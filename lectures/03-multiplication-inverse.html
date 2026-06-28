@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 3 — Matrix multiplication & inverse · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 3 · Matrix multiplication and inverse matrices</h1>
+  <div class="sub">One idea, three views: <code>Ax</code> is a <b>combination of A's columns</b>,
+    <code>AB</code> is built <b>one column at a time</b>, and <code>A⁻¹</code> is the transform that
+    <b>undoes</b> A.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <!-- ============================ FIGURE 1 ============================ -->
+  <h2>1 · Ax as a combination of columns</h2>
+  <div class="note">
+    <b>Drag the sliders</b> for <code>x₁, x₂, x₃</code>. The arrows chain tip-to-tail:
+    <span style="color:#1f77b4;font-weight:600">x₁·col₁</span> +
+    <span style="color:#2ca02c;font-weight:600">x₂·col₂</span> +
+    <span style="color:#ff7f0e;font-weight:600">x₃·col₃</span>. Where the chain lands is
+    <code>Ax</code> (the red arrow). Solving <code>Ax = b</code> means choosing the x's so the chain lands on b.
+  </div>
+
+  <div class="controls">
+    <span class="rng">x₁ = <span id="v-x1">1</span></span>
+    <input type="range" id="s-x1" min="-3" max="3" step="1" value="1"/>
+    <span class="rng">x₂ = <span id="v-x2">1</span></span>
+    <input type="range" id="s-x2" min="-3" max="3" step="1" value="1"/>
+    <span class="rng">x₃ = <span id="v-x3">1</span></span>
+    <input type="range" id="s-x3" min="-3" max="3" step="1" value="1"/>
+  </div>
+  <div class="status" id="combo-status"></div>
+  <div class="plots"><div id="fig1" class="plot" style="flex:1 1 760px;min-width:360px"></div></div>
+
+  <!-- ============================ FIGURE 2 ============================ -->
+  <h2>2 · Matrix multiplication AB, column by column</h2>
+  <div class="note">
+    The key fact: <b>column j of AB equals A times column j of B</b>. So computing
+    <code>AB</code> is just two (or n) separate "A&nbsp;times a column" problems. Use the buttons to step
+    through the worked example <code>A·B</code> with
+    <code>A = [[1,2],[3,4]]</code>, <code>B = [[5,6],[7,8]]</code>.
+  </div>
+  <div class="controls">
+    <button class="primary" id="ab-col1">Show column 1</button>
+    <button id="ab-col2">Show column 2</button>
+    <button id="ab-both">Show full AB</button>
+  </div>
+  <div class="status" id="ab-status"></div>
+
+  <!-- ============================ FIGURE 2b ============================ -->
+  <h2>2b · The 4th way: columns × rows (outer products)</h2>
+  <div class="note">
+    Strang's favorite surprise: <code>AB</code> is also <b>a sum of (column of A)(row of B)</b> pieces.
+    Each piece — a <b>column times a row</b> — is a full-sized matrix, but a very special one: <b>rank 1</b>.
+    His example is a single column times a single row, <code>(2,3,4)·(1,6)</code>. Toggle the row/column entries
+    and watch every <b>row of the product stay a multiple of the row</b> <code>(1,6)</code> and every
+    <b>column stay a multiple of</b> <code>(2,3,4)</code> — so the whole answer collapses onto two lines.
+  </div>
+  <div class="controls">
+    <span class="rng">col = (<span id="op-c0r">2</span>, <span id="op-c1r">3</span>, <span id="op-c2r">4</span>)</span>
+    <input type="range" id="op-c0" min="-4" max="4" step="1" value="2"/>
+    <input type="range" id="op-c1" min="-4" max="4" step="1" value="3"/>
+    <input type="range" id="op-c2" min="-4" max="4" step="1" value="4"/>
+    <span class="rng" style="margin-left:14px">row = (<span id="op-r0v">1</span>, <span id="op-r1v">6</span>)</span>
+    <input type="range" id="op-r0" min="-6" max="6" step="1" value="1"/>
+    <input type="range" id="op-r1" min="-6" max="6" step="1" value="6"/>
+  </div>
+  <div class="status" id="op-status"></div>
+  <div class="plots"><div id="fig2b" class="plot" style="flex:1 1 620px;min-width:340px;height:420px"></div></div>
+
+  <!-- ============================ FIGURE 3 ============================ -->
+  <h2>3 · The inverse undoes the transformation</h2>
+  <div class="note">
+    A matrix is a <b>transformation</b> of the plane. Below, the unit square + grid (faint) is pushed through
+    <code>A = [[1,3],[2,7]]</code> to the colored shape. Then we apply <code>A⁻¹ = [[7,−3],[−2,1]]</code>,
+    which carries every point <b>back</b> to where it started — that is what "inverse" means:
+    <code>A⁻¹A = I</code>.
+  </div>
+  <div class="controls">
+    <button class="primary" id="inv-identity">Start (grid)</button>
+    <button id="inv-apply">Apply A</button>
+    <button id="inv-undo">Then apply A⁻¹</button>
+    <span class="rng" id="inv-t">t = 0.00</span>
+    <input type="range" id="inv-slider" min="0" max="2" step="0.02" value="0" style="width:280px"/>
+  </div>
+  <div class="status" id="inv-status"></div>
+  <div class="plots"><div id="fig3" class="plot" style="flex:1 1 760px;min-width:360px"></div></div>
+
+  <!-- ============================ FIGURE 3b ============================ -->
+  <h2>3b · When the inverse fails — the singular matrix</h2>
+  <div class="note">
+    "Best to start with an example," Strang says, and writes <code>A = [[1,2],[3,6]]</code> — the matrix that has
+    <b>no inverse</b>. Why? Its two columns <code>(1,3)</code> and <code>(2,6)</code> lie on the <b>same line</b>,
+    so every combination <code>x₁·col₁ + x₂·col₂</code> stays on that line — A squashes the whole plane onto it
+    and can never be undone. His clinching reason: there's a <b>nonzero</b> <code>x</code> with <code>Ax = 0</code>.
+    Drag the sliders to <code>x = (2, −1)</code> and the red output arrow vanishes to the origin —
+    <code>2·(1,3) − 1·(2,6) = (0,0)</code>. If <code>A⁻¹</code> existed, <code>A⁻¹(Ax)=x</code> would force
+    <code>x=0</code>, a contradiction. So no inverse.
+  </div>
+  <div class="controls">
+    <span class="rng">x₁ = <span id="sg-x1v">2</span></span>
+    <input type="range" id="sg-x1" min="-4" max="4" step="1" value="2"/>
+    <span class="rng">x₂ = <span id="sg-x2v">-1</span></span>
+    <input type="range" id="sg-x2" min="-4" max="4" step="1" value="-1"/>
+    <button id="sg-null" class="primary" style="margin-left:10px">Jump to null vector (2, −1)</button>
+  </div>
+  <div class="status" id="sg-status"></div>
+  <div class="plots"><div id="fig3b" class="plot" style="flex:1 1 620px;min-width:340px;height:420px"></div></div>
+
+  <!-- ============================ WHAT YOU'RE SEEING ============================ -->
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>Columns, not rows.</b> The slickest way to read <code>Ax</code> is <i>not</i> "row · x" but as a
+    weighted sum of A's columns. If <code>A</code> has columns <code>c₁, c₂, c₃</code> then
+    <code>Ax = x₁c₁ + x₂c₂ + x₃c₃</code>. Figure 1 builds exactly that sum with arrows. The set of all
+    reachable points (every choice of x) is the <b>column space</b> of A.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>AB is many Ax's.</b> Multiply A by B by handing A each column of B in turn. Column 1 of the answer is
+    <code>A·(column 1 of B)</code>, column 2 is <code>A·(column 2 of B)</code>, and so on. Figure 2 shows the
+    arithmetic for each column separately, then stacks them into the full product.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Inverse = reverse.</b> Geometrically A stretches and shears the grid (Figure 3); <code>A⁻¹</code> is the
+    unique transform that puts every point back. Algebraically <code>A⁻¹A = AA⁻¹ = I</code>. A matrix has an
+    inverse exactly when it doesn't collapse space — i.e. <code>det A ≠ 0</code> and the columns are
+    independent. Here <code>det A = 1·7 − 3·2 = 1 ≠ 0</code>, so A is invertible.
+  </p>
+
+  <!-- ============================ WORKED MATH ============================ -->
+  <h2>The math, step by step</h2>
+
+  <p style="font-size:14px;max-width:780px"><b>(a) Ax as a column combination.</b></p>
+  <pre style="font-size:14px;background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:12px;overflow:auto">A = | 2  1  0 |        x = (x₁, x₂, x₃)
+    | 1  3  1 |
+    | 1  1  2 |
+
+Ax = x₁·| 2 | + x₂·| 1 | + x₃·| 0 |
+        | 1 |      | 3 |      | 1 |
+        | 1 |      | 1 |      | 2 |
+
+   = ( 2x₁ + 1x₂ + 0x₃ ,
+       1x₁ + 3x₂ + 1x₃ ,
+       1x₁ + 1x₂ + 2x₃ )</pre>
+  <p style="font-size:14px;max-width:780px">
+    Each slider in Figure 1 scales one column; the tip-to-tail sum of the scaled columns is the output vector.
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>(b) AB one column at a time.</b>
+    With <code>A = [[1,2],[3,4]]</code> and <code>B = [[5,6],[7,8]]</code>:</p>
+  <pre style="font-size:14px;background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:12px;overflow:auto">Column 1 of AB = A · (column 1 of B) = A · (5, 7)
+   = 5·(1,3) + 7·(2,4) = (5+14, 15+28) = (19, 43)
+
+Column 2 of AB = A · (column 2 of B) = A · (6, 8)
+   = 6·(1,3) + 8·(2,4) = (6+16, 18+32) = (22, 50)
+
+So   AB = | 19  22 |
+          | 43  50 |</pre>
+  <p style="font-size:14px;max-width:780px">
+    (Check one entry the "row · column" way: row 1 of A dotted with column 1 of B =
+    <code>1·5 + 2·7 = 19</code>. Same answer — the column view just bundles those dot products together.)
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>(b2) The 4th way — columns × rows (outer products).</b>
+    A whole column of A times a whole row of B is a full matrix of rank 1. Strang's example, one column
+    <code>(2,3,4)</code> times one row <code>(1,6)</code>:</p>
+  <pre style="font-size:14px;background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:12px;overflow:auto">| 2 |              | 2·1  2·6 |   | 2  12 |
+| 3 | · ( 1  6 ) = | 3·1  3·6 | = | 3  18 |
+| 4 |              | 4·1  4·6 |   | 4  24 |
+
+Every COLUMN is a multiple of (2,3,4):   col₂ = 6·col₁
+Every ROW    is a multiple of (1,6):      row₂ = 1.5·row₁, row₃ = 2·row₁
+→ column space = the line through (2,3,4);  row space = the line through (1,6).  (rank 1)
+
+General rule (4th way):   AB = Σ_k (column k of A)·(row k of B)</pre>
+  <p style="font-size:14px;max-width:780px">
+    This is the same product as the column-by-column view — just sliced the other way. Adding up these rank-1
+    pieces over all <code>k</code> rebuilds the full <code>AB</code>.
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>(c) Gauss–Jordan inverse of A = [[1,3],[2,7]].</b>
+    Augment with the identity and row-reduce until the left block is I; the right block becomes A⁻¹.</p>
+  <pre style="font-size:14px;background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:12px;overflow:auto">[ A | I ] =  | 1  3 | 1  0 |
+             | 2  7 | 0  1 |
+
+R2 ← R2 − 2·R1   (clear the 2 below the pivot)
+             | 1  3 | 1  0 |
+             | 0  1 |-2  1 |
+
+R1 ← R1 − 3·R2   (clear the 3 above the second pivot)
+             | 1  0 | 7 -3 |
+             | 0  1 |-2  1 |
+
+Left block is now I, so the right block is A⁻¹:
+
+   A⁻¹ = |  7  -3 |
+         | -2   1 |
+
+Check:  A·A⁻¹ = | 1 3 |·|  7 -3 | = | 1·7+3·(-2)  1·(-3)+3·1 | = | 1 0 |  = I  ✓
+                | 2 7 | | -2  1 |   | 2·7+7·(-2)  2·(-3)+7·1 |   | 0 1 |</pre>
+  <p style="font-size:14px;max-width:780px">
+    The pivots were both 1 (no division needed), so the inverse came out with clean integers. In general you
+    divide each pivot row through to make the pivot 1 — and if any pivot is 0 you cannot finish, which is the
+    algebraic signal that A has no inverse.
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>(d) Why A = [[1,3],[2,6]] has no inverse.</b>
+    (Strang's "one three two six" — columns <code>col₁ = (1,3)</code> and <code>col₂ = (2,6)</code>.)</p>
+  <pre style="font-size:14px;background:#f7f8fa;border:1px solid #eee;border-radius:8px;padding:12px;overflow:auto">A = | 1  2 |     det A = 1·6 − 2·3 = 0                    ← determinant test
+    | 3  6 |     col₂ = (2,6) = 2·(1,3) = 2·col₁          ← columns on one line
+
+Best reason (Strang's favorite): there is a NONZERO x with Ax = 0.
+Since col₂ = 2·col₁, we have 2·col₁ − col₂ = 0, i.e. x = (2, −1):
+
+   A·(2, −1) = 2·col₁ − 1·col₂ = 2·(1,3) − (2,6) = (2−2, 6−6) = (0, 0)  ✓
+
+If A⁻¹ existed:   x = I·x = (A⁻¹A)·x = A⁻¹·(Ax) = A⁻¹·0 = 0,
+but x = (2,−1) ≠ 0 — contradiction. A matrix that sends some nonzero x to 0 cannot be inverted.</pre>
+  <p style="font-size:14px;max-width:780px">
+    Geometrically: A flattens the whole plane onto the single line through <code>(1,3)</code>, so distinct
+    points pile onto the same image and there is no way back. The figure above lets you slide to
+    <code>x = (2, −1)</code> and watch the output arrow collapse to the origin.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* ===================================================================
+   FIGURE 1 — Ax as a combination of columns (3D, tip-to-tail arrows)
+   =================================================================== */
+const A1 = [[2,1,0],[1,3,1],[1,1,2]];                  // rows
+const cols = [0,1,2].map(j => A1.map(r => r[j]));      // column vectors
+const origin = [0,0,0];
+
+function ax(x){ return [0,1,2].map(i => A1[i][0]*x[0] + A1[i][1]*x[1] + A1[i][2]*x[2]); }
+
+function fig1Traces(x){
+  const traces = [];
+  let start = [0,0,0];
+  for (let j = 0; j < 3; j++){
+    const scaled = cols[j].map(v => v * x[j]);
+    const end = [start[0]+scaled[0], start[1]+scaled[1], start[2]+scaled[2]];
+    LA.arrow(start, end, LA.VEC[j], 7).forEach(t => traces.push(t));
+    start = end;
+  }
+  // resulting Ax (red), drawn straight from origin
+  const b = ax(x);
+  LA.arrow(origin, b, "#d62728", 5).forEach(t => { t.opacity = 0.85; traces.push(t); });
+  return traces;
+}
+
+function fig1Layout(){
+  return {
+    margin:{l:0,r:0,t:10,b:0}, showlegend:false,
+    scene: Object.assign(LA.SCENE(), {
+      aspectmode:"cube",
+      xaxis:{title:"x", range:[-8,8]},
+      yaxis:{title:"y", range:[-8,8]},
+      zaxis:{title:"z", range:[-8,8]},
+    }),
+  };
+}
+
+function readX(){
+  return [ +document.getElementById("s-x1").value,
+           +document.getElementById("s-x2").value,
+           +document.getElementById("s-x3").value ];
+}
+
+function drawFig1(){
+  const x = readX();
+  document.getElementById("v-x1").textContent = x[0];
+  document.getElementById("v-x2").textContent = x[1];
+  document.getElementById("v-x3").textContent = x[2];
+  const b = ax(x).map(LA.round);
+  document.getElementById("combo-status").innerHTML =
+    "<b>Ax</b> = " + x[0] + "·col₁ + " + x[1] + "·col₂ + " + x[2] + "·col₃ = " +
+    "<code>(" + b[0] + ", " + b[1] + ", " + b[2] + ")</code>";
+  Plotly.react("fig1", fig1Traces(x), fig1Layout(), {responsive:true});
+}
+
+["s-x1","s-x2","s-x3"].forEach(id =>
+  document.getElementById(id).addEventListener("input", drawFig1));
+drawFig1();
+
+/* ===================================================================
+   FIGURE 2 — AB column by column (numeric, rendered into status box)
+   =================================================================== */
+const A2 = [[1,2],[3,4]];
+const B2 = [[5,6],[7,8]];
+function Atimes(v){ return [ A2[0][0]*v[0]+A2[0][1]*v[1], A2[1][0]*v[0]+A2[1][1]*v[1] ]; }
+const bcol1 = [B2[0][0], B2[1][0]];   // (5,7)
+const bcol2 = [B2[0][1], B2[1][1]];   // (6,8)
+const abc1 = Atimes(bcol1);           // (19,43)
+const abc2 = Atimes(bcol2);           // (22,50)
+
+const AB_TEXT = {
+  col1: "<b>Column 1 of AB = A·(col 1 of B) = A·(5,7)</b><br>" +
+        "= 5·(1,3) + 7·(2,4) = (5+14, 15+28) = <code>(19, 43)</code>",
+  col2: "<b>Column 2 of AB = A·(col 2 of B) = A·(6,8)</b><br>" +
+        "= 6·(1,3) + 8·(2,4) = (6+16, 18+32) = <code>(22, 50)</code>",
+  both: "<b>Stack the two columns side by side:</b><br>" +
+        "AB = <code>[[19, 22], [43, 50]]</code><br>" +
+        "<span style='color:#666'>Check entry (1,1) by row·column: 1·5 + 2·7 = 19 ✓</span>",
+};
+function setAB(which, primary){
+  document.getElementById("ab-status").innerHTML = AB_TEXT[which];
+  ["ab-col1","ab-col2","ab-both"].forEach(id =>
+    document.getElementById(id).className = (id === primary ? "primary" : ""));
+}
+document.getElementById("ab-col1").onclick = () => setAB("col1","ab-col1");
+document.getElementById("ab-col2").onclick = () => setAB("col2","ab-col2");
+document.getElementById("ab-both").onclick = () => setAB("both","ab-both");
+setAB("col1","ab-col1");
+
+/* ===================================================================
+   FIGURE 3 — Inverse as undoing a 2D transformation
+   t in [0,1]: identity -> A.   t in [1,2]: A -> A^-1 A = identity.
+   =================================================================== */
+const A3    = [[1,3],[2,7]];
+const A3inv = [[7,-3],[-2,1]];
+const I2    = [[1,0],[0,1]];
+
+function lerpMat(M0, M1, s){
+  return [[M0[0][0]+(M1[0][0]-M0[0][0])*s, M0[0][1]+(M1[0][1]-M0[0][1])*s],
+          [M0[1][0]+(M1[1][0]-M0[1][0])*s, M0[1][1]+(M1[1][1]-M0[1][1])*s]];
+}
+function apply2(M, p){ return [M[0][0]*p[0]+M[0][1]*p[1], M[1][0]*p[0]+M[1][1]*p[1]]; }
+
+// current transform matrix for parameter t in [0,2]
+function matAt(t){
+  if (t <= 1) return lerpMat(I2, A3, t);          // identity -> A
+  return lerpMat(A3, I2, t - 1);                  // A -> identity (via A^-1 A)
+}
+
+function gridTraces(M){
+  const traces = [];
+  const lim = 2, n = 5;                            // grid lines at -2..2
+  const ticks = LA.linspace(-lim, lim, n);
+  // background reference grid (where things start), faint
+  // transformed grid lines
+  ticks.forEach((c) => {
+    // vertical line x=c
+    const v0 = apply2(M, [c, -lim]), v1 = apply2(M, [c, lim]);
+    traces.push({type:"scatter", mode:"lines", x:[v0[0],v1[0]], y:[v0[1],v1[1]],
+      line:{color:"#bcd6ef", width:1}, hoverinfo:"skip", showlegend:false});
+    // horizontal line y=c
+    const h0 = apply2(M, [-lim, c]), h1 = apply2(M, [lim, c]);
+    traces.push({type:"scatter", mode:"lines", x:[h0[0],h1[0]], y:[h0[1],h1[1]],
+      line:{color:"#bcd6ef", width:1}, hoverinfo:"skip", showlegend:false});
+  });
+  // the unit square (0,0)-(1,0)-(1,1)-(0,1) filled
+  const sq = [[0,0],[1,0],[1,1],[0,1],[0,0]].map(p => apply2(M, p));
+  traces.push({type:"scatter", mode:"lines", fill:"toself",
+    x: sq.map(p=>p[0]), y: sq.map(p=>p[1]),
+    line:{color:"#1f77b4", width:2}, fillcolor:"rgba(31,119,180,0.25)",
+    name:"unit square", hoverinfo:"skip", showlegend:false});
+  // the two transformed basis vectors (columns of M)
+  const e1 = apply2(M,[1,0]), e2 = apply2(M,[0,1]);
+  traces.push({type:"scatter", mode:"lines+markers", x:[0,e1[0]], y:[0,e1[1]],
+    line:{color:"#2ca02c", width:4}, marker:{size:5}, name:"i ↦", showlegend:false,
+    hovertemplate:"i ↦ (%{x:.2f}, %{y:.2f})<extra></extra>"});
+  traces.push({type:"scatter", mode:"lines+markers", x:[0,e2[0]], y:[0,e2[1]],
+    line:{color:"#ff7f0e", width:4}, marker:{size:5}, name:"j ↦", showlegend:false,
+    hovertemplate:"j ↦ (%{x:.2f}, %{y:.2f})<extra></extra>"});
+  return traces;
+}
+
+function fig3Layout(){
+  return {
+    margin:{l:30,r:10,t:10,b:30}, showlegend:false,
+    xaxis:{range:[-5,11], zeroline:true, zerolinecolor:"#999", scaleanchor:"y", scaleratio:1},
+    yaxis:{range:[-5,11], zeroline:true, zerolinecolor:"#999"},
+  };
+}
+
+function drawFig3(t){
+  const M = matAt(t);
+  let msg;
+  if (t <= 0.001) msg = "<b>t = 0:</b> the original grid and unit square (the identity, I).";
+  else if (Math.abs(t-1) < 0.02) msg = "<b>t = 1:</b> fully transformed by " +
+      "<code>A = [[1,3],[2,7]]</code> — i↦(1,2), j↦(3,7). The square is now a sheared parallelogram.";
+  else if (t >= 1.999) msg = "<b>t = 2:</b> applied <code>A⁻¹</code>, everything is back to the start. " +
+      "<code>A⁻¹A = I</code>.";
+  else if (t < 1) msg = "<b>Morphing I → A.</b> Watch the grid stretch and shear.";
+  else msg = "<b>Morphing A → I.</b> A⁻¹ pulls every point back to where it began.";
+  document.getElementById("inv-status").innerHTML = msg;
+  document.getElementById("inv-t").textContent = "t = " + t.toFixed(2);
+  Plotly.react("fig3", gridTraces(M), fig3Layout(), {responsive:true});
+}
+
+const invSlider = document.getElementById("inv-slider");
+invSlider.addEventListener("input", () => drawFig3(+invSlider.value));
+
+function animateTo(target){
+  const start = +invSlider.value;
+  const steps = 24; let k = 0;
+  const id = setInterval(() => {
+    k++; const t = start + (target - start) * (k/steps);
+    invSlider.value = t; drawFig3(t);
+    if (k >= steps){ clearInterval(id); invSlider.value = target; drawFig3(target); }
+  }, 20);
+}
+document.getElementById("inv-identity").onclick = () => animateTo(0);
+document.getElementById("inv-apply").onclick    = () => animateTo(1);
+document.getElementById("inv-undo").onclick     = () => animateTo(2);
+drawFig3(0);
+
+/* small local 2D arrow helper (LA.arrow is 3D-only) */
+function arrow2(p, q, color, w){
+  return {type:"scatter", mode:"lines", x:[p[0],q[0]], y:[p[1],q[1]],
+    line:{color, width:w||4}, hoverinfo:"skip", showlegend:false};
+}
+
+/* ===================================================================
+   FIGURE 2b — columns x rows (outer product), Strang's (2,3,4)·(1,6)
+   Rendered as an annotated heatmap of the rank-1 product matrix.
+   =================================================================== */
+function drawFig2b(){
+  const c = [ +document.getElementById("op-c0").value,
+              +document.getElementById("op-c1").value,
+              +document.getElementById("op-c2").value ];
+  const r = [ +document.getElementById("op-r0").value,
+              +document.getElementById("op-r1").value ];
+  setText("op-c0r", c[0]); setText("op-c1r", c[1]); setText("op-c2r", c[2]);
+  setText("op-r0v", r[0]); setText("op-r1v", r[1]);
+
+  // product matrix M[i][j] = c[i]*r[j]  (3x2)
+  const M = c.map(ci => r.map(rj => ci*rj));
+  // z for heatmap: row 0 at top -> reverse for display
+  const z = M;
+  const ann = [];
+  for (let i=0;i<3;i++) for (let j=0;j<2;j++){
+    ann.push({x:j, y:i, text:String(M[i][j]), showarrow:false,
+      font:{color: Math.abs(M[i][j])>Math.max(...M.flat().map(Math.abs))*0.55?"#fff":"#222", size:16}});
+  }
+  const trace = {type:"heatmap", z:z, x:[0,1], y:[0,1,2], colorscale:"Blues",
+    showscale:false, xgap:3, ygap:3, hoverinfo:"skip"};
+  const layout = {
+    margin:{l:30,r:10,t:28,b:24},
+    title:{text:`(${c.join(",")}) · (${r.join(",")}) = rank-1 matrix`, font:{size:14}},
+    xaxis:{title:"columns (each a multiple of (" + c.join(",") + "))", tickvals:[0,1], ticktext:["col 1","col 2"],
+           range:[-0.5,1.5], zeroline:false},
+    yaxis:{title:"rows (each a multiple of (" + r.join(",") + "))", tickvals:[0,1,2], ticktext:["row 1","row 2","row 3"],
+           range:[2.5,-0.5], zeroline:false},
+    annotations: ann,
+  };
+  Plotly.react("fig2b", [trace], layout, {responsive:true});
+
+  const colRatio = (r[0]!==0) ? LA.round(r[1]/r[0]) : "?";
+  document.getElementById("op-status").innerHTML =
+    "Every <b>column</b> is a multiple of <code>(" + c.join(",") + ")</code>; every <b>row</b> is a multiple of " +
+    "<code>(" + r.join(",") + ")</code>. " +
+    "col 2 = " + colRatio + "·col 1. " +
+    "<span style='color:#666'>This single column×row piece is the building block of the 4th way: " +
+    "AB = Σₖ (col k of A)(row k of B).</span>";
+}
+function setText(id, v){ const el = document.getElementById(id); if (el) el.textContent = v; }
+["op-c0","op-c1","op-c2","op-r0","op-r1"].forEach(id =>
+  document.getElementById(id).addEventListener("input", drawFig2b));
+drawFig2b();
+
+/* ===================================================================
+   FIGURE 3b — singular matrix A=[[1,2],[3,6]]; columns on one line;
+   Ax for the chosen x; at x=(2,-1) the output collapses to origin.
+   =================================================================== */
+const Asg = [[1,2],[3,6]];
+const sgCol1 = [Asg[0][0], Asg[1][0]];   // (1,3)
+const sgCol2 = [Asg[0][1], Asg[1][1]];   // (2,6)
+function readSgX(){
+  return [ +document.getElementById("sg-x1").value, +document.getElementById("sg-x2").value ];
+}
+function drawFig3b(){
+  const x = readSgX();
+  setText("sg-x1v", x[0]); setText("sg-x2v", x[1]);
+  const step1 = [x[0]*sgCol1[0], x[0]*sgCol1[1]];
+  const out   = [x[0]*sgCol1[0]+x[1]*sgCol2[0], x[0]*sgCol1[1]+x[1]*sgCol2[1]];
+  const R = 12;
+  const data = [];
+  // the line that A collapses everything onto: through (1,3) and origin
+  data.push(arrow2([-R*1, -R*3], [R*1, R*3], "#e0e0e0", 8));  // wide faint band = column space line
+  data.push(arrow2([-R*1, -R*3], [R*1, R*3], "#bbbbbb", 1));
+  // faint base columns
+  data.push(arrow2([0,0], sgCol1, "#9ec5e8", 2));
+  data.push(arrow2([0,0], sgCol2, "#a9dcb4", 2));
+  // tip-to-tail combination x1*col1 then x2*col2
+  data.push(arrow2([0,0], step1, "#1f77b4", 6));
+  data.push(arrow2(step1, out, "#2ca02c", 6));
+  // resulting Ax (red)
+  data.push(arrow2([0,0], out, "#d62728", 3));
+  data.push({type:"scatter", mode:"markers+text", x:[out[0]], y:[out[1]],
+    text:["  Ax = (" + LA.round(out[0]) + ", " + LA.round(out[1]) + ")"], textposition:"top right",
+    marker:{size: (Math.abs(out[0])<1e-9 && Math.abs(out[1])<1e-9) ? 12 : 8,
+            color:"#d62728"}, showlegend:false});
+  Plotly.react("fig3b", data, {
+    margin:{l:30,r:10,t:10,b:24}, showlegend:false,
+    xaxis:{range:[-R,R], zeroline:true, zerolinecolor:"#999", scaleanchor:"y", scaleratio:1},
+    yaxis:{range:[-R,R], zeroline:true, zerolinecolor:"#999"},
+  }, {responsive:true});
+
+  const isNull = (Math.abs(out[0])<1e-9 && Math.abs(out[1])<1e-9) && !(x[0]===0 && x[1]===0);
+  document.getElementById("sg-status").innerHTML = isNull
+    ? "<b>Ax = (0,0) with x = (" + x[0] + ", " + x[1] + ") ≠ 0.</b> " +
+      "A nonzero vector lands on the origin — A is <b>singular</b>, no inverse can undo it."
+    : (x[0]===0 && x[1]===0
+        ? "<b>x = (0,0):</b> trivially Ax = 0. Find a <i>nonzero</i> x that still gives (0,0)."
+        : "Ax = <code>(" + LA.round(out[0]) + ", " + LA.round(out[1]) +
+          ")</code> — still on the line through (1,3). Try <code>x = (2, −1)</code> to collapse it to 0.");
+}
+["sg-x1","sg-x2"].forEach(id =>
+  document.getElementById(id).addEventListener("input", drawFig3b));
+document.getElementById("sg-null").onclick = () => {
+  document.getElementById("sg-x1").value = 2;
+  document.getElementById("sg-x2").value = -1;
+  drawFig3b();
+};
+drawFig3b();
+</script>
+</body>
+</html>

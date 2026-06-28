@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 7 — Solving Ax=0, special solutions · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* lecture-local additions, in the same spirit as style.css */
+  .mat { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+  table.rref { border-collapse: collapse; margin: 8px 0; font-size: 15px; }
+  table.rref td { padding: 4px 12px; text-align: right; }
+  table.rref .lbl { color: var(--muted); text-align: left; font-family: -apple-system, sans-serif;
+                    font-size: 13px; padding-right: 14px; }
+  .pivcol { background: #e7f1fb; }     /* pivot column highlight */
+  .freecol { background: #fff4e0; }    /* free column highlight  */
+  .legend { font-size: 13px; color: #444; margin: 4px 0 0; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+            vertical-align: middle; margin: 0 4px 0 10px; }
+  .ck { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 13.5px; }
+  .ck .ok { color: #176d2c; font-weight: 700; }
+  .eqn { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 14px;
+         background: #f6f6f6; border-radius: 6px; padding: 2px 6px; }
+  .step { margin: 10px 0; font-size: 14px; max-width: 820px; }
+  .step .arrow { color: var(--muted); }
+  table.bmat td { padding: 5px 13px; text-align: right;
+                  font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 15px; }
+  .ipart  { background: #dff3e2; }   /* identity block in R          */
+  .fpart  { background: #fff4e0; }   /* F block (free cols) in R     */
+  .negf   { background: #ffe3e3; }   /* -F block inside N            */
+  .ipartn { background: #dff3e2; }   /* identity block inside N      */
+  .zrow   { color: #999; }
+  .estep.primary { font-weight: 700; }
+  .blab { font-weight:700; font-size:13px; color:#333; margin:14px 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 7 · Solving <span class="mat">Ax = 0</span> — pivot variables &amp; special solutions</h1>
+  <div class="sub">Elimination on <span class="mat">A</span> never changes its nullspace. Reduce to
+    <span class="mat">R</span> (reduced row echelon form), read off the <b>pivot</b> and <b>free</b> columns,
+    and each free variable hands you one <b>special solution</b>. Those special solutions span the whole
+    nullspace.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> here <span class="mat">A</span> is 2×3, so <span class="mat">x</span> lives in
+    <b>R³</b> and the nullspace is something you can see. Use the toggle to switch the second row.
+    With independent rows (<b>rank 2</b>) the nullspace is a <b>line</b>; make the rows dependent
+    (<b>rank 1</b>) and the nullspace opens up into a whole <b>plane</b>. Rotate the 3-D plot to feel it.
+  </div>
+
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Choose A:</span>
+    <button class="preset primary" data-case="rank2">rank 2 · nullspace = line &nbsp; A = [[1,2,2],[2,4,5]]</button>
+    <button class="preset" data-case="rank1">rank 1 · nullspace = plane &nbsp; A = [[1,2,2],[2,4,4]]</button>
+  </div>
+
+  <div class="plots">
+    <div id="plot3d" class="plot"></div>
+    <div id="panel" class="plot" style="overflow:auto; padding:14px; height:500px;"></div>
+  </div>
+  <div class="legend" id="legend"></div>
+
+  <h2>What you're seeing</h2>
+  <p class="step">
+    <b>The 3-D plot.</b> Every point <span class="mat">x = (x₁, x₂, x₃)</span> that solves
+    <span class="mat">Ax = 0</span> is drawn. For <b>rank 2</b> the two rows are independent constraints,
+    leaving <b>one</b> free direction — the nullspace is a line through the origin. For <b>rank 1</b> the
+    second row is just a multiple of the first, so there is really only one constraint and <b>two</b> free
+    directions — the nullspace is a plane through the origin (shaded). The colored arrows are the
+    <b>special solutions</b>; they are a basis for the nullspace, so the line/plane is exactly their span.
+  </p>
+  <p class="step">
+    <b>The right panel.</b> Elimination takes <span class="mat">A → R</span>. The columns holding a leading
+    <span class="mat">1</span> are <b>pivot columns</b> (blue); the rest are <b>free columns</b> (orange).
+    The count of free columns is the dimension of the nullspace, and it equals the number of arrows you see.
+    The check at the bottom multiplies <span class="mat">A</span> by each special solution and confirms you
+    get <span class="mat">0</span>.
+  </p>
+
+  <h2>Why elimination preserves the nullspace</h2>
+  <p class="step">
+    Row operations are: swap two equations, scale an equation, or add a multiple of one equation to another.
+    None of these change the set of <span class="mat">x</span> that make every equation
+    <span class="mat">0</span> — if each row dots to <span class="mat">0</span> against
+    <span class="mat">x</span>, then so does any combination of rows. So
+    <span class="eqn">N(A) = N(R)</span>. We solve the easy system <span class="mat">Rx = 0</span> instead, and
+    it has the same answers.
+  </p>
+
+  <h2>Worked math</h2>
+  <div id="worked"></div>
+
+  <hr style="margin:34px 0; border:none; border-top:1px solid #e3e3e3"/>
+
+  <h2>Strang's actual example — the 3×4 matrix</h2>
+  <div class="note">
+    The 2×3 cases above fit in R³ so we can <i>see</i> the nullspace. But the matrix Strang
+    works in lecture 7 is bigger — <b>3 rows, 4 columns</b> — so its nullspace lives in
+    <b>R⁴</b> and can't be drawn. Instead we follow his exact algorithm on the board:
+    eliminate <span class="mat">A → U</span> (echelon/"staircase" form), then keep going to
+    <span class="mat">R</span> (reduced row echelon), and read the two special solutions
+    straight off the <span class="mat">I</span> / <span class="mat">F</span> blocks.
+  </div>
+  <p class="step">
+    <b>His matrix.</b>
+    <span class="eqn">A = [[1, 2, 2, 2], [2, 4, 6, 8], [3, 6, 8, 10]]</span>.
+    He points out two dependencies <i>before</i> touching it: <b>column 2 = 2·column 1</b>
+    (so column 2 is not independent), and <b>row 3 = row 1 + row 2</b> (so row 3 is not
+    independent). "All that should come out of elimination."
+  </p>
+
+  <div class="controls" style="margin:6px 0 10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Step through elimination:</span>
+    <button class="estep primary" data-step="0">A (start)</button>
+    <button class="estep" data-step="1">→ clear column 1</button>
+    <button class="estep" data-step="2">→ U (echelon)</button>
+    <button class="estep" data-step="3">→ clean above pivot</button>
+    <button class="estep" data-step="4">→ R (RREF)</button>
+  </div>
+  <div class="plots">
+    <div id="elimPanel" class="plot" style="overflow:auto; padding:16px; min-height:300px; flex:1 1 420px;"></div>
+    <div id="nsPanel"   class="plot" style="overflow:auto; padding:16px; min-height:300px; flex:1 1 420px;"></div>
+  </div>
+
+  <h2>Reading the nullspace off R = [ I  F ]</h2>
+  <p class="step">
+    Once the pivot columns are cleaned to a leading 1 with zeros above and below, the pivot
+    columns hold an <b>identity block I</b> and the free columns hold a block Strang calls
+    <b>F</b>. The matrix whose columns are the special solutions is the <b>nullspace matrix</b>
+    <span class="eqn">N = [ −F ; I ]</span> — put the identity in the free rows, and
+    <span class="mat">−F</span> drops into the pivot rows. Multiplying <span class="mat">R·N</span>
+    gives the zero matrix, which is just "all special solutions at once."
+  </p>
+  <div id="ifPanel" style="max-width:860px"></div>
+
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* ---------- lightweight matrix helpers (only what this page needs) ---------- */
+const { round, linspace, arrow, SCENE } = LA;
+
+function matmul(A, x) {                       // A (m×n) times vector x (n)
+  return A.map(row => round(row.reduce((s, a, j) => s + a * x[j], 0)));
+}
+
+/* Reduced row echelon form of an m×n matrix.
+   Returns { R, pivots:[colIndices] }. Works for our 2×3 examples (and generally). */
+function rref(A) {
+  const eps = 1e-9;
+  const R = A.map(r => r.slice());
+  const m = R.length, n = R[0].length;
+  const pivots = [];
+  let row = 0;
+  for (let col = 0; col < n && row < m; col++) {
+    let piv = -1, best = eps;
+    for (let r = row; r < m; r++) if (Math.abs(R[r][col]) > best) { best = Math.abs(R[r][col]); piv = r; }
+    if (piv < 0) continue;                    // no pivot in this column -> free column
+    [R[row], R[piv]] = [R[piv], R[row]];      // swap pivot row up
+    const lead = R[row][col];
+    for (let c = 0; c < n; c++) R[row][c] = round(R[row][c] / lead);  // scale pivot to 1
+    for (let r = 0; r < m; r++) if (r !== row) {                       // clear the column
+      const f = R[r][col];
+      if (Math.abs(f) > eps) for (let c = 0; c < n; c++) R[r][c] = round(R[r][c] - f * R[row][c]);
+    }
+    pivots.push(col);
+    row++;
+  }
+  return { R, pivots };
+}
+
+/* From R + pivot columns build one special solution per free column.
+   Free var set to 1, others 0; pivot vars solved from Rx = 0. */
+function specialSolutions(R, pivots) {
+  const n = R[0].length;
+  const free = [];
+  for (let c = 0; c < n; c++) if (!pivots.includes(c)) free.push(c);
+  const sols = free.map(fc => {
+    const x = new Array(n).fill(0);
+    x[fc] = 1;
+    // each pivot row r:  x[pivCol] + (sum over other cols) R[r][c]*x[c] = 0
+    pivots.forEach((pc, r) => { x[pc] = round(-R[r][fc]); });   // only the chosen free col is nonzero
+    return x;
+  });
+  return { free, sols };
+}
+
+/* ---------- the two matrices ---------- */
+const CASES = {
+  rank2: { A: [[1,2,2],[2,4,5]], title: "rank 2 — nullspace is a LINE in R³" },
+  rank1: { A: [[1,2,2],[2,4,4]], title: "rank 1 — nullspace is a PLANE in R³" },
+};
+
+/* ---------- formatting helpers ---------- */
+const fmt = (v) => { v = round(v); return Number.isInteger(v) ? String(v) : v.toFixed(3); };
+const vecStr = (x) => "(" + x.map(fmt).join(", ") + ")";
+
+function matRows(A, pivots, label) {
+  const n = A[0].length;
+  let html = "";
+  A.forEach((r, i) => {
+    html += "<tr>";
+    html += `<td class="lbl">${i === 0 ? label : ""}</td>`;
+    r.forEach((v, j) => {
+      const cls = pivots ? (pivots.includes(j) ? "pivcol" : "freecol") : "";
+      html += `<td class="${cls}">${fmt(v)}</td>`;
+    });
+    html += "</tr>";
+  });
+  return html;
+}
+
+/* ---------- render the right-hand info panel ---------- */
+function renderPanel(A) {
+  const { R, pivots } = rref(A);
+  const { free, sols } = specialSolutions(R, pivots);
+  const n = A[0].length, rank = pivots.length;
+
+  let h = `<div style="font-size:14px;line-height:1.7">`;
+  h += `<b>A</b> &nbsp;&rarr;&nbsp; elimination &nbsp;&rarr;&nbsp; <b>R</b> (RREF)`;
+  h += `<table class="rref">`;
+  h += matRows(A, null, "A =");
+  h += matRows(R, pivots, "R =");
+  h += `</table>`;
+
+  h += `<p class="legend"><span class="swatch" style="background:#e7f1fb"></span>pivot columns
+        &nbsp; <span class="swatch" style="background:#fff4e0"></span>free columns</p>`;
+
+  h += `<p><b>rank</b> = #pivots = <b>${rank}</b> &nbsp;·&nbsp;
+        pivot cols = {${pivots.map(c => c + 1).join(", ")}} &nbsp;·&nbsp;
+        free cols = {${free.map(c => c + 1).join(", ") || "none"}}</p>`;
+  h += `<p><b>dim N(A)</b> = #free columns = <b>${free.length}</b>
+        &nbsp;(so ${free.length} special solution${free.length === 1 ? "" : "s"})</p>`;
+
+  h += `<p style="margin-top:10px"><b>Special solutions</b> (set one free var = 1, the rest = 0):</p>`;
+  sols.forEach((s, k) => {
+    h += `<p style="margin:2px 0">
+            <span class="swatch" style="background:${LA.VEC[k]}"></span>
+            <span class="mat">s${k + 1}</span> = ${vecStr(s)}
+            &nbsp;<span class="legend">(free var x${free[k] + 1} = 1)</span></p>`;
+  });
+
+  h += `<p style="margin-top:12px"><b>Numeric check &nbsp;A·s = 0</b></p>`;
+  sols.forEach((s, k) => {
+    const prod = matmul(A, s);
+    const zero = prod.every(v => Math.abs(v) < 1e-9);
+    h += `<p class="ck">A·s${k + 1} = ${vecStr(prod)}
+          ${zero ? '<span class="ok">✓ = 0</span>' : '<span style="color:#b00020">✗</span>'}</p>`;
+  });
+
+  h += `</div>`;
+  document.getElementById("panel").innerHTML = h;
+  return { R, pivots, free, sols };
+}
+
+/* ---------- render the 3-D nullspace picture ---------- */
+function render3D(A, sols, isPlane, title) {
+  const R = 3;                                  // axis half-extent
+  const traces = [];
+
+  // origin marker
+  traces.push({ type: "scatter3d", mode: "markers", x:[0], y:[0], z:[0],
+                marker: { size: 4, color: "#444" }, showlegend: false });
+
+  if (isPlane && sols.length === 2) {
+    // span of s1, s2 : x = a*s1 + b*s2  -> a shaded parallelogram-ish grid plane
+    const s1 = sols[0], s2 = sols[1];
+    const g = linspace(-R, R, 14);
+    const X = [], Y = [], Z = [];
+    for (let i = 0; i < g.length; i++) {
+      X.push([]); Y.push([]); Z.push([]);
+      for (let j = 0; j < g.length; j++) {
+        const a = g[i], b = g[j];
+        X[i].push(a * s1[0] + b * s2[0]);
+        Y[i].push(a * s1[1] + b * s2[1]);
+        Z[i].push(a * s1[2] + b * s2[2]);
+      }
+    }
+    traces.push({ type: "surface", x: X, y: Y, z: Z, showscale: false,
+                  opacity: 0.45, colorscale: LA.COLORS[0] });
+  } else {
+    // nullspace is a line: x = t * s1
+    const s1 = sols[0];
+    const t = linspace(-R, R, 2);
+    traces.push({ type: "scatter3d", mode: "lines",
+                  x: t.map(k => k * s1[0]), y: t.map(k => k * s1[1]), z: t.map(k => k * s1[2]),
+                  line: { color: "#888", width: 4, dash: "dot" }, showlegend: false });
+  }
+
+  // special-solution arrows from origin
+  sols.forEach((s, k) => {
+    arrow([0, 0, 0], s, LA.VEC[k], 8).forEach(t => traces.push(t));
+  });
+
+  Plotly.newPlot("plot3d", traces, {
+    title: { text: title, font: { size: 14 } },
+    margin: { l: 0, r: 0, t: 30, b: 0 },
+    scene: SCENE(),
+  }, { displayModeBar: false, responsive: true });
+}
+
+/* ---------- worked-math write-up (text mirrors the chosen A) ---------- */
+function renderWorked(caseKey) {
+  const A = CASES[caseKey].A;
+  const { R, pivots } = rref(A);
+  const { free, sols } = specialSolutions(R, pivots);
+  const rank = pivots.length;
+  const isPlane = free.length === 2;
+
+  let h = "";
+  h += `<div class="step"><b>Matrix.</b> <span class="eqn">A = [[${A[0].join(", ")}], [${A[1].join(", ")}]]</span>.
+        We want every <span class="mat">x</span> in R³ with <span class="mat">Ax = 0</span>.</div>`;
+
+  if (caseKey === "rank2") {
+    h += `<div class="step"><b>Elimination.</b>
+      Subtract 2×(row 1) from row 2:
+      <div class="eqn">[1 2 2 | 0]&nbsp;&nbsp;[2 4 5 | 0] &nbsp;<span class="arrow">→</span>&nbsp;
+        [1 2 2 | 0]&nbsp;&nbsp;[0 0 1 | 0]</div>
+      Column 3 now has a pivot. Clear it from row 1 (subtract 2×row 2 from row 1):
+      <div class="eqn">R = [1 2 0 | 0]&nbsp;&nbsp;[0 0 1 | 0]</div></div>`;
+    h += `<div class="step"><b>Pivots vs free.</b> Pivot columns are <b>1</b> and <b>3</b>
+      (each holds a leading 1). The only free column is <b>2</b>, so
+      <span class="mat">x₂</span> is the free variable. rank = 2, dim N(A) = 1.</div>`;
+    h += `<div class="step"><b>Back-substitute Rx = 0.</b> Rows say
+      <span class="eqn">x₁ + 2x₂ = 0</span> and <span class="eqn">x₃ = 0</span>.
+      Set the free variable <span class="mat">x₂ = 1</span>:
+      then <span class="mat">x₁ = −2</span>, <span class="mat">x₃ = 0</span>.
+      The special solution is
+      <div class="eqn">s₁ = (−2, 1, 0)</div>
+      The nullspace is the <b>line</b> <span class="mat">{ t·(−2, 1, 0) }</span> — all multiples of s₁.</div>`;
+  } else {
+    h += `<div class="step"><b>Elimination.</b>
+      Row 2 = 2×(row 1), so subtract 2×(row 1) from row 2 and it vanishes:
+      <div class="eqn">[1 2 2 | 0]&nbsp;&nbsp;[2 4 4 | 0] &nbsp;<span class="arrow">→</span>&nbsp;
+        R = [1 2 2 | 0]&nbsp;&nbsp;[0 0 0 | 0]</div>
+      There is really only one independent equation.</div>`;
+    h += `<div class="step"><b>Pivots vs free.</b> Only column <b>1</b> has a pivot.
+      Columns <b>2</b> and <b>3</b> are free, so <span class="mat">x₂</span> and
+      <span class="mat">x₃</span> are free variables. rank = 1, dim N(A) = 2.</div>`;
+    h += `<div class="step"><b>Two special solutions.</b> The one equation is
+      <span class="eqn">x₁ + 2x₂ + 2x₃ = 0</span>, i.e. <span class="mat">x₁ = −2x₂ − 2x₃</span>.
+      <ul style="margin:6px 0">
+        <li>Free vars <span class="mat">(x₂, x₃) = (1, 0)</span> &rarr;
+            <span class="eqn">s₁ = (−2, 1, 0)</span></li>
+        <li>Free vars <span class="mat">(x₂, x₃) = (0, 1)</span> &rarr;
+            <span class="eqn">s₂ = (−2, 0, 1)</span></li>
+      </ul>
+      The nullspace is the <b>plane</b>
+      <span class="mat">{ a·s₁ + b·s₂ }</span> — all combinations of the two special solutions.</div>`;
+  }
+
+  h += `<div class="step"><b>Check (computed live above):</b> `;
+  sols.forEach((s, k) => {
+    h += `<span class="eqn">A·${vecStr(s)} = ${vecStr(matmul(A, s))}</span>${k < sols.length - 1 ? " &nbsp; " : ""}`;
+  });
+  h += `. Both give the zero vector, confirming they lie in the nullspace.</div>`;
+
+  h += `<div class="step"><b>Counting rule.</b> For an m×n matrix,
+      <span class="eqn">(#pivots) + (#free) = n</span>. Here n = 3 and rank = ${rank},
+      so the nullspace has dimension ${free.length} — exactly what the
+      ${isPlane ? "plane" : "line"} in the picture shows.</div>`;
+
+  document.getElementById("worked").innerHTML = h;
+}
+
+/* ---------- wire it all together ---------- */
+function load(caseKey) {
+  const { A, title } = CASES[caseKey];
+  const { sols, free } = renderPanel(A);
+  const isPlane = free.length === 2;
+  render3D(A, sols, isPlane, title);
+  renderWorked(caseKey);
+
+  document.querySelectorAll(".preset").forEach(b => {
+    b.classList.toggle("primary", b.dataset.case === caseKey);
+  });
+  document.getElementById("legend").innerHTML =
+    `Arrows = special solutions (a basis for the nullspace). ` +
+    (isPlane ? "Shaded surface = the nullspace plane (their span)."
+             : "Dotted line = the nullspace line (multiples of s₁).");
+}
+
+document.querySelectorAll(".preset").forEach(b => {
+  b.onclick = () => load(b.dataset.case);
+});
+load("rank2");
+
+/* ============================================================================
+   Strang's actual 3x4 example: A = [[1,2,2,2],[2,4,6,8],[3,6,8,10]]
+   A -> U (echelon) -> R (RREF), then read special solutions off [I F].
+   This nullspace lives in R^4, so we show it as matrices + the nullspace
+   matrix N = [-F ; I] rather than a 3-D plot.
+   ============================================================================ */
+const A34 = [[1,2,2,2],[2,4,6,8],[3,6,8,10]];
+
+/* The five board snapshots Strang produces, with which rows are "pivot rows". */
+const ELIM = [
+  { // 0: A
+    M: [[1,2,2,2],[2,4,6,8],[3,6,8,10]],
+    desc: "Original A. Column 2 = 2·column 1; row 3 = row 1 + row 2. Both dependencies are still hidden."
+  },
+  { // 1: after R2-2R1, R3-3R1
+    M: [[1,2,2,2],[0,0,2,4],[0,0,2,4]],
+    desc: "Subtract 2·(row 1) from row 2 and 3·(row 1) from row 3. The 2 under the first pivot becomes 0,0; column 1 is straight."
+  },
+  { // 2: U  (after R3-R2)  -- echelon
+    M: [[1,2,2,2],[0,0,2,4],[0,0,0,0]],
+    label: "U", piv: [0,1],
+    desc: "Column 2 has a zero in the pivot spot and zero below it — nothing to do, it's a FREE column. The next pivot is the 2 in column 3. Subtract row 2 from row 3 → a row of zeros. This staircase is U, the echelon form. Two pivots ⇒ rank = 2."
+  },
+  { // 3: clean above the 2nd pivot (R1 - R2 of the col-3 entry: 1*row2)
+    M: [[1,2,0,-2],[0,0,2,4],[0,0,0,0]],
+    label: "R (in progress)", piv: [0,1],
+    desc: "Reduced row echelon goes upward too: clear the 2 above the second pivot (subtract 1·row 2 from row 1). That leaves a 0 and a −2 in row 1."
+  },
+  { // 4: R  (divide pivot row 2 by 2)
+    M: [[1,2,0,-2],[0,0,1,2],[0,0,0,0]],
+    label: "R (RREF)", piv: [0,1], pivCols: [0,2], freeCols: [1,3],
+    desc: "Divide row 2 by its pivot so every pivot is 1. This is R. Pivot columns 1 and 3 hold the identity; free columns 2 and 4 hold the block F."
+  },
+];
+
+function bmatHtml(M, opt = {}) {
+  // opt: { pivCols, freeCols } to color identity/F blocks in the pivot rows
+  const piv = opt.pivCols || [], free = opt.freeCols || [];
+  let h = `<table class="bmat">`;
+  M.forEach((row, i) => {
+    const zero = row.every(v => v === 0);
+    h += `<tr class="${zero ? "zrow" : ""}">`;
+    row.forEach((v, j) => {
+      let cls = "";
+      if (!zero) {
+        if (piv.includes(j)) cls = "ipart";
+        else if (free.includes(j)) cls = "fpart";
+      }
+      h += `<td class="${cls}">${v}</td>`;
+    });
+    h += `</tr>`;
+  });
+  h += `</table>`;
+  return h;
+}
+
+function renderElim(stepIdx) {
+  const s = ELIM[stepIdx];
+  const isR = stepIdx === 4;
+  let h = `<div style="font-size:14px;line-height:1.6">`;
+  h += `<div class="blab">${s.label ? s.label : "A"} ${stepIdx===0?"":""}</div>`;
+  h += bmatHtml(s.M, isR ? { pivCols: s.pivCols, freeCols: s.freeCols } : {});
+  if (isR) {
+    h += `<p class="legend"><span class="swatch" style="background:#dff3e2"></span>identity block I (pivot cols 1,3)
+          &nbsp; <span class="swatch" style="background:#fff4e0"></span>free block F (cols 2,4)</p>`;
+  } else if (s.piv) {
+    h += `<p class="legend">${s.piv.length} pivot${s.piv.length===1?"":"s"} so far ⇒ rank ${s.piv.length}.</p>`;
+  }
+  h += `<p class="step" style="margin-top:10px">${s.desc}</p>`;
+  if (stepIdx >= 2) {
+    h += `<p class="step"><b>Pivot columns:</b> 1 and 3. <b>Free columns:</b> 2 and 4
+          (variables x₂, x₄ are free). rank r = 2, n = 4, so dim N(A) = n − r = <b>2</b>.</p>`;
+  }
+  h += `</div>`;
+  document.getElementById("elimPanel").innerHTML = h;
+}
+
+/* Special solutions from R, in R^4 — Strang's exact result:
+   x2,x4 free.  s1=(-2,1,0,0)  for (x2,x4)=(1,0);  s2=(2,0,-2,1) for (x2,x4)=(0,1). */
+function renderNullspace() {
+  // Strang's exact rank-2 result for this 3x4 matrix (free vars x2, x4).
+  // (Computed by hand on the board; the local generic rref above is tuned for the
+  //  small 2x3 demos and isn't used here.)
+  const free = [1, 3];
+  const sols = [[-2, 1, 0, 0], [2, 0, -2, 1]];
+
+  let h = `<div style="font-size:14px;line-height:1.6">`;
+  h += `<div class="blab">Special solutions (one per free variable)</div>`;
+  sols.forEach((s, k) => {
+    const fc = free[k];
+    h += `<p style="margin:3px 0"><span class="mat">s${k+1}</span> = ${vecStr(s)}
+          &nbsp;<span class="legend">(set x${fc+1} = 1, other free var = 0)</span></p>`;
+  });
+  h += `<p class="step">These match Strang's board exactly: <span class="eqn">s₁ = (−2, 1, 0, 0)</span>
+        and <span class="eqn">s₂ = (2, 0, −2, 1)</span>. The whole nullspace is
+        <span class="eqn">{ c·s₁ + d·s₂ }</span> — a 2-D plane through the origin sitting in R⁴.</p>`;
+
+  h += `<div class="blab">Live check &nbsp;A·s = 0</div>`;
+  sols.forEach((s, k) => {
+    const prod = matmul(A34, s);
+    const zero = prod.every(v => Math.abs(v) < 1e-9);
+    h += `<p class="ck">A·s${k+1} = ${vecStr(prod)}
+          ${zero ? '<span class="ok">✓ = 0</span>' : '<span style="color:#b00020">✗</span>'}</p>`;
+  });
+  h += `<p class="step"><b>What s₁ says about columns:</b> −2·col₁ + 1·col₂ = 0 — exactly the
+        "column 2 = 2·column 1" dependency Strang spotted at the start.</p>`;
+  h += `</div>`;
+  document.getElementById("nsPanel").innerHTML = h;
+}
+
+/* The R = [I F] / N = [-F ; I] block structure, with R·N = 0 verified live. */
+function renderIF() {
+  const R = [[1,2,0,-2],[0,0,1,2],[0,0,0,0]];   // RREF, columns in original order
+  const pivCols = [0,2], freeCols = [1,3];
+  // F = pivot-rows ∩ free-cols  (rows 0,1) :  [[2,-2],[0,2]]
+  const F = [[2,-2],[0,2]];
+  // Nullspace matrix N (4x2): rows = variables x1..x4, cols = special solutions.
+  //   free rows (2,4) -> identity ;  pivot rows (1,3) -> -F
+  const N = [[-2, 2], [1, 0], [0, -2], [0, 1]];
+
+  let h = `<div style="display:flex; flex-wrap:wrap; gap:30px; align-items:flex-start; font-size:14px">`;
+
+  // R with I/F coloring
+  h += `<div><div class="blab">R = [ I  F ]</div>`;
+  h += bmatHtml(R, { pivCols, freeCols });
+  h += `<p class="legend"><span class="swatch" style="background:#dff3e2"></span>I (pivot cols)
+        &nbsp;<span class="swatch" style="background:#fff4e0"></span>F (free cols)</p></div>`;
+
+  // F block
+  h += `<div><div class="blab">F</div>`;
+  h += `<table class="bmat">`;
+  F.forEach(r => { h += `<tr>` + r.map(v => `<td class="fpart">${v}</td>`).join("") + `</tr>`; });
+  h += `</table></div>`;
+
+  // N = [-F ; I] with row labels
+  const labels = ["x₁ (pivot)","x₂ (free)","x₃ (pivot)","x₄ (free)"];
+  const isFreeRow = [false,true,false,true];
+  h += `<div><div class="blab">N = [ −F ; I ]&nbsp;&nbsp;(columns = s₁, s₂)</div>`;
+  h += `<table class="bmat">`;
+  N.forEach((r, i) => {
+    h += `<tr><td class="lbl" style="text-align:left;font-family:inherit;font-size:12px;color:var(--muted)">${labels[i]}</td>`;
+    h += r.map(v => `<td class="${isFreeRow[i] ? "ipartn" : "negf"}">${v}</td>`).join("");
+    h += `</tr>`;
+  });
+  h += `</table>`;
+  h += `<p class="legend"><span class="swatch" style="background:#ffe3e3"></span>−F (pivot rows)
+        &nbsp;<span class="swatch" style="background:#dff3e2"></span>I (free rows)</p></div>`;
+
+  h += `</div>`;
+
+  // R · N = 0 check (R is 3x4, N is 4x2 -> 3x2)
+  const RN = R.map(row => N[0].map((_, c) =>
+    round(row.reduce((sum, a, k) => sum + a * N[k][c], 0))));
+  const allZero = RN.every(r => r.every(v => Math.abs(v) < 1e-9));
+  h += `<p class="ck" style="margin-top:12px">R·N = `;
+  h += "[" + RN.map(r => "[" + r.join(", ") + "]").join(", ") + "]";
+  h += allZero ? ' <span class="ok">✓ = zero matrix</span>'
+               : ' <span style="color:#b00020">✗</span>';
+  h += `</p>`;
+  h += `<p class="step">Both special solutions, verified at once: <span class="mat">R·N = 0</span>,
+        so every column of N is in the nullspace, and the two columns are a basis for it.</p>`;
+
+  document.getElementById("ifPanel").innerHTML = h;
+}
+
+document.querySelectorAll(".estep").forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll(".estep").forEach(x => x.classList.remove("primary"));
+    b.classList.add("primary");
+    renderElim(+b.dataset.step);
+  };
+});
+renderElim(0);
+renderNullspace();
+renderIF();
+</script>
+</body>
+</html>

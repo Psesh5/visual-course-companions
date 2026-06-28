@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 5 — Transposes, permutations, spaces R^n · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 5 · Transposes, permutations, and the spaces R<sup>n</sup></h1>
+  <div class="sub">Permutation matrices just reorder coordinates; transposes flip rows and columns;
+    and a <b>vector space</b> (or subspace) is a set closed under adding vectors and scaling them.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <!-- ============================ PART 1: PERMUTATIONS ============================ -->
+  <div class="note">
+    <b>Part 1 — Permutation matrices.</b> A permutation matrix <code>P</code> is the identity with its rows
+    shuffled. Multiplying <code>P·v</code> just <i>reorders the entries</i> of <code>v</code>. Pick one of the
+    six 3×3 permutations below; the blue arrow is the original <code>v=(1,2,3)</code> and the orange arrow is
+    <code>P·v</code>. Notice the orange arrow is always the same length — permutations only rename axes.
+  </div>
+
+  <div class="controls" id="permBtns">
+    <span style="font-size:13px;color:#444;margin-right:6px">Choose P:</span>
+  </div>
+
+  <div class="plots">
+    <div id="permPlot" class="plot" style="flex:1 1 520px"></div>
+    <div style="flex:1 1 360px;min-width:320px">
+      <div id="permMat"></div>
+      <div class="status" id="permStatus"></div>
+      <div class="note" style="margin-top:10px">
+        <b>Key fact:</b> every permutation matrix is orthogonal, so
+        <code>P<sup>T</sup> = P<sup>-1</sup></code>. Undoing a shuffle is the same as transposing it.
+        There are <code>n! = 6</code> permutation matrices for <code>n = 3</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- 1a: why permutations exist — PA = LU ---- -->
+  <div class="note" style="margin-top:18px">
+    <b>Where permutations come from: <code>PA = LU</code>.</b> Strang's framing: elimination gives
+    <code>A = LU</code> only when no zero ever lands in a pivot. If a zero shows up in the pivot position,
+    you must <i>exchange rows</i> — and that row exchange is exactly a permutation matrix <code>P</code>.
+    Account for every needed exchange up front and elimination always succeeds:
+    <code>PA = LU</code>. For almost every matrix you need none, so <code>P = I</code>; for the handful that
+    do, <code>P</code> picks the good row order. (MATLAB exchanges rows even when algebra doesn't require it,
+    to dodge tiny pivots that are numerically bad.)
+  </div>
+
+  <!-- ---- 1b: counting permutations: n! ---- -->
+  <div class="note" style="margin-top:14px">
+    <b>How many permutation matrices? <code>n!</code></b> &mdash; that is
+    <code>n·(n-1)·(n-2)···(3)(2)(1)</code>, the number of ways to reorder <code>n</code> rows.
+    The identity (do-nothing) counts as one of them.
+    <div id="factTable" style="margin-top:8px"></div>
+  </div>
+
+  <!-- ============================ PART 2: SUBSPACES ============================ -->
+  <div class="note" style="margin-top:26px">
+    <b>Part 2 — What is a subspace?</b> A subspace of R<sup>3</sup> is a set of vectors that you can never
+    leave by <i>adding</i> two members or <i>scaling</i> a member. Toggle the examples and watch the verdict.
+    Valid subspaces are <span style="color:#176d2c;font-weight:600">shaded green</span>; sets that fail are
+    <span style="color:#b00020;font-weight:600">marked red</span>.
+  </div>
+
+  <div class="controls" id="subBtns">
+    <span style="font-size:13px;color:#444;margin-right:6px">Show example:</span>
+  </div>
+
+  <div class="plots">
+    <div id="subPlot" class="plot" style="flex:1 1 520px"></div>
+    <div style="flex:1 1 360px;min-width:320px">
+      <div class="status" id="subStatus"></div>
+    </div>
+  </div>
+
+  <!-- ============================ PART 3: TRANSPOSE ============================ -->
+  <div class="note" style="margin-top:26px">
+    <b>Part 3 — Transpose &amp; symmetry.</b> The transpose <code>A<sup>T</sup></code> reflects a matrix across
+    its main diagonal: <code>(A<sup>T</sup>)<sub>ij</sub> = A<sub>ji</sub></code> &mdash; the row and column
+    numbers just swap. A <b>rectangular</b> matrix flips shape: Strang's
+    <code>R</code> is <code>3×2</code>, so <code>R<sup>T</sup></code> is <code>2×3</code> ("short and wider").
+    A matrix is <b>symmetric</b> when it equals its own transpose, <code>A = A<sup>T</sup></code>.
+  </div>
+  <div id="transBox"></div>
+
+  <!-- ---- 3a: R^T R is always symmetric (Strang's centerpiece) ---- -->
+  <div class="note" style="margin-top:18px">
+    <b>How to <i>build</i> a symmetric matrix: <code>R<sup>T</sup>R</code>.</b> A rectangular
+    <code>R</code> is "absolutely far from symmetric" — it isn't even square. But
+    <code>R<sup>T</sup>R</code> is <i>always</i> symmetric. Strang does it with the actual numbers below.
+    Hover any off-diagonal cell of the product to see its mirror cell light up — they are forced equal.
+  </div>
+  <div class="plots">
+    <div id="rtrBox" style="flex:1 1 560px"></div>
+    <div style="flex:1 1 320px;min-width:300px">
+      <div class="status" id="rtrStatus"></div>
+      <div class="note" style="margin-top:10px">
+        <b>Why it must be symmetric (no numbers needed).</b> Transpose the product using the order-reversing
+        rule <code>(AB)<sup>T</sup> = B<sup>T</sup>A<sup>T</sup></code>:
+        <code>(R<sup>T</sup>R)<sup>T</sup> = R<sup>T</sup>(R<sup>T</sup>)<sup>T</sup> = R<sup>T</sup>R</code>,
+        since <code>(R<sup>T</sup>)<sup>T</sup> = R</code> (flipping across the diagonal twice gives R back).
+        The product equals its own transpose ⇒ symmetric.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ PART 4: COLUMN SPACE ============================ -->
+  <div class="note" style="margin-top:26px">
+    <b>Part 4 — Column space: how a matrix makes a subspace.</b> Strang's "central idea, the great example."
+    Take the columns of a matrix and form <i>all</i> their linear combinations
+    <code>x₁·col₁ + x₂·col₂</code> — that set is automatically a subspace, the <b>column space</b>
+    <code>C(A)</code>. His matrix <code>A</code> has columns <code>(1,2,4)</code> and <code>(3,3,1)</code> in
+    R³. Those two vectors aren't on one line, so their combinations <b>fill a whole plane through the
+    origin</b> — not all of R³, more than a line. Drag the two sliders to land on any point of that plane.
+  </div>
+  <div class="controls" id="colspaceCtrls"></div>
+  <div class="plots">
+    <div id="colspacePlot" class="plot" style="flex:1 1 540px"></div>
+    <div style="flex:1 1 340px;min-width:300px">
+      <div class="status" id="colspaceStatus"></div>
+      <div class="note" style="margin-top:10px">
+        <b>What you'd get otherwise.</b> If the two columns had landed on the same line, the column space
+        would shrink to just that line. Pile up columns that point every which way and the column space grows
+        to all of R³. In R<sup>10</sup> you can't picture it, but the rule is identical: combinations of the
+        columns form "some flat thing through the origin" — a subspace. Next lecture: <code>Ax = b</code> is
+        solvable exactly when <code>b</code> lies in <code>C(A)</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ INTUITION ============================ -->
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Permutations are just relabeling.</b> When you multiply <code>P·v</code> you are not stretching or
+    rotating space in any meaningful geometric way — you are swapping which coordinate is called <i>x</i>, which
+    is <i>y</i>, which is <i>z</i>. That is why <code>|P·v| = |v|</code> always, and why doing it twice in
+    reverse (transpose) puts everything back: <code>P<sup>T</sup>P = I</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>A subspace is "closed" world.</b> Think of a flat plane through the origin as a tabletop. Slide along it
+    (add two vectors on it) and you are still on the table. Push out from the origin or pull back through it
+    (scale, including by 0 and by negatives) and you are still on the table. The instant a set forces you off —
+    say an <i>offset</i> plane that does not pass through 0 — it is not a subspace, because scaling any member
+    by 0 must land on the zero vector, and an offset plane does not contain 0.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Why 0 must be in every subspace.</b> Closure under scaling says <code>c·v</code> stays in the set for
+    <i>every</i> scalar <code>c</code>. Take <code>c = 0</code>: then <code>0·v = 0</code> must be in the set.
+    So the zero vector is unavoidable — it is the smallest possible subspace, <code>{0}</code> itself.
+  </p>
+
+  <!-- ============================ WORKED MATH ============================ -->
+  <h2>Worked math</h2>
+
+  <p style="font-size:14px;max-width:820px"><b>(a) The two closure axioms, checked on a plane.</b>
+    Let <code>S</code> be the plane <code>x + y + z = 0</code> through the origin. Take two members:</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+  u = (1, -1, 0)   check: 1 + (-1) + 0 = 0   ✓ in S
+  w = (2,  1, -3)  check: 2 +   1  + (-3) = 0 ✓ in S
+
+  Closure under addition:   u + w = (3, 0, -3),   sum = 3 + 0 + (-3) = 0   ✓ still in S
+  Closure under scaling:    5·u   = (5, -5, 0),   sum = 5 + (-5) + 0 = 0   ✓ still in S
+  Contains zero:            0      = (0, 0, 0),    sum = 0                  ✓ in S
+
+  All three hold for every choice ⇒ S is a subspace (a 2-D plane through the origin).</pre>
+
+  <p style="font-size:14px;max-width:820px"><b>(b) Why an offset plane fails.</b>
+    Let <code>T</code> be the parallel plane <code>x + y + z = 1</code> (does not pass through 0).</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+  p = (1, 0, 0)  check: 1 + 0 + 0 = 1  ✓ in T
+  q = (0, 1, 0)  check: 0 + 1 + 0 = 1  ✓ in T
+
+  Closure under addition:  p + q = (1, 1, 0),  sum = 1 + 1 + 0 = 2 ≠ 1   ✗ NOT in T
+  Closure under scaling:   0·p   = (0, 0, 0),  sum = 0 ≠ 1              ✗ NOT in T (no zero vector)
+
+  Either failure alone is fatal ⇒ T is NOT a subspace. The same logic rules out any line or
+  plane that misses the origin.</pre>
+
+  <p style="font-size:14px;max-width:820px"><b>(b′) Strang's quarter-plane: closed under + but not scaling.</b>
+    The first quadrant of R² (all vectors with both components <code>≥ 0</code>) is a tempting non-example.</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+  Take v = (3, 2)  and  w = (5, 6),  both in the quarter-plane.
+
+  Closure under addition:   v + w = (8, 8)        ✓ still in the quarter-plane (adding two ≥0 stays ≥0)
+  Closure under scaling:    (-5)·v = (-15, -10)    ✗ NOT in it — a negative scalar throws you out
+
+  Addition alone is not enough. A subspace must be closed under EVERY scalar, including negatives
+  and 0 ⇒ the quarter-plane is NOT a subspace.</pre>
+
+  <p style="font-size:14px;max-width:820px"><b>(b″) The column space is a plane through 0.</b>
+    Strang's matrix <code>A</code> has columns <code>c₁=(1,2,4)</code>, <code>c₂=(3,3,1)</code>.
+    The column space is every combination <code>x₁c₁ + x₂c₂</code>.</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+  x=(0,0):  0·c₁ + 0·c₂ = (0,0,0)      ✓ contains the origin
+  x=(1,0):  c₁          = (1, 2, 4)     a point on the plane
+  x=(0,1):  c₂          = (3, 3, 1)     another point
+  x=(1,1):  c₁ + c₂     = (4, 5, 5)     the sum is on the plane too
+  x=(2,-1): 2c₁ − c₂    = (-1, 1, 7)    any combination stays on the plane
+
+  c₁ and c₂ are not multiples of each other ⇒ their combinations sweep out a 2-D plane through 0,
+  the column space C(A). It is more than a line, less than all of R³.</pre>
+
+  <p style="font-size:14px;max-width:820px"><b>(c) Permutation &amp; transpose facts.</b>
+    Take the swap-rows-1-and-2 permutation and apply it to <code>v=(1,2,3)</code>:</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+        ⎡0 1 0⎤        ⎡0 1 0⎤⎡1⎤   ⎡2⎤
+  P  =  ⎢1 0 0⎥   P·v =⎢1 0 0⎥⎢2⎥ = ⎢1⎥     (entries 1 and 2 swapped — length unchanged)
+        ⎣0 0 1⎦        ⎣0 0 1⎦⎣3⎦   ⎣3⎦
+
+  P is orthogonal:  Pᵀ = ⎡0 1 0⎤  and  Pᵀ·P = I  ⇒  Pᵀ = P⁻¹.
+                        ⎢1 0 0⎥
+                        ⎣0 0 1⎦   (for a single swap, P is also its own inverse: P = P⁻¹.)
+
+  Transpose example:           ⎡1 2 3⎤              ⎡1 4 7⎤
+                          A =  ⎢4 5 6⎥        Aᵀ =  ⎢2 5 8⎥   ((i,j) ↦ (j,i))
+                               ⎣7 8 9⎦              ⎣3 6 9⎦
+
+  Strang's rectangular R (3×2 → 2×3):   ⎡1 3⎤
+                                   R =  ⎢2 3⎥     Rᵀ = ⎡1 2 4⎤   (transpose flips the shape)
+                                        ⎣4 1⎦          ⎣3 3 1⎦
+
+  RᵀR is symmetric:   ⎡1 2 4⎤⎡1 3⎤   ⎡10 11  7⎤   e.g. the 11 = row(1,2,4)·col(3,3,1) appears at
+                      ⎣3 3 1⎦⎢2 3⎥ = ⎢11 13 11⎥   both (1,2) and (2,1); the 7 at both (1,3) and (3,1).
+                             ⎣4 1⎦   ⎣ 7 11 17⎦   So (RᵀR)ᵀ = RᵀR.
+
+  Symmetric matrix (A = Aᵀ):   ⎡2 1 0⎤   reflecting across the diagonal changes nothing,
+                          B =  ⎢1 3 5⎥   so B = Bᵀ.  Symmetric matrices are central to 18.06
+                               ⎣0 5 4⎦   (they have real eigenvalues and orthogonal eigenvectors).</pre>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  const BLUE = LA.VEC[0], ORANGE = LA.VEC[2];
+
+  /* ---- matrix-vector multiply for 3x3 ---- */
+  const matVec = (M, v) => M.map(row => row[0]*v[0] + row[1]*v[1] + row[2]*v[2]);
+  const fmtTable = (M) =>
+    '<table class="sys" style="border:1px solid #ddd">' +
+    M.map(r => '<tr>' + r.map(x =>
+      '<td style="width:34px;text-align:center;border:1px solid #eee">' + x + '</td>').join('') + '</tr>'
+    ).join('') + '</table>';
+
+  /* =================== PART 1: permutation matrices =================== */
+  const V = [1, 2, 3];
+  // all six 3x3 permutation matrices, labelled by where (x,y,z) goes
+  const PERMS = [
+    { name: "I  (identity)",      P: [[1,0,0],[0,1,0],[0,0,1]] },
+    { name: "swap x↔y",           P: [[0,1,0],[1,0,0],[0,0,1]] },
+    { name: "swap y↔z",           P: [[1,0,0],[0,0,1],[0,1,0]] },
+    { name: "swap x↔z",           P: [[0,0,1],[0,1,0],[1,0,0]] },
+    { name: "cycle x→y→z→x",      P: [[0,0,1],[1,0,0],[0,1,0]] },
+    { name: "cycle x→z→y→x",      P: [[0,1,0],[0,0,1],[1,0,0]] },
+  ];
+  const O = [0, 0, 0];
+
+  function drawPerm(idx) {
+    const { name, P } = PERMS[idx];
+    const Pv = matVec(P, V);
+    const data = [];
+    LA.arrow(O, V, BLUE, 8).forEach(t => data.push(t));
+    LA.arrow(O, Pv, ORANGE, 8).forEach(t => data.push(t));
+    // labels
+    data.push({ type:"scatter3d", mode:"text", x:[V[0]], y:[V[1]], z:[V[2]],
+      text:["v=(1,2,3)"], textfont:{color:BLUE,size:13}, showlegend:false });
+    data.push({ type:"scatter3d", mode:"text", x:[Pv[0]], y:[Pv[1]], z:[Pv[2]],
+      text:["P·v=("+Pv.join(",")+")"], textfont:{color:ORANGE,size:13}, showlegend:false });
+
+    Plotly.react("permPlot", data, {
+      margin:{l:0,r:0,t:8,b:0}, showlegend:false,
+      scene: Object.assign(LA.SCENE(), {
+        xaxis:{title:"x",range:[0,3.4]}, yaxis:{title:"y",range:[0,3.4]}, zaxis:{title:"z",range:[0,3.4]}
+      })
+    }, { responsive:true, displayModeBar:false });
+
+    const len = Math.sqrt(Pv[0]*Pv[0]+Pv[1]*Pv[1]+Pv[2]*Pv[2]);
+    document.getElementById("permMat").innerHTML =
+      '<div style="font-size:14px;font-weight:600;margin-bottom:4px">P &nbsp;<span style="color:#888;font-weight:400">('+name+')</span></div>' +
+      fmtTable(P);
+    document.getElementById("permStatus").innerHTML =
+      '<code>P·v = (' + Pv.join(", ") + ')</code> &mdash; the entries of <code>v</code> are reordered.<br>' +
+      'Length <code>|P·v| = ' + LA.round(len) + '</code> equals <code>|v| = ' + LA.round(Math.sqrt(14)) +
+      '</code>: permutations preserve length.';
+  }
+
+  const pBtns = document.getElementById("permBtns");
+  PERMS.forEach((perm, i) => {
+    const b = document.createElement("button");
+    b.textContent = perm.name;
+    b.style.fontSize = "13px";
+    b.onclick = () => {
+      drawPerm(i);
+      pBtns.querySelectorAll("button").forEach(x => x.classList.remove("primary"));
+      b.classList.add("primary");
+    };
+    if (i === 1) b.classList.add("primary");
+    pBtns.appendChild(b);
+  });
+
+  /* =================== PART 2: subspaces =================== */
+  // helper: a line through origin along direction d
+  function lineTrace(d, color) {
+    const t = LA.linspace(-3, 3, 2);
+    return { type:"scatter3d", mode:"lines",
+      x:t.map(s=>s*d[0]), y:t.map(s=>s*d[1]), z:t.map(s=>s*d[2]),
+      line:{color,width:8}, showlegend:false };
+  }
+  // a line offset from origin: passes through point a, direction d
+  function offsetLineTrace(a, d, color) {
+    const t = LA.linspace(-3, 3, 2);
+    return { type:"scatter3d", mode:"lines",
+      x:t.map(s=>a[0]+s*d[0]), y:t.map(s=>a[1]+s*d[1]), z:t.map(s=>a[2]+s*d[2]),
+      line:{color,width:8,dash:"dash"}, showlegend:false };
+  }
+  const originDot = (color) => ({ type:"scatter3d", mode:"markers",
+    x:[0],y:[0],z:[0], marker:{size:5,color}, showlegend:false });
+
+  const GREEN_SCALE = LA.COLORS[1];   // "Greens"
+  const VALID = "#176d2c", INVALID = "#b00020";
+
+  const SUBS = {
+    zero: {
+      label: "Just the zero vector {0}",
+      valid: true,
+      traces: () => [ originDot(VALID),
+        { type:"scatter3d", mode:"text", x:[0],y:[0],z:[0.4], text:["{0}"],
+          textfont:{color:VALID,size:14}, showlegend:false } ],
+      why: "The single point <code>0</code>. Adding <code>0+0=0</code> and scaling <code>c·0=0</code> never " +
+           "leave the set. The smallest subspace of R<sup>3</sup>."
+    },
+    line: {
+      label: "Line through origin",
+      valid: true,
+      traces: () => [ lineTrace([1,0.6,0.8], VALID), originDot(VALID) ],
+      why: "All multiples of one nonzero vector <code>d</code>. Any two points are multiples of " +
+           "<code>d</code>, so their sum is too; scaling keeps you on the line; it contains <code>0</code>. " +
+           "A 1-D subspace."
+    },
+    plane: {
+      label: "Plane through origin",
+      valid: true,
+      traces: () => {
+        const p = LA.planeTrace(1, 1, 1, 0, 3, GREEN_SCALE);  // x+y+z=0
+        return [ p, originDot(VALID) ];
+      },
+      why: "The plane <code>x+y+z=0</code>. Sums and scalings of vectors on it stay on it, and it passes " +
+           "through <code>0</code>. A 2-D subspace."
+    },
+    all: {
+      label: "All of R³",
+      valid: true,
+      traces: () => {
+        const arr = [];
+        LA.arrow(O,[2,0,0],VALID,5).forEach(t=>arr.push(t));
+        LA.arrow(O,[0,2,0],VALID,5).forEach(t=>arr.push(t));
+        LA.arrow(O,[0,0,2],VALID,5).forEach(t=>arr.push(t));
+        arr.push(originDot(VALID));
+        return arr;
+      },
+      why: "The whole space. Trivially closed under addition and scaling, and contains <code>0</code>. " +
+           "The largest subspace of R<sup>3</sup>."
+    },
+    offplane: {
+      label: "Plane NOT through origin",
+      valid: false,
+      traces: () => {
+        const p = LA.planeTrace(1, 1, 1, 3, 3, "Reds");  // x+y+z=3
+        if (p) p.opacity = 0.5;
+        return [ p, originDot("#888") ];
+      },
+      why: "The offset plane <code>x+y+z=3</code>. It misses <code>0</code> (scaling a member by 0 lands " +
+           "off the set), and adding two members can leave it. <b>Not a subspace.</b>"
+    },
+    offline: {
+      label: "Line NOT through origin",
+      valid: false,
+      traces: () => [ offsetLineTrace([0,0,1.5],[1,0.6,0], INVALID), originDot("#888") ],
+      why: "A line shifted away from the origin. It does not contain <code>0</code>, and the sum of two of " +
+           "its points falls off the line. <b>Not a subspace.</b>"
+    },
+  };
+
+  function drawSub(key) {
+    const ex = SUBS[key];
+    Plotly.react("subPlot", ex.traces(), {
+      margin:{l:0,r:0,t:8,b:0}, showlegend:false,
+      scene: Object.assign(LA.SCENE(), {
+        xaxis:{title:"x",range:[-3,3]}, yaxis:{title:"y",range:[-3,3]}, zaxis:{title:"z",range:[-3,3]}
+      })
+    }, { responsive:true, displayModeBar:false });
+
+    const verdict = ex.valid
+      ? '<span class="tag one">✓ IS a subspace</span>'
+      : '<span class="tag none">✗ NOT a subspace</span>';
+    document.getElementById("subStatus").innerHTML =
+      '<div style="font-size:15px;margin-bottom:6px"><b>' + ex.label + '</b></div>' +
+      '<div style="margin-bottom:8px">' + verdict + '</div>' +
+      '<div>' + ex.why + '</div>';
+  }
+
+  const sBtns = document.getElementById("subBtns");
+  const order = ["zero","line","plane","all","offplane","offline"];
+  order.forEach((key, i) => {
+    const b = document.createElement("button");
+    b.textContent = SUBS[key].label;
+    b.style.fontSize = "13px";
+    b.onclick = () => {
+      drawSub(key);
+      sBtns.querySelectorAll("button").forEach(x => x.classList.remove("primary"));
+      b.classList.add("primary");
+    };
+    if (i === 2) b.classList.add("primary");
+    sBtns.appendChild(b);
+  });
+
+  /* =================== PART 3: transpose =================== */
+  const A  = [[1,2,3],[4,5,6],[7,8,9]];
+  const AT = [[1,4,7],[2,5,8],[3,6,9]];
+  const B  = [[2,1,0],[1,3,5],[0,5,4]];
+  document.getElementById("transBox").innerHTML =
+    '<div style="display:flex;flex-wrap:wrap;gap:24px;align-items:center;font-size:14px">' +
+      '<div><div style="margin-bottom:4px">A</div>' + fmtTable(A) + '</div>' +
+      '<div style="font-size:22px;color:#888">→ transpose →</div>' +
+      '<div><div style="margin-bottom:4px">A<sup>T</sup> &nbsp;<span style="color:#888;font-size:12px">((i,j)→(j,i))</span></div>' + fmtTable(AT) + '</div>' +
+      '<div style="border-left:1px solid #ddd;padding-left:24px">' +
+        '<div style="margin-bottom:4px">B = B<sup>T</sup> &nbsp;<span style="color:#176d2c;font-size:12px">symmetric</span></div>' + fmtTable(B) +
+        '<div style="font-size:12px;color:#666;margin-top:4px">mirror across the diagonal: unchanged</div>' +
+      '</div>' +
+    '</div>';
+
+  /* =================== PART 1b: n! count table =================== */
+  (function () {
+    const fact = (k) => { let p = 1; for (let i = 2; i <= k; i++) p *= i; return p; };
+    let rows = "";
+    for (let n = 1; n <= 5; n++) {
+      const expr = n <= 1 ? "1" : Array.from({length:n}, (_,i)=>n-i).join("·");
+      const hi = n === 3 ? ' style="background:#eef7ff;font-weight:600"' : '';
+      rows += '<tr' + hi + '>' +
+        '<td style="border:1px solid #eee;text-align:center;width:48px">' + n + '</td>' +
+        '<td style="border:1px solid #eee;text-align:center;padding:0 10px">' + expr + '</td>' +
+        '<td style="border:1px solid #eee;text-align:center;width:64px">' + fact(n) + '</td></tr>';
+    }
+    document.getElementById("factTable").innerHTML =
+      '<table class="sys" style="border-collapse:collapse;font-size:13px">' +
+      '<tr style="color:#555"><td style="border:1px solid #eee;text-align:center">n</td>' +
+      '<td style="border:1px solid #eee;text-align:center;padding:0 10px">n·(n-1)···1</td>' +
+      '<td style="border:1px solid #eee;text-align:center"># of P</td></tr>' + rows + '</table>' +
+      '<div style="font-size:12px;color:#666;margin-top:5px">' +
+      'n=3 (highlighted) gives the six matrices above. n=4 → 24; n=5 → 120 — "not so much fun to list."</div>';
+  })();
+
+  /* =================== PART 3a: R^T R is symmetric =================== */
+  (function () {
+    // Strang's R: rows (1 2 4) and (3 3 1) -> a 2x3 matrix; he calls (1 2 4;3 3 1) "R transpose"
+    // and (1 3;2 3;4 1) "R". We display R (3x2), R^T (2x3), and the 3x3 product R^T R.
+    const Rt = [[1,2,4],[3,3,1]];                 // 2x3  (this is R^T in Strang's labeling)
+    const R  = [[1,3],[2,3],[4,1]];               // 3x2  (R)
+    // product P = R^T R  (2x3 times 3x2 would be 2x2; we want 3x3 = Rt^T * Rt... )
+    // Symmetric 3x3 Strang builds: (1 2 4;3 3 1)^T (1 2 4;3 3 1) = R * Rt
+    const P = R.map((_, i) => Rt[0].map((__, j) =>
+      R[i][0]*Rt[0][j] + R[i][1]*Rt[1][j]));      // 3x3
+    const cell = (txt, attrs) =>
+      '<td ' + (attrs||'') + ' style="width:40px;height:34px;text-align:center;border:1px solid #ddd">' + txt + '</td>';
+    function matHtml(M, id) {
+      let h = '<table class="sys" id="' + id + '" style="border:1px solid #ccc;border-collapse:collapse">';
+      M.forEach((r, i) => {
+        h += '<tr>';
+        r.forEach((x, j) => {
+          h += cell(x, 'data-i="' + i + '" data-j="' + j + '"' +
+            (id === 'rtrProd' ? ' class="rtrcell"' : ''));
+        });
+        h += '</tr>';
+      });
+      return h + '</table>';
+    }
+    document.getElementById("rtrBox").innerHTML =
+      '<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center;font-size:14px">' +
+        '<div><div style="margin-bottom:4px">R<sup>T</sup> <span style="color:#888;font-size:12px">(2×3)</span></div>' + matHtml(Rt, "rtrA") + '</div>' +
+        '<div style="font-size:20px;color:#888">·</div>' +
+        '<div><div style="margin-bottom:4px">R <span style="color:#888;font-size:12px">(3×2)</span></div>' + matHtml(R, "rtrB") + '</div>' +
+        '<div style="font-size:20px;color:#888">=</div>' +
+        '<div><div style="margin-bottom:4px">R<sup>T</sup>R <span style="color:#176d2c;font-size:12px">(3×3, symmetric)</span></div>' + matHtml(P, "rtrProd") + '</div>' +
+      '</div>';
+    const status = document.getElementById("rtrStatus");
+    status.innerHTML = '<b>R<sup>T</sup>R = [[10,11,7],[11,13,11],[7,11,17]]</b><br>' +
+      'Hover an off-diagonal cell to see its mirror across the diagonal — equal by construction.';
+    const cells = Array.from(document.querySelectorAll('#rtrProd .rtrcell'));
+    function find(i, j) { return cells.find(c => +c.dataset.i === i && +c.dataset.j === j); }
+    cells.forEach(c => {
+      c.addEventListener('mouseenter', () => {
+        const i = +c.dataset.i, j = +c.dataset.j, m = find(j, i);
+        c.style.background = '#cfe9d4'; if (m) m.style.background = '#cfe9d4';
+        status.innerHTML = (i === j)
+          ? '<b>(' + (i+1) + ',' + (j+1) + ') = ' + c.textContent + '</b> is on the diagonal — its own mirror.'
+          : '<b>(' + (i+1) + ',' + (j+1) + ') = ' + c.textContent + '</b> equals its mirror <b>(' +
+            (j+1) + ',' + (i+1) + ') = ' + (m ? m.textContent : '') + '</b>. Row·col is the same either way.';
+      });
+      c.addEventListener('mouseleave', () => {
+        cells.forEach(x => x.style.background = '');
+        status.innerHTML = '<b>R<sup>T</sup>R = [[10,11,7],[11,13,11],[7,11,17]]</b><br>' +
+          'Hover an off-diagonal cell to see its mirror across the diagonal — equal by construction.';
+      });
+    });
+  })();
+
+  /* =================== PART 4: column space =================== */
+  (function () {
+    const c1 = [1, 2, 4], c2 = [3, 3, 1];   // Strang's two columns in R^3
+    const ctrls = document.getElementById("colspaceCtrls");
+    ctrls.innerHTML =
+      'x₁ <input id="csx1" type="range" min="-2" max="2" step="0.25" value="1" style="vertical-align:middle">' +
+      ' <b id="csx1v">1</b> &nbsp;&nbsp; ' +
+      'x₂ <input id="csx2" type="range" min="-2" max="2" step="0.25" value="1" style="vertical-align:middle">' +
+      ' <b id="csx2v">1</b>';
+    // plane through origin spanned by c1,c2: normal = c1 × c2
+    const nrm = [c1[1]*c2[2]-c1[2]*c2[1], c1[2]*c2[0]-c1[0]*c2[2], c1[0]*c2[1]-c1[1]*c2[0]];
+    function draw() {
+      const x1 = parseFloat(document.getElementById("csx1").value);
+      const x2 = parseFloat(document.getElementById("csx2").value);
+      document.getElementById("csx1v").textContent = LA.round(x1);
+      document.getElementById("csx2v").textContent = LA.round(x2);
+      const comb = [x1*c1[0]+x2*c2[0], x1*c1[1]+x2*c2[1], x1*c1[2]+x2*c2[2]];
+      const data = [];
+      // the column-space plane: normal·(x,y,z)=0
+      const pl = LA.planeTrace(nrm[0], nrm[1], nrm[2], 0, 6, GREEN_SCALE);
+      if (pl) { pl.opacity = 0.35; data.push(pl); }
+      LA.arrow(O, c1, BLUE, 7).forEach(t => data.push(t));
+      LA.arrow(O, c2, "#7a4fd0", 7).forEach(t => data.push(t));
+      // tip-to-tail combination
+      const step1 = [x1*c1[0], x1*c1[1], x1*c1[2]];
+      LA.arrow(O, step1, "#9ec5e8", 4).forEach(t => data.push(t));
+      LA.arrow(step1, comb, "#c9b3ee", 4).forEach(t => data.push(t));
+      LA.arrow(O, comb, ORANGE, 8).forEach(t => data.push(t));
+      data.push({ type:"scatter3d", mode:"text", x:[c1[0]],y:[c1[1]],z:[c1[2]],
+        text:["c₁=(1,2,4)"], textfont:{color:BLUE,size:12}, showlegend:false });
+      data.push({ type:"scatter3d", mode:"text", x:[c2[0]],y:[c2[1]],z:[c2[2]],
+        text:["c₂=(3,3,1)"], textfont:{color:"#7a4fd0",size:12}, showlegend:false });
+      data.push({ type:"scatter3d", mode:"markers+text", x:[comb[0]],y:[comb[1]],z:[comb[2]],
+        text:["  x₁c₁+x₂c₂"], textfont:{color:ORANGE,size:12},
+        marker:{size:4,color:ORANGE}, showlegend:false });
+      Plotly.react("colspacePlot", data, {
+        margin:{l:0,r:0,t:8,b:0}, showlegend:false,
+        scene: Object.assign(LA.SCENE(), {
+          xaxis:{title:"x",range:[-6,6]}, yaxis:{title:"y",range:[-6,6]}, zaxis:{title:"z",range:[-6,6]}
+        })
+      }, { responsive:true, displayModeBar:false });
+      document.getElementById("colspaceStatus").innerHTML =
+        '<div style="font-size:15px;margin-bottom:6px"><b>Column space C(A)</b></div>' +
+        '<code>' + LA.round(x1) + '·(1,2,4) + ' + LA.round(x2) + '·(3,3,1) = (' +
+        comb.map(LA.round).join(", ") + ')</code><br>' +
+        '<div style="margin-top:8px">The orange tip always lands on the ' +
+        '<span style="color:#176d2c;font-weight:600">green plane</span> through the origin — that plane ' +
+        '<i>is</i> the column space. Two independent columns ⇒ a 2-D subspace of R³.</div>';
+    }
+    document.getElementById("csx1").addEventListener("input", draw);
+    document.getElementById("csx2").addEventListener("input", draw);
+    draw();
+  })();
+
+  /* ---- initial render ---- */
+  drawPerm(1);
+  drawSub("plane");
+})();
+</script>
+</body>
+</html>

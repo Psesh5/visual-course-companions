@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 30 — Linear transformations and their matrices · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 30 · Linear transformations and their matrices</h1>
+  <div class="sub">A linear transformation <code>T</code> bends space without bending lines: it keeps the
+    origin fixed and the grid evenly spaced and parallel. The big payoff — once you know where the two
+    basis vectors land, the <b>columns of the matrix ARE</b> <code>T(e₁), T(e₂)</code>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The lab:</b> the light blue grid + house is the original space; the bold shape is its image under the
+    2×2 matrix <code>T</code> shown on the right. Pick a canonical transformation, or drag the angle slider for
+    rotation. Watch the two thick arrows: they are <code>T(e₁)</code> (where <code>(1,0)</code> goes) and
+    <code>T(e₂)</code> (where <code>(0,1)</code> goes) — and they are exactly the columns of the matrix.
+  </div>
+
+  <div class="controls">
+    <button class="preset primary" data-p="rotate">Rotation θ</button>
+    <button class="preset" data-p="scale">Scaling</button>
+    <button class="preset" data-p="shear">Shear</button>
+    <button class="preset" data-p="reflect">Reflect (45°)</button>
+    <button class="preset" data-p="project">Project onto line</button>
+    <button class="preset" data-p="identity">Identity</button>
+  </div>
+  <div class="controls">
+    <span id="theta_label" class="rng">angle θ = 45°</span>
+    <input id="theta" type="range" min="0" max="360" step="1" value="45"
+           style="width:300px;vertical-align:middle">
+  </div>
+
+  <div class="plots">
+    <div id="plot" class="plot"></div>
+    <div style="flex:1 1 320px;min-width:300px">
+      <div class="status" id="matbox" style="font-size:15px"></div>
+      <div class="status" style="background:#f7fbff;border-color:#bcd6ef">
+        <div><span style="color:#1f77b4;font-weight:700">━━▶</span>
+          column 1 = <code>T(e₁)</code> = image of <code>(1,0)</code></div>
+        <div style="margin-top:6px"><span style="color:#2ca02c;font-weight:700">━━▶</span>
+          column 2 = <code>T(e₂)</code> = image of <code>(0,1)</code></div>
+        <div style="margin-top:8px;font-size:13px;color:#555">
+          det <code>T</code> = <span id="det"></span> &nbsp;(signed area scale; negative = orientation flipped,
+          0 = squashed to a line).</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>The intuition — what makes a map <i>linear</i></h2>
+  <p style="font-size:14px;max-width:780px">
+    A transformation <code>T</code> is <b>linear</b> when it respects the two operations that build every vector:
+  </p>
+  <div class="status" style="max-width:780px">
+    <div><b>Additivity:</b> <code>T(v + w) = T(v) + T(w)</code></div>
+    <div style="margin-top:4px"><b>Homogeneity:</b> <code>T(c·v) = c·T(v)</code></div>
+  </div>
+  <p style="font-size:14px;max-width:780px">
+    Geometrically those two rules force three visible facts, all on display in the figure:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>Lines stay lines.</b> A straight segment never curves — combinations map to combinations.</li>
+    <li><b>The origin is pinned.</b> <code>T(0) = T(0·v) = 0·T(v) = 0</code>. (This is why pure shifts are
+      <i>not</i> linear — they move the origin.)</li>
+    <li><b>The grid stays evenly spaced and parallel.</b> Equal steps in input become equal steps in output, so
+      parallel lines remain parallel and equally gridded — they may tilt, stretch, or collapse, but never bend.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    The deep consequence: a vector is just <code>v = x·e₁ + y·e₂</code>, so by the two rules
+    <code>T(v) = x·T(e₁) + y·T(e₂)</code>. Knowing <code>T(e₁)</code> and <code>T(e₂)</code> tells you
+    <i>everything</i>. Stack those two output vectors as columns and you have the matrix:
+    <code>A = [ T(e₁) | T(e₂) ]</code>, and then <code>T(v) = A·v</code>.
+  </p>
+
+  <h2>The worked math</h2>
+
+  <p style="font-size:14px;max-width:780px"><b>1 · Columns are the images of the basis vectors.</b>
+    Multiply a matrix by <code>e₁ = (1,0)</code>:</p>
+  <pre style="font-size:14px;background:#f6f6f6;padding:10px 14px;border-radius:8px;max-width:780px;overflow:auto">
+[ a  b ] [ 1 ]   [ a ]            [ a  b ] [ 0 ]   [ b ]
+[ c  d ] [ 0 ] = [ c ] = T(e₁),   [ c  d ] [ 1 ] = [ d ] = T(e₂).</pre>
+  <p style="font-size:14px;max-width:780px">
+    So the first column <i>is</i> <code>T(e₁)</code> and the second column <i>is</i> <code>T(e₂)</code> — no
+    coincidence, it is the definition of matrix–vector multiplication.</p>
+
+  <p style="font-size:14px;max-width:780px"><b>2 · Deriving the rotation matrix.</b>
+    Rotate everything counter-clockwise by <code>θ</code>. Track only the two basis vectors:</p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><code>e₁ = (1,0)</code> sweeps onto the unit circle at angle <code>θ</code>:
+      <code>T(e₁) = (cos θ, sin θ)</code>.</li>
+    <li><code>e₂ = (0,1)</code> starts at 90° and rotates to <code>90°+θ</code>:
+      <code>T(e₂) = (cos(90°+θ), sin(90°+θ)) = (−sin θ, cos θ)</code>.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">Drop those two images in as columns:</p>
+  <pre style="font-size:14px;background:#f6f6f6;padding:10px 14px;border-radius:8px;max-width:780px;overflow:auto">
+        [  cos θ   −sin θ ]
+R(θ) =  [  sin θ    cos θ ]   =  [ T(e₁) | T(e₂) ].</pre>
+  <p style="font-size:14px;max-width:780px">
+    Set the slider to θ = 90°: the columns become <code>(0,1)</code> and <code>(−1,0)</code> — the blue arrow
+    swings up the y-axis and the green arrow swings to the −x direction, matching
+    <code>[[0,−1],[1,0]]</code>.</p>
+
+  <p style="font-size:14px;max-width:780px"><b>3 · Verifying linearity on an example.</b>
+    Take a shear <code>A = [[1,1],[0,1]]</code> with <code>v = (1,2)</code>, <code>w = (3,−1)</code>,
+    <code>c = 2</code>.</p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><code>Av = (1·1 + 1·2, 0·1 + 1·2) = (3, 2)</code>, &nbsp; <code>Aw = (3 + (−1), −1) = (2, −1)</code>.</li>
+    <li><b>Additivity:</b> <code>v + w = (4, 1)</code>, so <code>A(v+w) = (4+1, 1) = (5, 1)</code>, which equals
+      <code>Av + Aw = (3,2) + (2,−1) = (5, 1)</code>. ✓</li>
+    <li><b>Homogeneity:</b> <code>cv = (2, 4)</code>, so <code>A(cv) = (2+4, 4) = (6, 4) = 2·(3,2) = c·Av</code>. ✓</li>
+  </ul>
+
+  <h2>A non-example — why "shift by v₀" is NOT linear</h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang's Example two: take the whole plane and <b>shift every vector by a fixed <code>v₀</code></b>,
+    so <code>T(v) = v + v₀</code>. It looks innocent, but it breaks both rules. The fastest tell:
+    <code>T(0) = 0 + v₀ = v₀ ≠ 0</code> — a linear map must pin the origin, and this one moves it. Drag
+    <code>v₀</code> and the scalar <code>c</code> below and watch the gap open up.
+  </p>
+  <div class="controls">
+    <span class="rng">v₀ = (<span id="nl_v0x">1</span>, <span id="nl_v0y">1.5</span>)</span>
+    &nbsp; v₀ₓ <input id="nl_v0x_s" type="range" min="-2" max="2" step="0.25" value="1" style="vertical-align:middle">
+    &nbsp; v₀ᵧ <input id="nl_v0y_s" type="range" min="-2" max="2" step="0.25" value="1.5" style="vertical-align:middle">
+  </div>
+  <div class="controls">
+    <span class="rng">c = <span id="nl_c">2</span></span>
+    &nbsp; <input id="nl_c_s" type="range" min="-2" max="3" step="0.5" value="2" style="width:240px;vertical-align:middle">
+  </div>
+  <div class="plots">
+    <div id="nl_plot" class="plot" style="flex:1 1 360px;min-width:300px;height:380px"></div>
+    <div style="flex:1 1 320px;min-width:300px">
+      <div class="status" id="nl_box" style="font-size:14px"></div>
+      <div class="status" style="background:#fff7f5;border-color:#f0c9bc;font-size:13px;color:#774">
+        Homogeneity wants <code>T(c·v)</code> and <code>c·T(v)</code> to land on the same point. With a shift
+        they differ by <code>(c−1)·v₀</code> — the red gap. The other classic non-example is
+        <b>length</b>, <code>T(v) = ‖v‖</code>: it sends <code>0</code> to <code>0</code> and doubling
+        <code>v</code> does double the length, but <code>T(−2v) = 2‖v‖ ≠ −2‖v‖ = c·T(v)</code>, so homogeneity
+        fails for negative <code>c</code>.
+      </div>
+    </div>
+  </div>
+
+  <h2>The derivative IS a linear transformation</h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang's closing example, and a beautiful one: the transformation isn't a map of the plane at all — it acts
+    on <b>polynomials</b>. Let the input space be all <code>p = c₁ + c₂x + c₃x²</code> (basis <code>{1, x, x²}</code>,
+    three-dimensional) and let <code>T = d/dx</code>. The output <code>p′ = c₂ + 2c₃x</code> lives in the
+    two-dimensional space with basis <code>{1, x}</code>. Differentiation obeys both rules —
+    <code>(p+q)′ = p′ + q′</code> and <code>(c·p)′ = c·p′</code> — which, as Strang notes, is exactly
+    <i>why</i> you can differentiate any function once you know a short list of derivatives.
+  </p>
+  <div class="controls">
+    <span class="rng">p(x) = <span id="dv_poly"></span></span>
+  </div>
+  <div class="controls">
+    c₁ <input id="dv_c1" type="range" min="-3" max="3" step="1" value="2" style="vertical-align:middle"> <b id="dv_c1v">2</b>
+    &nbsp; c₂ <input id="dv_c2" type="range" min="-3" max="3" step="1" value="1" style="vertical-align:middle"> <b id="dv_c2v">1</b>
+    &nbsp; c₃ <input id="dv_c3" type="range" min="-3" max="3" step="1" value="-1" style="vertical-align:middle"> <b id="dv_c3v">-1</b>
+  </div>
+  <div class="plots">
+    <div id="dv_plot" class="plot" style="flex:1 1 360px;min-width:300px;height:380px"></div>
+    <div style="flex:1 1 320px;min-width:300px">
+      <div class="status" id="dv_box" style="font-size:14px"></div>
+    </div>
+  </div>
+  <p style="font-size:14px;max-width:780px"><b>The 2×3 matrix.</b>
+    Apply Strang's column rule. The input basis is <code>{1, x, x²}</code> and the output basis is
+    <code>{1, x}</code>:</p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><code>d/dx (1) = 0 = 0·1 + 0·x</code> → column <code>(0, 0)</code>.</li>
+    <li><code>d/dx (x) = 1 = 1·1 + 0·x</code> → column <code>(1, 0)</code>.</li>
+    <li><code>d/dx (x²) = 2x = 0·1 + 2·x</code> → column <code>(0, 2)</code>.</li>
+  </ul>
+  <pre style="font-size:14px;background:#f6f6f6;padding:10px 14px;border-radius:8px;max-width:780px;overflow:auto">
+        [ 0  1  0 ]   [ c₁ ]   [ c₂  ]
+A = [ 0  0  2 ] , and A·[ c₂ ] = [ 2c₃ ]  =  coordinates of p′ in {1, x}.
+                        [ c₃ ]</pre>
+  <p style="font-size:14px;max-width:780px">
+    The 3-input / 2-output sizes force a 2×3 matrix — the same shape Strang predicted for any map from
+    <code>R³</code> to <code>R²</code>. Multiplying the coordinate column <code>(c₁, c₂, c₃)</code> by <code>A</code>
+    drops <code>c₁</code> (the constant differentiates away), keeps <code>c₂</code>, and doubles <code>c₃</code> —
+    exactly the power rule, now packaged as a matrix.</p>
+
+  <h2>The matrix depends on the basis</h2>
+  <p style="font-size:14px;max-width:780px">
+    A subtlety that launches the next lecture: the <i>transformation</i> is a geometric fact about space, but the
+    <i>matrix</i> is its description in coordinates — and coordinates depend on the basis you chose. The same
+    projection or rotation written in a different basis (say the transformation's own eigenvectors) gets a
+    different, usually simpler, matrix. The columns are always "where the basis vectors go," but <b>which</b> basis
+    you write them in is up to you. Choosing the right basis to make <code>A</code> diagonal is exactly the
+    <b>change of basis / diagonalization</b> story coming up.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  const { linspace, round } = LA;
+
+  // A small "house" outline (closed polyline) living in the unit grid.
+  const HOUSE = [
+    [0,0],[2,0],[2,1.4],[1,2.2],[0,1.4],[0,0],   // body + roof, closed
+    [0.4,0.4],[0.9,0.4],[0.9,1.0],[0.4,1.0],[0.4,0.4] // a door, closed
+  ];
+
+  const PRESETS = {
+    identity: () => [[1,0],[0,1]],
+    rotate:   (th) => { const c=Math.cos(th), s=Math.sin(th); return [[c,-s],[s,c]]; },
+    scale:    () => [[1.6,0],[0,0.6]],
+    shear:    () => [[1,1],[0,1]],
+    reflect:  () => [[0,1],[1,0]],        // reflect across the line y = x
+    project:  () => { // project onto the line y = 0.5 x  => unit dir u=(2,1)/√5
+      const ux=2/Math.sqrt(5), uy=1/Math.sqrt(5);
+      return [[ux*ux,ux*uy],[ux*uy,uy*uy]];
+    },
+  };
+
+  let current = "rotate";
+  const slider = document.getElementById("theta");
+  const thetaLabel = document.getElementById("theta_label");
+
+  const apply = (A, p) => [A[0][0]*p[0] + A[0][1]*p[1], A[1][0]*p[0] + A[1][1]*p[1]];
+
+  // grid lines (light = original, bold = transformed) over [-3,3]
+  function gridLines(A) {
+    const R = 3, ticks = linspace(-R, R, 2*R+1);
+    const orig = { x:[], y:[] }, img = { x:[], y:[] };
+    const push = (acc, p, q) => { acc.x.push(p[0], q[0], null); acc.y.push(p[1], q[1], null); };
+    ticks.forEach(t => {
+      // vertical line x=t and horizontal line y=t
+      push(orig, [t,-R], [t,R]); push(orig, [-R,t], [R,t]);
+      push(img, apply(A,[t,-R]), apply(A,[t,R]));
+      push(img, apply(A,[-R,t]), apply(A,[R,t]));
+    });
+    return { orig, img };
+  }
+
+  function poly(A, pts) {
+    const x=[], y=[];
+    pts.forEach(p => { const q = apply(A,p); x.push(q[0]); y.push(q[1]); });
+    return { x, y };
+  }
+
+  function fmt(v){ const r = round(v); return (r>=0?" ":"") + r.toFixed(2); }
+
+  function draw(A) {
+    const g = gridLines(A);
+    const oh = poly([[1,0],[0,1]], HOUSE);  // original house (identity)
+    const th = poly(A, HOUSE);              // transformed house
+    const e1 = apply(A,[1,0]), e2 = apply(A,[0,1]);
+
+    const data = [
+      // light original grid
+      { x:g.orig.x, y:g.orig.y, mode:"lines", type:"scatter",
+        line:{color:"#d8e6f5", width:1}, hoverinfo:"skip", showlegend:false },
+      // bold transformed grid
+      { x:g.img.x, y:g.img.y, mode:"lines", type:"scatter",
+        line:{color:"#9ec3e8", width:1.5}, hoverinfo:"skip", showlegend:false },
+      // original house (light)
+      { x:oh.x, y:oh.y, mode:"lines", type:"scatter",
+        line:{color:"#bbb", width:2}, name:"original", hoverinfo:"skip" },
+      // transformed house (bold ink)
+      { x:th.x, y:th.y, mode:"lines", type:"scatter",
+        line:{color:"#1a1a1a", width:3.5}, name:"T(shape)", hoverinfo:"skip" },
+      // T(e1) and T(e2) as bold arrows (line + marker head)
+      { x:[0,e1[0]], y:[0,e1[1]], mode:"lines", type:"scatter",
+        line:{color:"#1f77b4", width:5}, hoverinfo:"skip", showlegend:false },
+      { x:[0,e2[0]], y:[0,e2[1]], mode:"lines", type:"scatter",
+        line:{color:"#2ca02c", width:5}, hoverinfo:"skip", showlegend:false },
+      { x:[e1[0]], y:[e1[1]], mode:"markers+text", type:"scatter",
+        marker:{color:"#1f77b4", size:9, symbol:"triangle-up", angleref:"previous"},
+        text:["T(e₁)"], textposition:"top right", textfont:{color:"#1f77b4"},
+        hoverinfo:"skip", showlegend:false },
+      { x:[e2[0]], y:[e2[1]], mode:"markers+text", type:"scatter",
+        marker:{color:"#2ca02c", size:9, symbol:"triangle-up", angleref:"previous"},
+        text:["T(e₂)"], textposition:"top left", textfont:{color:"#2ca02c"},
+        hoverinfo:"skip", showlegend:false },
+    ];
+
+    const layout = {
+      margin:{l:30,r:10,t:10,b:30},
+      xaxis:{ range:[-3.2,3.2], zeroline:true, zerolinecolor:"#888", scaleanchor:"y", scaleratio:1 },
+      yaxis:{ range:[-3.2,3.2], zeroline:true, zerolinecolor:"#888" },
+      showlegend:false, hovermode:false,
+    };
+    Plotly.react("plot", data, layout, { responsive:true });
+
+    // matrix readout
+    const det = A[0][0]*A[1][1] - A[0][1]*A[1][0];
+    document.getElementById("matbox").innerHTML =
+      `<div style="font-family:ui-monospace,Menlo,monospace;font-size:16px">` +
+      `T = &nbsp;[ <span style="color:#1f77b4">${fmt(A[0][0])}</span>` +
+      ` &nbsp;<span style="color:#2ca02c">${fmt(A[0][1])}</span> ]<br>` +
+      `&nbsp;&nbsp;&nbsp;&nbsp;[ <span style="color:#1f77b4">${fmt(A[1][0])}</span>` +
+      ` &nbsp;<span style="color:#2ca02c">${fmt(A[1][1])}</span> ]</div>` +
+      `<div style="margin-top:6px;font-size:13px;color:#555">` +
+      `col 1 = T(e₁) = (${fmt(A[0][0])},${fmt(A[1][0])}) &nbsp;·&nbsp; ` +
+      `col 2 = T(e₂) = (${fmt(A[0][1])},${fmt(A[1][1])})</div>`;
+    document.getElementById("det").textContent = round(det);
+  }
+
+  function build() {
+    const th = parseFloat(slider.value) * Math.PI / 180;
+    const A = current === "rotate" ? PRESETS.rotate(th) : PRESETS[current]();
+    draw(A);
+  }
+
+  document.querySelectorAll(".preset").forEach(btn => {
+    btn.onclick = () => {
+      current = btn.dataset.p;
+      document.querySelectorAll(".preset").forEach(b => b.classList.remove("primary"));
+      btn.classList.add("primary");
+      slider.disabled = (current !== "rotate");
+      slider.style.opacity = slider.disabled ? 0.4 : 1;
+      build();
+    };
+  });
+  slider.addEventListener("input", () => {
+    thetaLabel.textContent = "angle θ = " + slider.value + "°";
+    if (current === "rotate") build();
+  });
+
+  build();
+})();
+
+// --- Non-example: shift by v0 breaks linearity ---
+(function () {
+  const { round } = LA;
+  const ar = (p, q, color, w) => ({ x:[p[0],q[0]], y:[p[1],q[1]], mode:"lines",
+    line:{color, width:w||4}, hoverinfo:"skip" });
+  const V = [1.2, 0.6];   // the test vector v we follow
+  const s = (id) => parseFloat(document.getElementById(id).value);
+  const fmt = (n) => round(n);
+
+  function draw() {
+    const v0 = [s("nl_v0x_s"), s("nl_v0y_s")], c = s("nl_c_s");
+    document.getElementById("nl_v0x").textContent = fmt(v0[0]);
+    document.getElementById("nl_v0y").textContent = fmt(v0[1]);
+    document.getElementById("nl_c").textContent  = fmt(c);
+
+    const T   = (p) => [p[0]+v0[0], p[1]+v0[1]];       // T(v) = v + v0
+    const cv  = [c*V[0], c*V[1]];
+    const Tcv = T(cv);                                  // T(c v)
+    const cTv = [c*T(V)[0], c*T(V)[1]];                // c T(v)
+    const T0  = T([0,0]);                               // T(0) = v0  (should be 0 if linear)
+
+    const data = [
+      ar([0,0], V, "#1f77b4", 4),                       // v
+      ar([0,0], T(V), "#9ec3e8", 4),                    // T(v)
+      ar([0,0], Tcv, "#2ca02c", 5),                     // T(c v)
+      ar([0,0], cTv, "#ff7f0e", 5),                     // c T(v)
+      ar(Tcv, cTv, "red", 3),                           // the gap
+      ar([0,0], T0, "#cc3333", 2),                      // T(0)
+      { x:[V[0]], y:[V[1]], mode:"markers+text", text:["  v"], textposition:"bottom right",
+        marker:{size:7,color:"#1f77b4"}, hoverinfo:"skip" },
+      { x:[Tcv[0]], y:[Tcv[1]], mode:"markers+text", text:["  T(cv)"], textposition:"top center",
+        marker:{size:8,color:"#2ca02c"}, hoverinfo:"skip" },
+      { x:[cTv[0]], y:[cTv[1]], mode:"markers+text", text:["  c·T(v)"], textposition:"bottom center",
+        marker:{size:8,color:"#ff7f0e"}, hoverinfo:"skip" },
+      { x:[T0[0]], y:[T0[1]], mode:"markers+text", text:["  T(0)=v₀"], textposition:"top right",
+        marker:{size:8,color:"#cc3333", symbol:"x"}, hoverinfo:"skip" },
+    ];
+    const R = 6;
+    Plotly.react("nl_plot", data,
+      { xaxis:{range:[-R,R], zeroline:true, zerolinecolor:"#888"},
+        yaxis:{range:[-R,R], zeroline:true, zerolinecolor:"#888", scaleanchor:"x"},
+        margin:{l:24,r:6,t:8,b:24}, showlegend:false, hovermode:false },
+      { responsive:true });
+
+    const gap = Math.hypot(Tcv[0]-cTv[0], Tcv[1]-cTv[1]);
+    const t0moved = Math.hypot(T0[0], T0[1]) > 1e-9;
+    document.getElementById("nl_box").innerHTML =
+      `<div><b>T(0) = (${fmt(T0[0])}, ${fmt(T0[1])})</b> — ` +
+        (t0moved ? `<span style="color:#cc3333">not the origin, so NOT linear.</span>` :
+                   `the origin (set v₀ = 0 and the shift is the identity).`) + `</div>` +
+      `<div style="margin-top:8px">Homogeneity check with v = (${V[0]}, ${V[1]}), c = ${fmt(c)}:</div>` +
+      `<div style="margin-top:4px"><span style="color:#2ca02c">T(c·v) = (${fmt(Tcv[0])}, ${fmt(Tcv[1])})</span></div>` +
+      `<div><span style="color:#ff7f0e">c·T(v) = (${fmt(cTv[0])}, ${fmt(cTv[1])})</span></div>` +
+      `<div style="margin-top:4px"><b>gap = ${fmt(gap)}</b> ` +
+        (gap > 1e-9 ? `<span style="color:#cc3333">≠ 0 → homogeneity fails.</span>` :
+                      `(only zero when c = 1 or v₀ = 0).`) + `</div>`;
+  }
+  ["nl_v0x_s","nl_v0y_s","nl_c_s"].forEach((id) =>
+    document.getElementById(id).addEventListener("input", draw));
+  draw();
+})();
+
+// --- Derivative as a linear transformation on polynomials ---
+(function () {
+  const { linspace, round } = LA;
+  const get = (id) => parseInt(document.getElementById(id).value, 10);
+  // input basis {1, x, x^2}; output basis {1, x}. A is the 2x3 derivative matrix.
+  const A = [[0,1,0],[0,0,2]];
+
+  // Pretty-print a polynomial from coefficients on the given monomials, e.g.
+  // fromTerms([c1,c2,c3], ["","x","x²"]). Uses real minus signs and tidy spacing.
+  function fromTerms(coefs, mono) {
+    let out = "";
+    coefs.forEach((k, i) => {
+      if (k === 0) return;
+      const mag = Math.abs(k);
+      const body = (mag === 1 && mono[i] !== "") ? mono[i] : `${mag}${mono[i]}`;
+      if (out === "") out += (k < 0 ? "−" : "") + body;
+      else            out += (k < 0 ? " − " : " + ") + body;
+    });
+    return out === "" ? "0" : out;
+  }
+  const polyStr  = (c) => fromTerms(c, ["", "x", "x²"]);   // c1 + c2 x + c3 x²
+  const dpolyStr = (d) => fromTerms(d, ["", "x"]);          // c2 + 2 c3 x
+  const evalP = (c, x) => c[0] + c[1]*x + c[2]*x*x;
+  const evalD = (d, x) => d[0] + d[1]*x;
+
+  function draw() {
+    const c = [get("dv_c1"), get("dv_c2"), get("dv_c3")];
+    document.getElementById("dv_c1v").textContent = c[0];
+    document.getElementById("dv_c2v").textContent = c[1];
+    document.getElementById("dv_c3v").textContent = c[2];
+    // d = A * c  (coordinates of the derivative in {1, x})
+    const d = [A[0][0]*c[0]+A[0][1]*c[1]+A[0][2]*c[2],
+               A[1][0]*c[0]+A[1][1]*c[1]+A[1][2]*c[2]];
+    document.getElementById("dv_poly").textContent = polyStr(c);
+
+    const xs = linspace(-3, 3, 121);
+    const yp = xs.map((x) => evalP(c, x));
+    const yd = xs.map((x) => evalD(d, x));
+    Plotly.react("dv_plot", [
+      { x:xs, y:yp, mode:"lines", line:{color:"#1f77b4", width:3}, name:"p(x)", hoverinfo:"skip" },
+      { x:xs, y:yd, mode:"lines", line:{color:"#ff7f0e", width:3, dash:"dash"}, name:"p′(x)", hoverinfo:"skip" },
+    ], {
+      xaxis:{range:[-3,3], zeroline:true, zerolinecolor:"#888", title:"x"},
+      yaxis:{range:[-10,10], zeroline:true, zerolinecolor:"#888"},
+      margin:{l:30,r:8,t:8,b:30}, hovermode:false,
+      legend:{x:0.02, y:0.98, bgcolor:"rgba(255,255,255,0.7)"},
+    }, { responsive:true });
+
+    document.getElementById("dv_box").innerHTML =
+      `<div style="font-family:ui-monospace,Menlo,monospace;font-size:15px">` +
+      `input coords (in {1, x, x²}) = (${c[0]}, ${c[1]}, ${c[2]})</div>` +
+      `<div style="margin-top:8px"><b style="color:#1f77b4">p(x) = ${polyStr(c)}</b></div>` +
+      `<div style="margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:15px">` +
+      `A·c = (0·${c[0]}+1·${c[1]}+0·${c[2]}, &nbsp;0·${c[0]}+0·${c[1]}+2·${c[2]}) = (${d[0]}, ${d[1]})</div>` +
+      `<div style="margin-top:8px"><b style="color:#ff7f0e">p′(x) = ${dpolyStr(d)}</b> ` +
+      `&nbsp;(coords (${d[0]}, ${d[1]}) in {1, x})</div>`;
+  }
+  ["dv_c1","dv_c2","dv_c3"].forEach((id) =>
+    document.getElementById(id).addEventListener("input", draw));
+  draw();
+})();
+</script>
+</body>
+</html>

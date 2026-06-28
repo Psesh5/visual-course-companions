@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 31 — Change of basis · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 31 · Change of basis (and image compression)</h1>
+  <div class="sub">A vector doesn't change when you change the basis — only its <b>coordinates</b> do.
+    The bridge between two coordinate systems is the change-of-basis matrix <code>W</code>; a transformation's
+    matrix transforms by the <b>similarity</b> rule <code>B = W⁻¹AW</code>. Compression exploits a basis where
+    most coordinates are tiny.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The big idea:</b> the same point in the plane can be described as "go 3 east and 1 north" (standard basis)
+    or as "go 2 along <code>w₁</code> and ½ along <code>w₂</code>" (a skewed basis). Both describe the
+    <i>identical</i> arrow. Below, move the basis vectors <code>w₁</code>, <code>w₂</code> with the sliders and
+    watch how the coordinates of a fixed vector <code>v</code> change while <code>v</code> itself stays put.
+  </div>
+
+  <!-- ============================ FIGURE 1: two coordinate systems ============================ -->
+  <h2>Figure 1 — One vector, two coordinate systems</h2>
+  <div class="controls">
+    <span class="rng">v = (<input id="vx" class="coef" value="3" style="width:46px"> ,
+                          <input id="vy" class="coef" value="1" style="width:46px">)</span>
+  </div>
+  <div class="controls">
+    w₁ = (<input id="w1x" type="range" min="-2" max="3" step="0.25" value="1.5" style="width:150px;vertical-align:middle">
+          <span id="w1xv" class="rng"></span> ,
+          <input id="w1y" type="range" min="-2" max="3" step="0.25" value="0.5" style="width:150px;vertical-align:middle">
+          <span id="w1yv" class="rng"></span>)
+  </div>
+  <div class="controls">
+    w₂ = (<input id="w2x" type="range" min="-2" max="3" step="0.25" value="-0.5" style="width:150px;vertical-align:middle">
+          <span id="w2xv" class="rng"></span> ,
+          <input id="w2y" type="range" min="-2" max="3" step="0.25" value="1.5" style="width:150px;vertical-align:middle">
+          <span id="w2yv" class="rng"></span>)
+  </div>
+
+  <div class="plots">
+    <div id="cobPlot" class="plot" style="flex:1 1 460px"></div>
+    <div style="flex:1 1 320px;min-width:300px">
+      <div class="status" id="cobStatus"></div>
+      <div class="note" id="cobMath" style="font-size:13px"></div>
+    </div>
+  </div>
+
+  <!-- ============================ FIGURE 2: similarity B = W⁻¹AW ============================ -->
+  <h2>Figure 2 — A transformation in two bases: B = W⁻¹AW</h2>
+  <p style="font-size:14px;max-width:780px">
+    A linear map <code>T</code> is a fixed geometric action (here a shear). In the standard basis it is the matrix
+    <code>A</code>; in the basis <code>{w₁,w₂}</code> the very same map is a <i>different</i> matrix
+    <code>B = W⁻¹AW</code>. Pick a basis and watch how the numbers re-express the same action. When the columns of
+    <code>W</code> are <b>eigenvectors</b> of <code>A</code>, <code>B</code> comes out <b>diagonal</b> — that is
+    diagonalization, the best possible change of basis.
+  </p>
+  <div class="controls">
+    <button class="preset" data-sim="eig">Use A's eigenvectors → B diagonal</button>
+    <button class="preset" data-sim="skew">Use the skewed basis above</button>
+  </div>
+  <div class="note" id="simMath" style="font-size:13px"></div>
+
+  <!-- ============================ FIGURE 3: sparse basis / compression ============================ -->
+  <h2>Figure 3 — Why a good basis compresses</h2>
+  <p style="font-size:14px;max-width:780px">
+    A smooth signal of 8 samples has 8 standard coordinates, all sizable — keeping only a few loses everything.
+    Re-express the same signal in a <b>cosine (DCT)</b> basis and almost all coordinates collapse toward zero.
+    Now you can <i>throw most of them away</i> and still rebuild the signal. That is the heart of JPEG.
+  </p>
+  <div class="controls">
+    Keep top <input id="keep" type="range" min="1" max="8" step="1" value="2" style="width:240px;vertical-align:middle">
+    <span id="keepv" class="rng"></span> DCT coefficients
+  </div>
+  <div class="plots">
+    <div id="sigPlot" class="plot" style="flex:1 1 460px"></div>
+    <div id="coefPlot" class="plot" style="flex:1 1 460px"></div>
+  </div>
+  <div class="status" id="compStatus"></div>
+
+  <!-- ============================ FIGURE 4: Strang's Haar wavelet basis ============================ -->
+  <h2>Figure 4 — Strang's actual example: the 8 Haar wavelets</h2>
+  <p style="font-size:14px;max-width:820px">
+    In the lecture Strang builds a concrete "better basis" for <code>R⁸</code> by hand and calls it the
+    <b>wavelet basis</b> — "the simplest set of wavelets." He starts from the vector he most wants in any image
+    basis, the <b>all-ones (DC) vector</b> <code>(1,1,1,1,1,1,1,1)</code> ("by itself it completely describes a solid
+    image"), then the <b>half-ones/half-minus</b> vector, then narrower and narrower ±1 blocks, down to the
+    <b>checkerboard-style</b> high-frequency wiggles. These are exactly the columns of the wavelet matrix
+    <code>W</code> below. Hover any bar chart to read a basis vector.
+  </p>
+  <div class="controls">
+    <button class="preset" data-wsig="smooth">Smooth signal (Strang's lecture: mostly solid)</button>
+    <button class="preset" data-wsig="step">A step (dark half / light half)</button>
+    <button class="preset" data-wsig="jumpy">Jumpy / noisy signal</button>
+  </div>
+  <div class="controls">
+    Keep top <input id="wkeep" type="range" min="1" max="8" step="1" value="2" style="width:240px;vertical-align:middle">
+    <span id="wkeepv" class="rng"></span> wavelet coefficients (threshold the small ones — Strang's "throw away the small coefficients")
+  </div>
+  <div class="plots">
+    <div id="wbasisPlot" class="plot" style="flex:1 1 420px;min-width:320px;height:360px"></div>
+    <div style="flex:1 1 360px;min-width:300px">
+      <div id="wsigPlot" class="plot" style="height:230px"></div>
+      <div id="wcoefPlot" class="plot" style="height:230px"></div>
+    </div>
+  </div>
+  <div class="status" id="wcompStatus"></div>
+  <div class="note" id="wOrtho" style="font-size:13px"></div>
+
+  <!-- ============================ INTUITION ============================ -->
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>A vector is not its coordinates.</b> The arrow <code>v</code> sits in the plane independently of any grid.
+    Lay down the standard grid and you read off <code>(3, 1)</code>. Lay down a skewed grid built from
+    <code>w₁, w₂</code> and you read off different numbers <code>c = (c₁, c₂)</code> — but the arrow never moved.
+    Coordinates are answers to the question "how much of each basis vector?", so changing the basis changes the
+    answer, not the question's subject.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>W converts coordinates.</b> Put the new basis vectors in the columns of <code>W = [w₁ | w₂]</code>. Then the
+    new coordinates <code>c</code> rebuild the standard description by <code>v = W c</code> — you are literally
+    forming <code>c₁w₁ + c₂w₂</code>. Going the other way, <code>c = W⁻¹ v</code>. So <code>W</code> sends
+    new→standard and <code>W⁻¹</code> sends standard→new.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Matrices change by similarity.</b> A transformation eats a vector and spits out a vector. If you describe
+    everything in the new basis, you must first translate the input to standard coords (<code>W</code>), apply
+    <code>A</code>, then translate the output back to new coords (<code>W⁻¹</code>). Chaining those gives
+    <code>B = W⁻¹AW</code>. Similar matrices are the same map seen through different grids; they share eigenvalues,
+    trace, and determinant.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Compression is basis-shopping.</b> Information cost is the number of nonzero coordinates you must store. A
+    smart basis concentrates a signal's energy into a few coordinates and leaves the rest near zero. Keep the big
+    ones, discard the small ones, and you have lossy compression — JPEG, MP3, and wavelet image coders are all this
+    one idea, applied with the cosine or wavelet basis.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>What makes a basis "good"? (Strang's billion-dollar question.)</b> Two requirements. First, it must be
+    <b>fast</b>: you have to multiply by <code>W</code> and by <code>W⁻¹</code> cheaply, since the change of basis
+    <code>c = W⁻¹P</code> is done on every block of every image. The Fourier basis gets this from the FFT; the Haar
+    wavelet basis gets it because its entries are just <code>+1, −1, 0</code>. Second, it must <b>compress well</b>:
+    a few basis vectors should already come close to the signal so you can throw the rest away. (Doing nothing —
+    staying in the standard pixel basis — is the fastest of all, but it compresses terribly: drop 90% of the pixels
+    and the picture goes dark.) Strang notes a bonus: if the basis is <b>orthogonal</b>, then once you normalize the
+    columns, <code>W⁻¹ = Wᵀ</code> — the inverse is free, so "fast forward" automatically gives "fast back." JPEG
+    uses Fourier today; JPEG-2000 and the FBI's fingerprint system switched to wavelets. The very best basis of all
+    is the <b>eigenvector basis</b> (it makes the transformation diagonal), but finding the eigenvectors of the pixel
+    matrix is too expensive — so we settle for a fixed good basis like wavelets.
+  </p>
+
+  <!-- ============================ WORKED MATH ============================ -->
+  <h2>Worked math</h2>
+  <p style="font-size:14px;max-width:780px"><b>1 · Converting coordinates.</b> Take the demo's default basis
+    <code>w₁ = (1.5, 0.5)</code>, <code>w₂ = (−0.5, 1.5)</code>, so</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px;max-width:780px;overflow:auto">
+W = [ 1.5  -0.5 ]      det W = 1.5·1.5 − (−0.5)·0.5 = 2.5
+    [ 0.5   1.5 ]
+
+W⁻¹ = (1/2.5) [  1.5   0.5 ] = [ 0.6  0.2 ]
+              [ -0.5   1.5 ]   [ -0.2  0.6 ]
+
+v = (3, 1)   →   c = W⁻¹v = (0.6·3 + 0.2·1, −0.2·3 + 0.6·1) = (2.0, 0.0)
+
+check:  W c = 2.0·(1.5, 0.5) + 0.0·(−0.5, 1.5) = (3.0, 1.0) = v  ✓</pre>
+  <p style="font-size:14px;max-width:780px">So in the skewed basis the vector <code>(3,1)</code> has the tidy
+    coordinates <code>(2, 0)</code> — it is exactly two copies of <code>w₁</code>.</p>
+
+  <p style="font-size:14px;max-width:780px"><b>2 · The similarity formula.</b> Let
+    <code>A = [[2, 1],[0, 3]]</code>, with eigenvalues 2 and 3 and eigenvectors
+    <code>w₁ = (1, 0)</code>, <code>w₂ = (1, 1)</code>. Build <code>W = [w₁ | w₂]</code>:</p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px;max-width:780px;overflow:auto">
+W = [ 1  1 ]    W⁻¹ = [ 1  -1 ]
+    [ 0  1 ]          [ 0   1 ]
+
+B = W⁻¹ A W = [ 1 -1 ][ 2 1 ][ 1 1 ] = [ 2  0 ]   ← diagonal: eigenvalues on the diagonal
+              [ 0  1 ][ 0 3 ][ 0 1 ]   [ 0  3 ]
+
+trace B = 5 = trace A,   det B = 6 = det A   (similarity invariants)</pre>
+  <p style="font-size:14px;max-width:780px">Choosing eigenvectors as the basis makes the matrix diagonal: in the
+    right coordinates the shear becomes pure stretching along each axis.</p>
+
+  <p style="font-size:14px;max-width:780px"><b>3 · Why sparsity compresses.</b> A length-<code>n</code> signal
+    <code>f</code> in the standard basis needs all <code>n</code> numbers. Expand it in an orthonormal cosine basis
+    <code>{u₀,…,u₇}</code>: <code>f = Σ cₖ uₖ</code> with <code>cₖ = uₖ·f</code>. For a smooth signal the
+    energy <code>Σ cₖ²</code> piles up in the first few <code>cₖ</code>; the tail is near zero. Keep the
+    <code>m</code> largest and zero the rest to get <code>f̃</code>. Because the basis is orthonormal, the squared
+    error equals the discarded energy: <code>‖f − f̃‖² = Σ<sub>discarded</sub> cₖ²</code>. Tiny discarded
+    coefficients ⇒ tiny error ⇒ you stored <code>m ≪ n</code> numbers almost for free.</p>
+
+  <p style="font-size:14px;max-width:780px"><b>4 · Strang's Haar wavelet matrix.</b> The lecture's hand-built
+    basis for <code>R⁸</code> has these eight columns (the all-ones DC vector, the half/half vector, two
+    quarter-width ±1 vectors, and four neighbor-difference wavelets):</p>
+  <pre style="font-size:12px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px;max-width:780px;overflow:auto">
+        ⎡ 1  1  1  0  1  0  0  0 ⎤      column 1 = all-ones (DC)        ← rarely thrown away
+        ⎢ 1  1  1  0 -1  0  0  0 ⎥      column 2 = half +1 / half −1
+        ⎢ 1  1 -1  0  0  1  0  0 ⎥      columns 3,4 = quarter ±1 blocks
+   W =  ⎢ 1  1 -1  0  0 -1  0  0 ⎥      columns 5–8 = neighbor differences (1,−1)
+        ⎢ 1 -1  0  1  0  0  1  0 ⎥                                     ← highest frequency
+        ⎢ 1 -1  0  1  0  0 -1  0 ⎥
+        ⎢ 1 -1  0 -1  0  0  0  1 ⎥
+        ⎣ 1 -1  0 -1  0  0  0 -1 ⎦
+
+Transform (lossless):  P = W c   ⇒   coefficients  c = W⁻¹ P
+Compression  (lossy):  keep the few large c, threshold the rest → c-hat with many zeros</pre>
+  <p style="font-size:14px;max-width:780px"><b>Why the inverse is nice — orthogonality.</b> Any two distinct columns
+    are orthogonal. For example column 1 · column 2 <code>= (four +1's) + (four −1's) = 0</code>, and column 3 ·
+    column 4 <code>= (two +1's) + (two −1's) = 0</code>. The columns aren't unit length yet: their lengths are
+    <code>√8, √4, √2</code> (and <code>√2</code> for the high-frequency pairs). Divide each column by its length to
+    get an <b>orthonormal</b> <code>W</code>; then <code>W⁻¹ = Wᵀ</code>, so applying the inverse change of basis is
+    just another fast matrix multiply. That "fast <code>W</code> ⇒ fast <code>W⁻¹</code>" is exactly the property
+    that makes the wavelet basis usable for compression. Strang's closing remark: the FBI uses a smoother wavelet
+    (no abrupt ±1 jumps) for fingerprints, but the linear-algebra idea is identical.</p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* ---------- tiny 2D linear-algebra helpers (clean JS, none in LA) ---------- */
+const det2 = (M) => M[0][0]*M[1][1] - M[0][1]*M[1][0];
+const inv2 = (M) => { const d = det2(M);
+  return [[ M[1][1]/d, -M[0][1]/d], [-M[1][0]/d, M[0][0]/d]]; };
+const mul2 = (A,B) => [
+  [A[0][0]*B[0][0]+A[0][1]*B[1][0], A[0][0]*B[0][1]+A[0][1]*B[1][1]],
+  [A[1][0]*B[0][0]+A[1][1]*B[1][0], A[1][0]*B[0][1]+A[1][1]*B[1][1]] ];
+const matvec2 = (M,v) => [M[0][0]*v[0]+M[0][1]*v[1], M[1][0]*v[0]+M[1][1]*v[1]];
+const R = (x) => LA.round(x);
+const fmtM = (M) => `[ ${R(M[0][0])}  ${R(M[0][1])} ; ${R(M[1][0])}  ${R(M[1][1])} ]`;
+
+/* 2D arrow as a single scatter trace: shaft + tiny arrowhead lines. */
+function arrow2(p, q, color, width, name) {
+  const dx = q[0]-p[0], dy = q[1]-p[1], L = Math.hypot(dx,dy) || 1;
+  const ux = dx/L, uy = dy/L, h = Math.min(0.22*L, 0.28);
+  // two head barbs at +-25 deg
+  const a = 0.42;
+  const bx = q[0] - h*(ux*Math.cos(a) - uy*Math.sin(a)),
+        by = q[1] - h*(uy*Math.cos(a) + ux*Math.sin(a));
+  const cx = q[0] - h*(ux*Math.cos(a) + uy*Math.sin(a)),
+        cy = q[1] - h*(uy*Math.cos(a) - ux*Math.sin(a));
+  return { type:"scatter", mode:"lines", name: name||"",
+    x:[p[0],q[0],bx,q[0],cx], y:[p[1],q[1],by,q[1],cy],
+    line:{color, width: width||4}, showlegend: !!name, hoverinfo:"name" };
+}
+
+/* ===================== FIGURE 1 ===================== */
+(function () {
+  const ids = ["vx","vy","w1x","w1y","w2x","w2y"];
+  const el = {}; ids.forEach(i => el[i] = document.getElementById(i));
+  const LIM = 5;
+
+  function gridLines(w1, w2, color) {
+    // skewed grid: lines of constant c1 and constant c2 over an integer range
+    const traces = [], N = 5;
+    for (let k = -N; k <= N; k++) {
+      // constant c2 = k : points c1*w1 + k*w2, c1 in [-N,N]
+      const p = matvec2([[w1[0],w2[0]],[w1[1],w2[1]]], [-N, k]);
+      const q = matvec2([[w1[0],w2[0]],[w1[1],w2[1]]], [ N, k]);
+      traces.push({type:"scatter",mode:"lines",x:[p[0],q[0]],y:[p[1],q[1]],
+        line:{color,width:1},opacity:0.35,showlegend:false,hoverinfo:"skip"});
+      const r = matvec2([[w1[0],w2[0]],[w1[1],w2[1]]], [k, -N]);
+      const s = matvec2([[w1[0],w2[0]],[w1[1],w2[1]]], [k,  N]);
+      traces.push({type:"scatter",mode:"lines",x:[r[0],s[0]],y:[r[1],s[1]],
+        line:{color,width:1},opacity:0.35,showlegend:false,hoverinfo:"skip"});
+    }
+    return traces;
+  }
+
+  function draw() {
+    const v  = [parseFloat(el.vx.value)||0, parseFloat(el.vy.value)||0];
+    const w1 = [parseFloat(el.w1x.value), parseFloat(el.w1y.value)];
+    const w2 = [parseFloat(el.w2x.value), parseFloat(el.w2y.value)];
+    document.getElementById("w1xv").textContent = w1[0];
+    document.getElementById("w1yv").textContent = w1[1];
+    document.getElementById("w2xv").textContent = w2[0];
+    document.getElementById("w2yv").textContent = w2[1];
+
+    const W = [[w1[0],w2[0]],[w1[1],w2[1]]];
+    const d = det2(W);
+    const sing = Math.abs(d) < 1e-6;
+    const data = [];
+
+    // standard grid (faint gray)
+    for (let k = -LIM; k <= LIM; k++) {
+      data.push({type:"scatter",mode:"lines",x:[-LIM,LIM],y:[k,k],
+        line:{color:"#ddd",width:1},showlegend:false,hoverinfo:"skip"});
+      data.push({type:"scatter",mode:"lines",x:[k,k],y:[-LIM,LIM],
+        line:{color:"#ddd",width:1},showlegend:false,hoverinfo:"skip"});
+    }
+    // skewed grid (blue)
+    if (!sing) gridLines(w1, w2, "#9ec5e8").forEach(t => data.push(t));
+
+    // basis vectors
+    data.push(arrow2([0,0], w1, "#1f77b4", 4, "w₁"));
+    data.push(arrow2([0,0], w2, "#2ca02c", 4, "w₂"));
+    // the fixed vector v (red)
+    data.push(arrow2([0,0], v, "#d62728", 5, "v"));
+
+    let c = sing ? [NaN, NaN] : matvec2(inv2(W), v);
+    if (!sing) {
+      // dotted parallelogram decomposition c1*w1 then + c2*w2
+      const m = [c[0]*w1[0], c[0]*w1[1]];
+      data.push({type:"scatter",mode:"lines",x:[0,m[0]],y:[0,m[1]],
+        line:{color:"#1f77b4",width:2,dash:"dot"},showlegend:false,hoverinfo:"skip"});
+      data.push({type:"scatter",mode:"lines",x:[m[0],v[0]],y:[m[1],v[1]],
+        line:{color:"#2ca02c",width:2,dash:"dot"},showlegend:false,hoverinfo:"skip"});
+    }
+
+    Plotly.react("cobPlot", data, {
+      margin:{l:30,r:10,t:10,b:30},
+      xaxis:{range:[-LIM,LIM],zeroline:true,zerolinecolor:"#999",scaleanchor:"y",scaleratio:1},
+      yaxis:{range:[-LIM,LIM],zeroline:true,zerolinecolor:"#999"},
+      legend:{x:0.02,y:0.98,bgcolor:"rgba(255,255,255,0.7)"}
+    }, {responsive:true,displayModeBar:false});
+
+    const st = document.getElementById("cobStatus");
+    const mt = document.getElementById("cobMath");
+    if (sing) {
+      st.innerHTML = `<span class="tag none">w₁, w₂ are dependent</span> — they don't form a basis (det W = 0).`;
+      mt.innerHTML = "";
+      return;
+    }
+    st.innerHTML =
+      `<b>Standard coords:</b> v = <code>(${R(v[0])}, ${R(v[1])})</code><br>` +
+      `<b>New coords:</b> c = W⁻¹v = <code>(${R(c[0])}, ${R(c[1])})</code><br>` +
+      `<span style="color:#666">i.e. v = ${R(c[0])}·w₁ + ${R(c[1])}·w₂ — same red arrow, different numbers.</span>`;
+    const Wi = inv2(W);
+    mt.innerHTML =
+      `<b>W = [w₁ | w₂] =</b> <code>${fmtM(W)}</code>, det W = <code>${R(d)}</code><br>` +
+      `<b>W⁻¹ =</b> <code>${fmtM(Wi)}</code><br>` +
+      `standard = W·c &nbsp;|&nbsp; new = W⁻¹·standard`;
+  }
+
+  ids.forEach(i => { el[i].addEventListener("input", draw); });
+  draw();
+})();
+
+/* ===================== FIGURE 2 ===================== */
+(function () {
+  const A = [[2,1],[0,3]];                 // a shear/stretch; eigvals 2,3
+  const BASES = {
+    eig:  { W: [[1,1],[0,1]], label: "eigenvectors w₁=(1,0), w₂=(1,1)" },
+    skew: { W: [[1.5,-0.5],[0.5,1.5]], label: "skewed basis from Figure 1" },
+  };
+  function show(key) {
+    const W = BASES[key].W, Wi = inv2(W), B = mul2(mul2(Wi, A), W);
+    const diag = Math.abs(B[0][1]) < 1e-9 && Math.abs(B[1][0]) < 1e-9;
+    document.getElementById("simMath").innerHTML =
+      `Basis: <b>${BASES[key].label}</b><br>` +
+      `<b>A =</b> <code>${fmtM(A)}</code> &nbsp; (trace ${R(A[0][0]+A[1][1])}, det ${R(det2(A))})<br>` +
+      `<b>W =</b> <code>${fmtM(W)}</code>, &nbsp; <b>W⁻¹ =</b> <code>${fmtM(Wi)}</code><br>` +
+      `<b>B = W⁻¹AW =</b> <code>${fmtM(B)}</code>` +
+      (diag ? ` &nbsp;<span class="tag one">diagonal!</span> eigenvalues on the diagonal` : "") + "<br>" +
+      `<span style="color:#666">trace B = ${R(B[0][0]+B[1][1])} = trace A, &nbsp; det B = ${R(det2(B))} = det A — ` +
+      `the same map, re-expressed.</span>`;
+  }
+  document.querySelectorAll("[data-sim]").forEach(btn =>
+    btn.onclick = () => show(btn.dataset.sim));
+  show("eig");
+})();
+
+/* ===================== FIGURE 3 ===================== */
+(function () {
+  const N = 8;
+  // a smooth-ish signal sampled at 8 points
+  const f = LA.linspace(0, Math.PI, N).map((t,i) => 2*Math.cos(t) + 0.6*Math.sin(2*t) + 1);
+
+  // orthonormal DCT-II basis vectors u_k (k=0..N-1)
+  function dctBasis(k) {
+    const s = (k === 0) ? Math.sqrt(1/N) : Math.sqrt(2/N);
+    const u = [];
+    for (let n = 0; n < N; n++) u.push(s * Math.cos(Math.PI * (n + 0.5) * k / N));
+    return u;
+  }
+  const U = []; for (let k = 0; k < N; k++) U.push(dctBasis(k));
+  const dot = (a,b) => a.reduce((s,x,i)=>s+x*b[i],0);
+  const coef = U.map(u => dot(u, f));                 // DCT coefficients
+
+  function reconstruct(m) {
+    // keep the m coefficients largest in magnitude
+    const order = coef.map((c,i)=>[Math.abs(c),i]).sort((a,b)=>b[0]-a[0]);
+    const keep = new Set(order.slice(0, m).map(p=>p[1]));
+    const r = new Array(N).fill(0);
+    for (let k = 0; k < N; k++) if (keep.has(k))
+      for (let n = 0; n < N; n++) r[n] += coef[k]*U[k][n];
+    return { r, keep };
+  }
+
+  function draw(m) {
+    document.getElementById("keepv").textContent = m;
+    const { r, keep } = reconstruct(m);
+    const xs = LA.linspace(0, N-1, N);
+
+    Plotly.react("sigPlot", [
+      {type:"scatter",mode:"lines+markers",x:xs,y:f,name:"original",
+        line:{color:"#1f77b4",width:2},marker:{size:7}},
+      {type:"scatter",mode:"lines+markers",x:xs,y:r,name:`kept ${m} coeffs`,
+        line:{color:"#d62728",width:2,dash:"dash"},marker:{size:7}},
+    ], { margin:{l:35,r:10,t:24,b:30}, title:{text:"signal (standard samples)",font:{size:13}},
+        xaxis:{title:"sample n"}, legend:{x:0.5,y:1.12,orientation:"h",xanchor:"center"} },
+       {responsive:true,displayModeBar:false});
+
+    const ks = coef.map((_,k)=>k);
+    Plotly.react("coefPlot", [
+      {type:"bar",x:ks,y:coef.map(c=>R(c)),
+       marker:{color:ks.map(k=>keep.has(k)?"#2ca02c":"#ccc")}},
+    ], { margin:{l:35,r:10,t:24,b:30}, title:{text:"DCT coordinates (green = kept)",font:{size:13}},
+        xaxis:{title:"coefficient k"}, yaxis:{zeroline:true} },
+       {responsive:true,displayModeBar:false});
+
+    // squared error = discarded energy (orthonormal basis)
+    const order = coef.map((c,i)=>[Math.abs(c),i]).sort((a,b)=>b[0]-a[0]);
+    const discarded = order.slice(m).reduce((s,p)=>s + p[0]*p[0], 0);
+    const total = coef.reduce((s,c)=>s+c*c, 0);
+    const pct = total>0 ? (100*(1-discarded/total)) : 100;
+    document.getElementById("compStatus").innerHTML =
+      `Storing <b>${m}</b> of ${N} numbers (${R(100*m/N)}%). ` +
+      `Energy retained: <b>${R(pct)}%</b>. ` +
+      `Squared error ‖f−f̃‖² = discarded energy = <code>${R(discarded)}</code>. ` +
+      (m<=2 ? `<span style="color:#666">Two coefficients already recover the curve — that's compression.</span>` : "");
+  }
+
+  const slider = document.getElementById("keep");
+  slider.addEventListener("input", () => draw(parseInt(slider.value)));
+  draw(2);
+})();
+
+/* ===================== FIGURE 4 — Strang's Haar wavelet basis ===================== */
+(function () {
+  const N = 8;
+  // The eight columns Strang writes on the board (each is a length-8 vector).
+  // 1: all-ones (DC)   2: half +/-   3,4: quarter blocks   5..8: neighbor differences
+  const cols = [
+    [ 1, 1, 1, 1, 1, 1, 1, 1],   // c1  DC
+    [ 1, 1, 1, 1,-1,-1,-1,-1],   // c2  half/half
+    [ 1, 1,-1,-1, 0, 0, 0, 0],   // c3  left quarter +/-
+    [ 0, 0, 0, 0, 1, 1,-1,-1],   // c4  right quarter +/-
+    [ 1,-1, 0, 0, 0, 0, 0, 0],   // c5  highest frequency
+    [ 0, 0, 1,-1, 0, 0, 0, 0],   // c6
+    [ 0, 0, 0, 0, 1,-1, 0, 0],   // c7
+    [ 0, 0, 0, 0, 0, 0, 1,-1],   // c8
+  ];
+  const dot = (a,b) => a.reduce((s,x,i)=>s+x*b[i],0);
+  const norm2 = cols.map(w => dot(w,w));            // = 8,8,4,4,2,2,2,2  (lengths^2)
+
+  // signals (in the standard pixel basis)
+  const SIGNALS = {
+    // mostly-solid smooth ramp -> energy in DC + low frequencies
+    smooth: [5.0, 5.2, 5.0, 4.8, 4.3, 4.0, 3.9, 3.8],
+    // a clean step: dark half / light half -> only c1 and c2 nonzero
+    step:   [2, 2, 2, 2, 6, 6, 6, 6],
+    // jumpy/noisy -> spread across the high-frequency wavelets
+    jumpy:  [4, 1, 5, 2, 4, 0, 6, 1],
+  };
+  let curKey = "smooth";
+
+  function coeffs(P) {            // orthogonal projection: c_k = (w_k . P)/(w_k . w_k)
+    return cols.map((w,k) => dot(w,P)/norm2[k]);
+  }
+  function reconstruct(c, keepSet) {
+    const r = new Array(N).fill(0);
+    for (let k = 0; k < N; k++) if (keepSet.has(k))
+      for (let n = 0; n < N; n++) r[n] += c[k]*cols[k][n];
+    return r;
+  }
+
+  // small multiples: the 8 basis vectors as mini bar charts
+  function drawBasis(keepSet) {
+    const traces = [];
+    const cw = 1/4, ch = 1/2, gx = 0.03, gy = 0.10;
+    for (let k = 0; k < N; k++) {
+      const col = k % 4, row = Math.floor(k/4);
+      const x0 = col*cw + gx, x1 = (col+1)*cw - gx;
+      const y0 = (1-row)*ch + gy, y1 = (2-row)*ch - gy - 0.04;
+      const ax = "x"+(k+1), ay = "y"+(k+1);
+      traces.push({type:"bar", x:cols[k].map((_,i)=>i), y:cols[k],
+        xaxis:ax, yaxis:ay, showlegend:false, hoverinfo:"y",
+        marker:{color: keepSet.has(k) ? "#2ca02c" : "#bbb"}});
+      drawBasis.layout["xaxis"+(k+1)] = {domain:[x0,x1], anchor:ay, showticklabels:false, fixedrange:true};
+      drawBasis.layout["yaxis"+(k+1)] = {domain:[y0,y1], anchor:ax, range:[-1.3,1.3],
+        showticklabels:false, fixedrange:true, zeroline:true, zerolinecolor:"#ccc"};
+      drawBasis.layout.annotations.push({text:"w"+(k+1), x:(x0+x1)/2, y:y1+0.035,
+        xref:"paper", yref:"paper", showarrow:false, font:{size:11,color:"#444"}});
+    }
+    return traces;
+  }
+  drawBasis.layout = {margin:{l:6,r:6,t:24,b:6}, annotations:[],
+    title:{text:"columns of W = the 8 Haar wavelets (green = kept)", font:{size:13}}};
+
+  function draw(m) {
+    document.getElementById("wkeepv").textContent = m;
+    const P = SIGNALS[curKey];
+    const c = coeffs(P);
+    // keep the m coefficients largest in magnitude (energy uses the column lengths)
+    const energy = c.map((ck,k)=>ck*ck*norm2[k]);
+    const order = energy.map((e,i)=>[e,i]).sort((a,b)=>b[0]-a[0]);
+    const keepSet = new Set(order.slice(0,m).map(p=>p[1]));
+    const r = reconstruct(c, keepSet);
+
+    // reset annotations each redraw so they don't accumulate
+    drawBasis.layout.annotations = [];
+    Plotly.react("wbasisPlot", drawBasis(keepSet), drawBasis.layout,
+      {responsive:true, displayModeBar:false});
+
+    const xs = LA.linspace(0, N-1, N);
+    Plotly.react("wsigPlot", [
+      {type:"scatter",mode:"lines+markers",x:xs,y:P,name:"signal P",
+        line:{color:"#1f77b4",width:2},marker:{size:6}},
+      {type:"scatter",mode:"lines+markers",x:xs,y:r,name:`kept ${m}`,
+        line:{color:"#d62728",width:2,dash:"dash"},marker:{size:6}},
+    ], {margin:{l:30,r:8,t:22,b:24}, title:{text:"signal vs reconstruction",font:{size:12}},
+        legend:{x:0.5,y:1.25,orientation:"h",xanchor:"center",font:{size:10}}},
+       {responsive:true,displayModeBar:false});
+
+    Plotly.react("wcoefPlot", [
+      {type:"bar", x:c.map((_,k)=>"c"+(k+1)), y:c.map(ck=>R(ck)),
+       marker:{color:c.map((_,k)=>keepSet.has(k)?"#2ca02c":"#ccc")}, hoverinfo:"y"},
+    ], {margin:{l:30,r:8,t:22,b:24}, title:{text:"wavelet coefficients c = W⁻¹P (green = kept)",font:{size:12}},
+        yaxis:{zeroline:true}}, {responsive:true,displayModeBar:false});
+
+    const total = energy.reduce((s,e)=>s+e,0);
+    const kept = order.slice(0,m).reduce((s,p)=>s+p[0],0);
+    const pct = total>0 ? 100*kept/total : 100;
+    document.getElementById("wcompStatus").innerHTML =
+      `Storing <b>${m}</b> of ${N} coefficients (${R(100*m/N)}%). ` +
+      `Energy retained: <b>${R(pct)}%</b>. ` +
+      (curKey==="step" && m>=2
+        ? `<span style="color:#666">A step is <i>exactly</i> c₁·(all-ones) + c₂·(half/half) — 2 numbers, zero error.</span>`
+        : curKey==="jumpy"
+        ? `<span style="color:#666">A jumpy signal spreads into the high-frequency wavelets — it does NOT compress well.</span>`
+        : (m<=2 ? `<span style="color:#666">A smooth signal lives in the first few wavelets — that's the compression.</span>` : ""));
+  }
+
+  // orthogonality + W^-1 = W^T note, computed live
+  (function showOrtho(){
+    const c1c2 = dot(cols[0],cols[1]), c3c4 = dot(cols[2],cols[3]);
+    document.getElementById("wOrtho").innerHTML =
+      `<b>Orthogonality (Strang's check):</b> w₁·w₂ = <code>${c1c2}</code>, &nbsp; w₃·w₄ = <code>${c3c4}</code> — ` +
+      `all distinct columns are orthogonal. Column lengths² are <code>[${norm2.join(", ")}]</code> ` +
+      `(i.e. √8, √8, √4, √4, √2…). Normalize each column by its length and <b>W⁻¹ = Wᵀ</b>, so the inverse change ` +
+      `of basis is free — the key reason a wavelet basis is fast in both directions.`;
+  })();
+
+  document.querySelectorAll("[data-wsig]").forEach(btn =>
+    btn.onclick = () => { curKey = btn.dataset.wsig; draw(parseInt(wslider.value)); });
+  const wslider = document.getElementById("wkeep");
+  wslider.addEventListener("input", () => draw(parseInt(wslider.value)));
+  draw(2);
+})();
+</script>
+</body>
+</html>

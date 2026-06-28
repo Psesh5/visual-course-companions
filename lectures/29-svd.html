@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 29 — Singular value decomposition · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 29 · Singular value decomposition</h1>
+  <div class="sub">Every matrix factors as <code>A = UΣVᵀ</code>: an orthogonal rotation <code>Vᵀ</code>,
+    a non-negative diagonal stretch <code>Σ</code>, and a second orthogonal rotation <code>U</code>.
+    Geometrically, <b>A turns the unit circle into an ellipse</b>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The big picture.</b> The eigen-decomposition <code>A = SΛS⁻¹</code> only works for square matrices with
+    enough eigenvectors, and <code>S</code> is usually <i>not</i> orthogonal. The SVD works for <b>any</b> matrix and
+    uses two <i>orthonormal</i> bases: the right singular vectors <code>v₁, v₂</code> in the input space and the left
+    singular vectors <code>u₁, u₂</code> in the output space. The key identity is <code>A vᵢ = σᵢ uᵢ</code>:
+    A sends an orthonormal frame to a perpendicular frame, scaled by the singular values.
+  </div>
+
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Matrix A:</span>
+    <button class="preset primary" data-p="strang">Strang [[4, 4], [-3, 3]]</button>
+    <button class="preset" data-p="rank1">Strang rank-1 [[4, 3], [8, 6]]</button>
+    <button class="preset" data-p="default">[[3, 0], [4, 5]]</button>
+    <button class="preset" data-p="rot">[[2, 2], [-1, 1]]</button>
+    <button class="preset" data-p="thin">[[2, 1], [1, 1]]</button>
+  </div>
+
+  <div class="note" style="background:#fff8e6;border-color:#f0d27a">
+    <b>Strang's blackboard example (lecture 29).</b> He picks <code>A = [[4, 4], [-3, 3]]</code> and works it by hand.
+    <b>Step 1:</b> <code>AᵀA = [[25, 7], [7, 25]]</code>. Its eigenvectors are the famously nice <code>(1, 1)</code> and
+    <code>(1, −1)</code> with eigenvalues <b>32</b> and <b>18</b> — so (normalizing) <code>v₁ = (1, 1)/√2</code>,
+    <code>v₂ = (1, −1)/√2</code> and <code>σ₁ = √32, σ₂ = √18</code>. <b>Step 2:</b> here <code>AAᵀ = [[32, 0], [0, 18]]</code>
+    comes out <i>diagonal</i> (a lucky accident), so <code>u₁ = (1, 0)</code>, <code>u₂ = (0, 1)</code> — <code>U</code> is the
+    identity. Select that preset and watch the live boxes reproduce 32, 18, √32, √18 exactly. Strang's famous "sign catch"
+    (one column wants <code>uᵢ = A vᵢ / σᵢ</code>, which fixes the sign that a raw <code>AAᵀ</code> eigenvector leaves
+    ambiguous) is exactly why this page builds <code>U</code> from <code>A vᵢ / σᵢ</code> rather than a second eigenproblem.
+    His <b>second example</b> <code>A = [[4, 3], [8, 6]]</code> is rank&nbsp;1: row space = multiples of <code>(4, 3)</code>,
+    column space = multiples of <code>(1, 2)</code>, so <code>v₁ = (.8, .6)</code>, <code>u₁ = (1, 2)/√5</code>,
+    <code>σ₁ = √125</code>, and the nullspace direction <code>v₂ = (.6, −.8)</code> rides in with <code>σ₂ = 0</code> — the
+    zero that "shows up on the diagonal of Σ."
+  </div>
+
+  <h2>The signature picture: <code>Vᵀ</code> rotate → <code>Σ</code> stretch → <code>U</code> rotate</h2>
+  <p style="font-size:14px;max-width:820px">
+    Drag the slider from 0 to 1 to morph the <b>unit circle</b> through the three SVD stages. Watch the two
+    orthonormal vectors <code>v₁, v₂</code> ride along. At <code>t = 1</code> the circle has become the ellipse
+    <code>A·(unit circle)</code>, whose semi-axes are the singular values <code>σ₁, σ₂</code> pointing along the
+    columns of <code>U</code> (the left singular vectors <code>u₁, u₂</code>).
+  </p>
+  <div class="controls">
+    <button class="step" data-s="0">① start (circle)</button>
+    <button class="step" data-s="1">② Vᵀ rotate</button>
+    <button class="step" data-s="2">③ Σ stretch</button>
+    <button class="step primary" data-s="3">④ U rotate = A</button>
+  </div>
+  <div class="controls">
+    morph: <input id="morph" type="range" min="0" max="3" step="0.01" value="0" style="width:340px;vertical-align:middle">
+    <span id="stage_lbl" class="rng"></span>
+  </div>
+  <div id="svdPlot" class="plot" style="max-width:640px;height:560px"></div>
+
+  <h2>The two orthonormal frames</h2>
+  <p style="font-size:14px;max-width:820px">
+    Left: the <b>right singular vectors</b> <code>v₁, v₂</code> on the unit circle (the orthonormal pre-image).
+    Right: their images <code>A v₁ = σ₁u₁</code> and <code>A v₂ = σ₂u₂</code> — still perpendicular, now stretched
+    onto the principal axes of the ellipse (the orthonormal <b>left singular vectors</b> <code>u₁, u₂</code>).
+  </p>
+  <div class="plots">
+    <div id="preImg"  class="plot"></div>
+    <div id="postImg" class="plot"></div>
+  </div>
+
+  <h2>Computing the SVD of this 2×2</h2>
+  <p style="font-size:14px;max-width:820px">
+    We diagonalize the symmetric matrix <code>AᵀA</code> (a 2×2 eigenproblem solved in closed form on this page).
+    Its eigenvalues are the squared singular values, its eigenvectors are the columns of <code>V</code>, and
+    <code>uᵢ = A vᵢ / σᵢ</code>. The boxes below are computed live for the matrix you picked.
+  </p>
+  <div id="matrices" class="status" style="font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.7"></div>
+  <div id="verify" class="status"></div>
+
+  <h2>The worked math</h2>
+  <p style="font-size:14px;max-width:820px"><b>Goal.</b> Write <code>A = UΣVᵀ</code> with <code>U, V</code>
+    orthogonal (<code>UᵀU = I</code>, <code>VᵀV = I</code>) and <code>Σ</code> diagonal with
+    <code>σ₁ ≥ σ₂ ≥ 0</code>.</p>
+  <p style="font-size:14px;max-width:820px"><b>Step 1 — kill the U.</b> Since <code>U</code> is orthogonal,
+    <code>AᵀA = (UΣVᵀ)ᵀ(UΣVᵀ) = VΣᵀUᵀUΣVᵀ = V Σ² Vᵀ</code>. So the eigenvectors of the symmetric matrix
+    <code>AᵀA</code> are the columns of <code>V</code>, and its eigenvalues are <code>σᵢ²</code>.</p>
+  <p style="font-size:14px;max-width:820px"><b>Step 2 — singular values.</b>
+    <code>σᵢ = √λᵢ(AᵀA) ≥ 0</code>. (Equivalently <code>AAᵀ = U Σ² Uᵀ</code> gives the columns of <code>U</code>.)</p>
+  <p style="font-size:14px;max-width:820px"><b>Step 3 — left singular vectors without a second eigenproblem.</b>
+    From <code>A = UΣVᵀ</code> we get <code>AV = UΣ</code>, i.e. column by column <code>A vᵢ = σᵢ uᵢ</code>. So for
+    each <code>σᵢ &gt; 0</code> set <code>uᵢ = A vᵢ / σᵢ</code>. Orthonormality of the <code>uᵢ</code> is automatic:
+    <code>uᵢᵀuⱼ = (vᵢᵀAᵀA vⱼ)/(σᵢσⱼ) = (σⱼ² vᵢᵀvⱼ)/(σᵢσⱼ) = δᵢⱼ</code>.</p>
+  <p style="font-size:14px;max-width:820px"><b>Step 4 — assemble.</b>
+    <code>A = U Σ Vᵀ</code> with <code>U = [u₁ u₂]</code>, <code>Σ = diag(σ₁, σ₂)</code>, <code>V = [v₁ v₂]</code>.
+    The verification box above confirms <code>UΣVᵀ</code> reproduces the chosen <code>A</code>.</p>
+  <p style="font-size:14px;max-width:820px"><b>The four subspaces.</b> The <code>vᵢ</code> with <code>σᵢ &gt; 0</code>
+    span the <b>row space</b>; the remaining <code>vᵢ</code> span the <b>nullspace</b>. The <code>uᵢ</code> with
+    <code>σᵢ &gt; 0</code> span the <b>column space</b>; the rest span the <b>left nullspace</b>. The SVD lines up
+    orthonormal bases for all four fundamental subspaces at once, with A acting as a pure scaling between them.</p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* ---------- tiny 2x2 linear algebra (page-local) ---------- */
+const mul = (M, v) => [M[0][0]*v[0] + M[0][1]*v[1], M[1][0]*v[0] + M[1][1]*v[1]];
+const matmul = (A, B) => [
+  [A[0][0]*B[0][0] + A[0][1]*B[1][0], A[0][0]*B[0][1] + A[0][1]*B[1][1]],
+  [A[1][0]*B[0][0] + A[1][1]*B[1][0], A[1][0]*B[0][1] + A[1][1]*B[1][1]],
+];
+const transpose = (M) => [[M[0][0], M[1][0]], [M[0][1], M[1][1]]];
+const fmt = (x) => { const r = LA.round(x); return (r >= 0 ? " " : "") + r.toFixed(3); };
+
+/* Eigen-decomposition of a 2x2 SYMMETRIC matrix S = [[a,b],[b,d]].
+   Returns eigenvalues (desc) and orthonormal eigenvectors as columns. */
+function eigSym(S) {
+  const a = S[0][0], b = S[0][1], d = S[1][1];
+  const tr = a + d, det = a*d - b*b;
+  const disc = Math.sqrt(Math.max(0, tr*tr/4 - det));
+  let l1 = tr/2 + disc, l2 = tr/2 - disc;          // l1 >= l2
+  function evec(l) {
+    // (S - lI) e = 0
+    let e;
+    if (Math.abs(b) > 1e-12) e = [l - d, b];
+    else e = (Math.abs(a - l) < Math.abs(d - l)) ? [1, 0] : [0, 1];
+    const n = Math.hypot(e[0], e[1]) || 1;
+    return [e[0]/n, e[1]/n];
+  }
+  return { vals: [l1, l2], vecs: [evec(l1), evec(l2)] };
+}
+
+/* Full SVD of a 2x2 A via AtA. Returns U, S (singular values), V (cols are v_i). */
+function svd2(A) {
+  const At = transpose(A);
+  const AtA = matmul(At, A);
+  const e = eigSym(AtA);
+  const sig = e.vals.map((v) => Math.sqrt(Math.max(0, v)));
+  let v1 = e.vecs[0], v2 = e.vecs[1];
+  // u_i = A v_i / sigma_i  (fall back to perpendicular if sigma ~ 0)
+  function uOf(v, s, fallback) {
+    if (s > 1e-9) { const Av = mul(A, v); return [Av[0]/s, Av[1]/s]; }
+    return fallback;
+  }
+  let u1 = uOf(v1, sig[0], [1, 0]);
+  let u2 = uOf(v2, sig[1], [-u1[1], u1[0]]);
+  return { U: [[u1[0], u2[0]], [u1[1], u2[1]]], S: sig, V: [[v1[0], v2[0]], [v1[1], v2[1]]] };
+}
+
+/* ---------- geometry helpers ---------- */
+const N = 120;
+function unitCircle() {
+  const x = [], y = [];
+  for (let i = 0; i <= N; i++) { const t = 2*Math.PI*i/N; x.push(Math.cos(t)); y.push(Math.sin(t)); }
+  return { x, y };
+}
+// rotation matrix that takes columns of identity to an orthonormal basis Q
+function applyMat(M, pts) {
+  const x = [], y = [];
+  for (let i = 0; i < pts.x.length; i++) {
+    const p = mul(M, [pts.x[i], pts.y[i]]);
+    x.push(p[0]); y.push(p[1]);
+  }
+  return { x, y };
+}
+// linear interpolation between two 2x2 matrices
+const lerpMat = (M0, M1, t) => [
+  [M0[0][0] + (M1[0][0]-M0[0][0])*t, M0[0][1] + (M1[0][1]-M0[0][1])*t],
+  [M0[1][0] + (M1[1][0]-M0[1][0])*t, M0[1][1] + (M1[1][1]-M0[1][1])*t],
+];
+const I2 = [[1,0],[0,1]];
+
+// a 2D arrow as a Plotly annotation-free trace pair (line + tip marker)
+function arrow2(p, q, color, name) {
+  return {
+    type: "scatter", mode: "lines", x: [p[0], q[0]], y: [p[1], q[1]],
+    line: { color, width: 4 }, name, showlegend: !!name,
+    hovertemplate: (name || "") + " (%{x:.2f}, %{y:.2f})<extra></extra>",
+  };
+}
+function tip(q, color, label) {
+  return {
+    type: "scatter", mode: "markers+text", x: [q[0]], y: [q[1]],
+    marker: { color, size: 9, symbol: "triangle-up" },
+    text: ["  " + label], textposition: "top right",
+    textfont: { color, size: 13 }, showlegend: false, hoverinfo: "skip",
+  };
+}
+
+const V_COL = "#1f77b4", V2_COL = "#2ca02c", U_COL = "#d62728", U2_COL = "#9467bd";
+
+/* ---------- state ---------- */
+const PRESETS = {
+  strang:  [[4, 4], [-3, 3]],   // Strang's lecture-29 worked example (AᵀA = [[25,7],[7,25]], λ = 32, 18)
+  rank1:   [[4, 3], [8, 6]],    // Strang's rank-1 (singular) example: σ₂ = 0, nullspace on the diagonal
+  default: [[3, 0], [4, 5]],
+  rot:     [[2, 2], [-1, 1]],
+  thin:    [[2, 1], [1, 1]],
+};
+let A = PRESETS.strang;
+let svd = svd2(A);
+
+/* ---------- main morph picture ---------- */
+const STAGES = ["unit circle", "after Vᵀ (rotate)", "after Σ (stretch)", "after U (rotate) = A"];
+
+function morphMatrix(t) {
+  // Build the chain identity -> Vt -> (Sigma·Vt) -> (U·Sigma·Vt = A)
+  const Vt = transpose(svd.V);                 // V^T
+  const Sig = [[svd.S[0], 0], [0, svd.S[1]]];
+  const M1 = Vt;                               // stage 1 matrix
+  const M2 = matmul(Sig, Vt);                  // stage 2
+  const M3 = matmul(svd.U, M2);               // stage 3 = A
+  if (t <= 0) return I2;
+  if (t <= 1) return lerpMat(I2, M1, t);
+  if (t <= 2) return lerpMat(M1, M2, t - 1);
+  return lerpMat(M2, M3, Math.min(1, t - 2));
+}
+
+function drawMorph(t) {
+  const M = morphMatrix(t);
+  const circ = applyMat(M, unitCircle());
+  // the two singular directions v1, v2 transported through M
+  const e1 = mul(M, svd.V.map((r) => r[0]).length ? [svd.V[0][0], svd.V[1][0]] : [1,0]);
+  const e2 = mul(M, [svd.V[0][1], svd.V[1][1]]);
+  const data = [
+    { type: "scatter", mode: "lines", x: circ.x, y: circ.y,
+      line: { color: "#1f77b4", width: 3 }, fill: "toself", fillcolor: "rgba(31,119,180,0.08)",
+      name: "image of unit circle", showlegend: false, hoverinfo: "skip" },
+    arrow2([0,0], e1, V_COL), tip(e1, V_COL, "v₁"),
+    arrow2([0,0], e2, V2_COL), tip(e2, V2_COL, "v₂"),
+  ];
+  // faint reference unit circle
+  const ref = unitCircle();
+  data.unshift({ type: "scatter", mode: "lines", x: ref.x, y: ref.y,
+    line: { color: "#ccc", width: 1, dash: "dot" }, showlegend: false, hoverinfo: "skip" });
+
+  const stageIdx = Math.min(3, Math.round(t));
+  document.getElementById("stage_lbl").textContent =
+    "t = " + t.toFixed(2) + "  ·  " + STAGES[stageIdx];
+
+  Plotly.react("svdPlot", data, {
+    margin: { l: 30, r: 10, t: 10, b: 30 },
+    xaxis: { range: [-12, 12], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+    yaxis: { range: [-12, 12], zeroline: true },
+    showlegend: false,
+  }, { responsive: true });
+}
+
+/* ---------- pre-image / image frames ---------- */
+function drawFrames() {
+  const v1 = [svd.V[0][0], svd.V[1][0]], v2 = [svd.V[0][1], svd.V[1][1]];
+  const u1 = [svd.U[0][0], svd.U[1][0]], u2 = [svd.U[0][1], svd.U[1][1]];
+  const ref = unitCircle();
+
+  // pre-image: unit circle + v1, v2
+  Plotly.react("preImg", [
+    { type: "scatter", mode: "lines", x: ref.x, y: ref.y,
+      line: { color: "#1f77b4", width: 2 }, fill: "toself", fillcolor: "rgba(31,119,180,0.07)",
+      showlegend: false, hoverinfo: "skip" },
+    arrow2([0,0], v1, V_COL), tip(v1, V_COL, "v₁"),
+    arrow2([0,0], v2, V2_COL), tip(v2, V2_COL, "v₂"),
+  ], {
+    title: { text: "input space (unit circle)", font: { size: 13 } },
+    margin: { l: 30, r: 10, t: 28, b: 30 },
+    xaxis: { range: [-2, 2], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+    yaxis: { range: [-2, 2], zeroline: true },
+  }, { responsive: true });
+
+  // image: ellipse A·(circle) + sigma1 u1, sigma2 u2
+  const ell = applyMat(A, unitCircle());
+  const s1u1 = [svd.S[0]*u1[0], svd.S[0]*u1[1]];
+  const s2u2 = [svd.S[1]*u2[0], svd.S[1]*u2[1]];
+  Plotly.react("postImg", [
+    { type: "scatter", mode: "lines", x: ell.x, y: ell.y,
+      line: { color: "#d62728", width: 2 }, fill: "toself", fillcolor: "rgba(214,39,40,0.07)",
+      showlegend: false, hoverinfo: "skip" },
+    arrow2([0,0], s1u1, U_COL), tip(s1u1, U_COL, "σ₁u₁"),
+    arrow2([0,0], s2u2, U2_COL), tip(s2u2, U2_COL, "σ₂u₂"),
+  ], {
+    title: { text: "output space (ellipse = A·circle)", font: { size: 13 } },
+    margin: { l: 30, r: 10, t: 28, b: 30 },
+    xaxis: { range: [-12, 12], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+    yaxis: { range: [-12, 12], zeroline: true },
+  }, { responsive: true });
+}
+
+/* ---------- numeric panels ---------- */
+function mtx(M) {
+  return "⎡" + fmt(M[0][0]) + "  " + fmt(M[0][1]) + " ⎤\n" +
+         "⎣" + fmt(M[1][0]) + "  " + fmt(M[1][1]) + " ⎦";
+}
+function drawNumbers() {
+  const Sig = [[svd.S[0], 0], [0, svd.S[1]]];
+  const recon = matmul(matmul(svd.U, Sig), transpose(svd.V));
+  const At = transpose(A), AtA = matmul(At, A);
+  const html =
+    "<b>A</b> =\n" + mtx(A) + "\n\n" +
+    "<b>AᵀA</b> =\n" + mtx(AtA) +
+      "    eigenvalues λ = [" + LA.round(svd.S[0]*svd.S[0]) + ", " + LA.round(svd.S[1]*svd.S[1]) + "]\n\n" +
+    "<b>U</b> =\n" + mtx(svd.U) + "\n\n" +
+    "<b>Σ</b> =\n" + mtx(Sig) + "    σ = [" + LA.round(svd.S[0]) + ", " + LA.round(svd.S[1]) + "]\n\n" +
+    "<b>V</b> =\n" + mtx(svd.V) + "\n\n" +
+    "<b>UΣVᵀ</b> =\n" + mtx(recon);
+  document.getElementById("matrices").innerHTML = "<pre style='margin:0;white-space:pre-wrap'>" + html + "</pre>";
+
+  let maxErr = 0;
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) maxErr = Math.max(maxErr, Math.abs(recon[i][j] - A[i][j]));
+  const ok = maxErr < 1e-9;
+  document.getElementById("verify").innerHTML =
+    "<b>Verification.</b> max|UΣVᵀ − A| = <code>" + maxErr.toExponential(2) + "</code> — " +
+    (ok ? "<span class='tag one'>UΣVᵀ = A ✓</span>" : "<span class='tag none'>mismatch</span>") +
+    ".  Also check orthogonality: <code>v₁·v₂ = " +
+    LA.round(svd.V[0][0]*svd.V[0][1] + svd.V[1][0]*svd.V[1][1]) + "</code>, <code>u₁·u₂ = " +
+    LA.round(svd.U[0][0]*svd.U[0][1] + svd.U[1][0]*svd.U[1][1]) + "</code> (both ≈ 0, orthonormal frames).";
+}
+
+/* ---------- wire-up ---------- */
+function refresh() {
+  svd = svd2(A);
+  drawMorph(parseFloat(document.getElementById("morph").value));
+  drawFrames();
+  drawNumbers();
+}
+
+document.getElementById("morph").addEventListener("input", (e) => drawMorph(parseFloat(e.target.value)));
+document.querySelectorAll(".step").forEach((b) => {
+  b.onclick = () => { const s = parseInt(b.dataset.s, 10);
+    document.getElementById("morph").value = s; drawMorph(s); };
+});
+document.querySelectorAll(".preset").forEach((b) => {
+  b.onclick = () => { A = PRESETS[b.dataset.p]; refresh(); };
+});
+
+refresh();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Strang 18.06 — Linear Algebra Visualizer</title>
+<link rel="stylesheet" href="lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="catalog.html">← All courses</a></div>
+  <h1>Linear Algebra Visualizer</h1>
+  <div class="sub">Interactive 3D companions to Gilbert Strang's <b>MIT 18.06</b>, organized by his lecture list.
+    Drag to rotate · scroll to zoom · hover for values · use sliders &amp; presets.</div>
+  <div class="note">
+    📺 Watch the lectures:
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">MIT OpenCourseWare (18.06)</a>
+    &nbsp;·&nbsp;
+    <a href="https://www.youtube.com/playlist?list=PLE7DDD91010BC51F8" target="_blank">Full YouTube playlist</a>.
+    <br><b>Legend:</b>
+    <span class="badge live">interactive</span> has a visual ·
+    <span class="badge soon">concept review</span> a quiz-review / abstract lecture with no separate visual.
+    Lectures 18–20 share one determinants module; 25 &amp; 27 share the positive-definite module.
+  </div>
+
+  <div class="unit">Unit I · Ax = b, elimination, and the four fundamental subspaces</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 1</span><span class="ttl">The geometry of linear equations</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/01-geometry.html">Open →</a>
+      <div class="links">Row vs column picture · system explorer · tilt-a-plane slider</div></div>
+    <div class="card live"><span class="num">Lecture 2</span><span class="ttl">Elimination with matrices</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/02-elimination.html">Open →</a>
+      <div class="links">Step-through pivots; planes tilt to triangular</div></div>
+    <div class="card live"><span class="num">Lecture 3</span><span class="ttl">Multiplication &amp; inverse matrices</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/03-multiplication-inverse.html">Open →</a>
+      <div class="links">Ax as column combo · AB by columns · Gauss-Jordan</div></div>
+    <div class="card live"><span class="num">Lecture 4</span><span class="ttl">Factorization A = LU</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/04-lu-factorization.html">Open →</a>
+      <div class="links">Multipliers fill L · shear/scale view</div></div>
+    <div class="card live"><span class="num">Lecture 5</span><span class="ttl">Transposes, permutations, spaces Rⁿ</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/05-permutations-spaces.html">Open →</a>
+      <div class="links">6 permutations · what is a subspace</div></div>
+    <div class="card live"><span class="num">Lecture 6</span><span class="ttl">Column space &amp; nullspace</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/06-column-space-nullspace.html">Open →</a>
+      <div class="links">Column space plane · nullspace line</div></div>
+    <div class="card live"><span class="num">Lecture 7</span><span class="ttl">Solving Ax = 0: special solutions</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/07-ax0-special-solutions.html">Open →</a>
+      <div class="links">RREF · pivot vs free · nullspace plane/line</div></div>
+    <div class="card live"><span class="num">Lecture 8</span><span class="ttl">Solving Ax = b: complete solution</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/08-axb-complete-solution.html">Open →</a>
+      <div class="links">Particular + nullspace = shifted line</div></div>
+    <div class="card live"><span class="num">Lecture 9</span><span class="ttl">Independence, basis, dimension</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/09-independence-basis-dimension.html">Open →</a>
+      <div class="links">Parallelepiped collapses as det → 0</div></div>
+    <div class="card live"><span class="num">Lecture 10</span><span class="ttl">The four fundamental subspaces</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/10-four-subspaces.html">Open →</a>
+      <div class="links">Row ⟂ null · column ⟂ left-null</div></div>
+    <div class="card live"><span class="num">Lecture 11</span><span class="ttl">Matrix spaces; rank 1</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/11-matrix-spaces-rank1.html">Open →</a>
+      <div class="links">Rank-1 = uvᵀ · matrix subspace dimensions</div></div>
+    <div class="card live"><span class="num">Lecture 12</span><span class="ttl">Graphs, networks, incidence matrices</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/12-graphs-networks.html">Open →</a>
+      <div class="links">Incidence matrix · loops · Kirchhoff</div></div>
+    <div class="card"><span class="num">Lecture 13</span><span class="ttl">Quiz 1 review</span>
+      <span class="badge soon">concept review</span><div class="links">No separate visual — revisit Lec 1–12</div></div>
+  </div>
+
+  <div class="unit">Unit II · Orthogonality, projections, determinants</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 14</span><span class="ttl">Orthogonal vectors &amp; subspaces</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/14-orthogonality.html">Open →</a>
+      <div class="links">Dot = 0 · orthogonal complement</div></div>
+    <div class="card live"><span class="num">Lecture 15</span><span class="ttl">Projections onto subspaces</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/15-projections.html">Open →</a>
+      <div class="links">Drop b onto line &amp; plane · error ⟂ space</div></div>
+    <div class="card live"><span class="num">Lecture 16</span><span class="ttl">Projection matrices &amp; least squares</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/16-least-squares.html">Open →</a>
+      <div class="links">Best-fit line · residuals · normal equations</div></div>
+    <div class="card live"><span class="num">Lecture 17</span><span class="ttl">Orthogonal matrices &amp; Gram–Schmidt</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/17-gram-schmidt.html">Open →</a>
+      <div class="links">Step-by-step orthonormalization · A = QR</div></div>
+    <div class="card live"><span class="num">Lecture 18</span><span class="ttl">Properties of determinants</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/18-determinants-volume.html">Open →</a>
+      <div class="links">Signed area/volume · all the rules</div></div>
+    <div class="card live"><span class="num">Lecture 19</span><span class="ttl">Determinant formulas &amp; cofactors</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/18-determinants-volume.html">In determinants module →</a>
+      <div class="links">Cofactor expansion (same page)</div></div>
+    <div class="card live"><span class="num">Lecture 20</span><span class="ttl">Cramer's rule, inverse, volume</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/18-determinants-volume.html">In determinants module →</a>
+      <div class="links">Cramer &amp; adjugate (same page)</div></div>
+  </div>
+
+  <div class="unit">Unit III · Eigenvalues, SVD, transformations &amp; applications</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 21</span><span class="ttl">Eigenvalues &amp; eigenvectors</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/21-eigenvalues.html">Open →</a>
+      <div class="links">Vectors that don't rotate under A</div></div>
+    <div class="card live"><span class="num">Lecture 22</span><span class="ttl">Diagonalization &amp; powers of A</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/22-diagonalization-powers.html">Open →</a>
+      <div class="links">Aᵏ → dominant eigenvector</div></div>
+    <div class="card live"><span class="num">Lecture 23</span><span class="ttl">Differential equations &amp; eᴬᵗ</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/23-differential-equations.html">Open →</a>
+      <div class="links">Phase portraits · stability from λ</div></div>
+    <div class="card live"><span class="num">Lecture 24</span><span class="ttl">Markov matrices; Fourier series</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/24-markov-fourier.html">Open →</a>
+      <div class="links">Converge to steady state · Fourier note</div></div>
+    <div class="card live"><span class="num">Lecture 25</span><span class="ttl">Symmetric matrices &amp; positive definiteness</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/25-symmetric-positive-definite.html">Open →</a>
+      <div class="links">Quadratic-form bowl · ellipse axes · PD tests</div></div>
+    <div class="card"><span class="num">Lecture 26</span><span class="ttl">Complex matrices; FFT</span>
+      <span class="badge soon">concept review</span><div class="links">Mostly algebraic — no 3D visual</div></div>
+    <div class="card live"><span class="num">Lecture 27</span><span class="ttl">Positive definite matrices &amp; minima</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/25-symmetric-positive-definite.html">In PD module →</a>
+      <div class="links">Minimum = bowl (same page)</div></div>
+    <div class="card"><span class="num">Lecture 28</span><span class="ttl">Similar matrices &amp; Jordan form</span>
+      <span class="badge soon">concept review</span><div class="links">Abstract — see change-of-basis (Lec 31)</div></div>
+    <div class="card live"><span class="num">Lecture 29</span><span class="ttl">Singular value decomposition</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/29-svd.html">Open →</a>
+      <div class="links">Rotate → stretch → rotate · circle → ellipse</div></div>
+    <div class="card live"><span class="num">Lecture 30</span><span class="ttl">Linear transformations &amp; their matrices</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/30-linear-transformations.html">Open →</a>
+      <div class="links">Rotate/shear/reflect · columns = T(basis)</div></div>
+    <div class="card live"><span class="num">Lecture 31</span><span class="ttl">Change of basis; image compression</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/31-change-of-basis.html">Open →</a>
+      <div class="links">Two coordinate grids · B = W⁻¹AW · DCT</div></div>
+    <div class="card"><span class="num">Lecture 32</span><span class="ttl">Quiz 3 review</span>
+      <span class="badge soon">concept review</span><div class="links">No separate visual</div></div>
+    <div class="card"><span class="num">Lecture 33</span><span class="ttl">Left &amp; right inverses; pseudoinverse</span>
+      <span class="badge soon">concept review</span><div class="links">Builds on SVD (Lec 29)</div></div>
+    <div class="card"><span class="num">Lecture 34</span><span class="ttl">Final course review</span>
+      <span class="badge soon">concept review</span><div class="links">Revisit the whole map</div></div>
+  </div>
+
+  <div class="sub" style="margin-top:28px">
+    25 interactive modules across 31 lectures. Built with Plotly.js + a shared <code>lib/linalg.js</code>; no build step.
+  </div>
+</div>
+</body>
+</html>

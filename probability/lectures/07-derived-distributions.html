@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Derived distributions — how a density transforms · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Derived distributions · how a density transforms</h1>
+  <div class="sub">You know the distribution of <code>X</code>. You build a new random variable
+    <code>Y = g(X)</code> — square it, exponentiate it, scale it. What is the density of <code>Y</code>?
+    The answer is the <b>change-of-variables formula</b>: where <code>g</code> is <i>steep</i> the density
+    gets stretched thin, where <code>g</code> is <i>flat</i> probability piles up.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> on the <span style="color:#1f77b4">left</span> is the density of the source
+    <code>X</code> (shaded), with a handful of actual samples ticked underneath. On the
+    <span style="color:#176d2c">right</span> we draw <b>20,000</b> samples of <code>X</code>, push each one
+    through <code>Y = g(X)</code>, and histogram the results. The smooth black curve is the analytic density
+    <code>f<sub>Y</sub>(y)</code> computed by hand from the change-of-variables formula. The histogram and the
+    curve must lie on top of each other — that agreement <i>is</i> the formula working.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Presets (source + transform):</span>
+    <button class="preset" data-p="u01,square">Uniform[0,1] → X² · piles up at 0</button>
+    <button class="preset" data-p="norm,exp">Normal → eˣ · the lognormal</button>
+    <button class="preset" data-p="u22,linear,0.5,1">Uniform[−2,2] → ½X+1 · linear</button>
+    <button class="preset" data-p="norm,square">Normal → X² · χ² (folds ±x)</button>
+    <button class="preset" data-p="u01,exp">Uniform[0,1] → eˣ</button>
+    <button class="preset" data-p="u22,abs">Uniform[−2,2] → |X|</button>
+  </div>
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Source X:</span>
+    <button class="preset" data-src="u01">Uniform[0,1]</button>
+    <button class="preset" data-src="u22">Uniform[−2,2]</button>
+    <button class="preset" data-src="norm">Normal(0,1)</button>
+    <span style="font-size:13px;color:#444;margin:0 6px 0 14px">Transform g:</span>
+    <button class="preset" data-g="square">Y = X²</button>
+    <button class="preset" data-g="exp">Y = eˣ</button>
+    <button class="preset" data-g="linear">Y = aX+b</button>
+    <button class="preset" data-g="abs">Y = |X|</button>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <label style="font-size:14px">linear slope&nbsp; <b>a = <span id="aval">0.5</span></b>&nbsp;
+      <input type="range" id="a" min="-3" max="3" value="0.5" step="0.1" style="vertical-align:middle;width:170px">
+    </label>
+    <label style="font-size:14px;margin-left:14px">shift&nbsp; <b>b = <span id="bval">1</span></b>&nbsp;
+      <input type="range" id="b" min="-3" max="3" value="1" step="0.1" style="vertical-align:middle;width:170px">
+    </label>
+    <span class="rng">(only used when g = aX+b)</span>
+  </div>
+
+  <div class="plots">
+    <div id="srcPlot" class="plot"></div>
+    <div id="yPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>The method — first the CDF, then differentiate</h2>
+  <p style="font-size:14px;max-width:780px">
+    There is exactly one safe recipe, and it never involves "just plug into a formula" first. To find the
+    distribution of <code>Y = g(X)</code> you first chase down its <b>CDF</b>:
+    <code>F<sub>Y</sub>(y) = P(Y ≤ y) = P(g(X) ≤ y)</code>. You rewrite the event <code>{g(X) ≤ y}</code> as an
+    event about <code>X</code> — a set of <code>x</code>-values — and read off its probability from the
+    distribution you already have. Then, and only then, you differentiate:
+    <code>f<sub>Y</sub>(y) = d/dy F<sub>Y</sub>(y)</code>. Tsitsiklis is insistent on the order: get the CDF
+    honestly, <i>then</i> take the derivative. Skipping to a density formula is how people drop a factor or a
+    whole branch.
+  </p>
+
+  <h2>The change-of-variables formula</h2>
+  <p style="font-size:14px;max-width:780px">
+    When <code>g</code> is monotonic and smooth, doing that CDF calculation once in general gives a clean
+    shortcut. If <code>g</code> is increasing, <code>g(X) ≤ y</code> is the same event as
+    <code>X ≤ g⁻¹(y)</code>, so <code>F<sub>Y</sub>(y) = F<sub>X</sub>(g⁻¹(y))</code>, and the chain rule hands you
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+f_Y(y) = f_X( g⁻¹(y) ) · | d/dy g⁻¹(y) |          ← the Jacobian |dx/dy|</pre>
+  <p style="font-size:14px;max-width:780px">
+    The absolute value is there so a <i>decreasing</i> <code>g</code> gives the same positive density. The
+    whole content lives in that Jacobian <code>|dx/dy| = 1 / |g′(x)|</code>. Read it as a stretch factor:
+    where <code>g</code> is <b>steep</b> (<code>|g′|</code> large) a wide band of <code>x</code> gets squeezed
+    into a thin band of <code>y</code>, so the density is <i>divided</i> down — stretched thin. Where
+    <code>g</code> is <b>flat</b> (<code>|g′|</code> small) a sliver of <code>x</code> spreads across a wide
+    band of <code>y</code>, and probability <i>piles up</i>. The density of <code>Y</code> is just the density
+    of <code>X</code> reweighted by how much <code>g</code> locally stretches the axis.
+  </p>
+
+  <h2>The non-monotonic case — add the branches</h2>
+  <p style="font-size:14px;max-width:780px">
+    Press <b>Normal → X²</b>. Now <code>g(x) = x²</code> is <i>not</i> monotonic: both <code>x = +√y</code> and
+    <code>x = −√y</code> land on the same <code>y</code>. The CDF method handles this automatically —
+    <code>{X² ≤ y} = {−√y ≤ X ≤ √y}</code> — and differentiating picks up <b>both</b> ends:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+F_Y(y) = F_X(√y) − F_X(−√y)
+f_Y(y) = [ f_X(√y) + f_X(−√y) ] · 1/(2√y) ,   y > 0</pre>
+  <p style="font-size:14px;max-width:780px">
+    You sum one Jacobian-weighted term per branch of <code>g⁻¹</code>. For <code>X ~ Uniform[0,1]</code> only
+    the <code>+√y</code> branch is in support, so <code>f<sub>Y</sub>(y) = 1/(2√y)</code> on <code>(0,1)</code> —
+    and notice it <b>explodes as y → 0</b>. That spike is the "flat <code>g</code>" intuition made literal:
+    near <code>x = 0</code> the parabola <code>x²</code> is nearly horizontal, so a fat clump of <code>x</code>
+    near 0 gets crushed into a tiny sliver of <code>y</code> near 0, and the density there blows up. The
+    histogram on the right shows the same pile-up; the analytic curve simply runs off the top of the frame.
+  </p>
+
+  <h2>The lognormal — why multiplicative noise is skewed</h2>
+  <p style="font-size:14px;max-width:780px">
+    Press <b>Normal → eˣ</b>. Here <code>g</code> is monotonic, <code>g⁻¹(y) = ln y</code>,
+    <code>|dx/dy| = 1/y</code>, so
+    <code>f<sub>Y</sub>(y) = f<sub>X</sub>(ln y) / y = 1/(y√(2π)) · e<sup>−(ln y)²/2</sup></code> for
+    <code>y > 0</code>. This is the <b>lognormal</b>: a symmetric bell in <code>x = ln y</code> becomes a
+    right-skewed hump in <code>y</code>, with a long tail to the right and a hard floor at 0. The mechanism is
+    the <code>1/y</code> Jacobian — the exponential is flat for small <code>y</code> (piling density up near 0)
+    and steep for large <code>y</code> (thinning it into the tail). This is exactly why <b>prices</b> are
+    modeled as lognormal while <b>log-returns</b> are modeled as normal: returns compound multiplicatively, and
+    a symmetric distribution of log-returns produces an asymmetric, never-negative distribution of prices.
+  </p>
+
+  <h2>The linear case is the sanity check</h2>
+  <p style="font-size:14px;max-width:780px">
+    For <code>Y = aX + b</code> the Jacobian is the constant <code>1/|a|</code>:
+    <code>f<sub>Y</sub>(y) = f<sub>X</sub>((y−b)/a) / |a|</code>. Scaling by <code>a</code> just widens (or, for
+    <code>|a| &lt; 1</code>, narrows) the density and divides the height to keep the area at 1; adding
+    <code>b</code> slides it. Feed it a normal and you get a normal back: <code>N(0,1) → N(b, a²)</code>. Drag
+    the <code>a</code> and <code>b</code> sliders and watch a stretch in <code>x</code> show up as a
+    proportional thinning of the curve — the cleanest possible view of "steep <code>g</code> ⇒ density divided
+    down."
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const N = 20000;     // Monte-Carlo samples of X pushed through g
+
+  // ----- sources: a sampler, an analytic pdf f_X, and a plotting window -----
+  const SOURCES = {
+    u01:  { label: "Uniform[0,1]",  draw: () => PR.uniform(0, 1),
+            pdf: (x) => (x >= 0 && x <= 1 ? 1 : 0),           xr: [-0.3, 1.3] },
+    u22:  { label: "Uniform[−2,2]", draw: () => PR.uniform(-2, 2),
+            pdf: (x) => (x >= -2 && x <= 2 ? 0.25 : 0),       xr: [-2.6, 2.6] },
+    norm: { label: "Normal(0,1)",   draw: () => PR.normal(0, 1),
+            pdf: (x) => PR.normPdf(x, 0, 1),                  xr: [-4, 4] },
+  };
+
+  // ----- transforms: g, and f_Y built from change-of-variables over all branches -----
+  // fY(y, fX, a, b) returns the analytic density at y given the source pdf fX.
+  const TRANSFORMS = {
+    square: { label: "Y = X²", mono: false, yMin: 0,
+              apply: (x) => x * x,
+              fY: (y, fX) => (y <= 0 ? 0 : (fX(Math.sqrt(y)) + fX(-Math.sqrt(y))) / (2 * Math.sqrt(y))) },
+    exp:    { label: "Y = eˣ", mono: true, yMin: 0,
+              apply: (x) => Math.exp(x),
+              fY: (y, fX) => (y <= 0 ? 0 : fX(Math.log(y)) / y) },
+    linear: { label: "Y = aX + b", mono: true, yMin: null,
+              apply: (x, a, b) => a * x + b,
+              fY: (y, fX, a, b) => (Math.abs(a) < 1e-9 ? 0 : fX((y - b) / a) / Math.abs(a)) },
+    abs:    { label: "Y = |X|", mono: false, yMin: 0,
+              apply: (x) => Math.abs(x),
+              fY: (y, fX) => (y < 0 ? 0 : fX(y) + fX(-y)) },
+  };
+
+  let curSrc = "u01", curG = "square";
+
+  function quantile(sorted, q) {
+    const i = (sorted.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
+    return lo === hi ? sorted[lo] : sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
+  }
+
+  function statusHTML(src, gKey, a, b, yMean, ySD) {
+    const f = (x) => PR.round(x, 3);
+    const T = TRANSFORMS[gKey];
+    let head, body;
+    if (gKey === "square") {
+      head = "Non-monotonic: g⁻¹ has two branches x = ±√y, Jacobian |dx/dy| = 1/(2√y).";
+      let formula = "f_Y(y) = [ f_X(√y) + f_X(−√y) ] / (2√y),  y > 0";
+      if (curSrc === "u01") formula = "f_Y(y) = 1/(2√y) on (0,1) — explodes as y → 0";
+      if (curSrc === "norm") formula = "f_Y(y) = e^(−y/2) / √(2πy),  y > 0  (a chi-square with 1 d.o.f.)";
+      body = "<code>g(x)=x²</code>, &nbsp;<code>g⁻¹(y)=±√y</code>, &nbsp;<code>|dx/dy|=1/(2√y)</code><br><code>" + formula + "</code>";
+    } else if (gKey === "exp") {
+      head = "Monotonic increasing: g⁻¹(y) = ln y, Jacobian |dx/dy| = 1/y.";
+      let formula = "f_Y(y) = f_X(ln y) / y,  y > 0";
+      if (curSrc === "norm") formula = "f_Y(y) = e^(−(ln y)²/2) / (y√(2π)),  y > 0  — the LOGNORMAL";
+      body = "<code>g(x)=eˣ</code>, &nbsp;<code>g⁻¹(y)=ln y</code>, &nbsp;<code>|dx/dy|=1/y</code><br><code>" + formula + "</code>";
+    } else if (gKey === "linear") {
+      head = "Monotonic (affine): g⁻¹(y) = (y−b)/a, Jacobian |dx/dy| = 1/|a|.";
+      let formula = "f_Y(y) = f_X((y−" + f(b) + ")/" + f(a) + ") / " + f(Math.abs(a));
+      if (curSrc === "norm") formula = "f_Y(y) = N(b, a²) = N(" + f(b) + ", " + f(a * a) + ")";
+      body = "<code>g(x)=" + f(a) + "x+" + f(b) + "</code>, &nbsp;<code>g⁻¹(y)=(y−" + f(b) + ")/" + f(a) +
+             "</code>, &nbsp;<code>|dx/dy|=1/" + f(Math.abs(a)) + "</code><br><code>" + formula + "</code>";
+    } else { // abs
+      head = "Non-monotonic: g⁻¹ has two branches x = ±y, Jacobian |dx/dy| = 1.";
+      body = "<code>g(x)=|x|</code>, &nbsp;<code>g⁻¹(y)=±y</code>, &nbsp;<code>|dx/dy|=1</code><br>" +
+             "<code>f_Y(y) = f_X(y) + f_X(−y),  y > 0</code>";
+    }
+    return '<span class="tag one">' + src.label + " &nbsp;→&nbsp; " + T.label + "</span><br>" +
+           head + "<br>" + body + "<br>" +
+           '<span style="color:#666">simulated &nbsp;<code>E[Y] = ' + f(yMean) +
+           '</code>, &nbsp;<code>SD[Y] = ' + f(ySD) + '</code> &nbsp;— histogram (green) vs. ' +
+           'change-of-variables density (black) overlaid.</span>';
+  }
+
+  function draw() {
+    const src = SOURCES[curSrc], T = TRANSFORMS[curG];
+    const a = parseFloat($("a").value), b = parseFloat($("b").value);
+    $("aval").textContent = a; $("bval").textContent = b;
+
+    // ---------- LEFT: density of X (shaded) + sample ticks ----------
+    const xs = PR.linspace(src.xr[0], src.xr[1], 240);
+    const fx = xs.map(src.pdf);
+    const ticks = []; for (let i = 0; i < 18; i++) ticks.push(src.draw());
+    const fxMax = Math.max.apply(null, fx) || 1;
+    Plotly.react("srcPlot", [
+      { type: "scatter", mode: "lines", x: xs, y: fx, fill: "tozeroy",
+        line: { color: "#1f77b4", width: 2 }, fillcolor: "rgba(159,198,232,0.55)",
+        name: "f_X(x)", hoverinfo: "x+y" },
+      { type: "scatter", mode: "markers", x: ticks, y: ticks.map(() => -0.04 * fxMax),
+        marker: { color: "#0b4a73", symbol: "line-ns-open", size: 9, line: { width: 1.5 } },
+        name: "samples of X", hoverinfo: "x" },
+    ], {
+      title: { text: "Source — density of X  (" + src.label + ")", font: { size: 13 } },
+      margin: { l: 44, r: 12, t: 34, b: 34 },
+      xaxis: { range: src.xr, title: { text: "value of X", font: { size: 11 } } },
+      yaxis: { title: { text: "density f_X", font: { size: 11 } }, rangemode: "tozero" },
+      showlegend: false,
+    }, { responsive: true });
+
+    // ---------- RIGHT: Monte-Carlo histogram of Y + analytic f_Y ----------
+    const ys = new Array(N);
+    for (let i = 0; i < N; i++) ys[i] = T.apply(src.draw(), a, b);
+    const sorted = ys.slice().sort((p, q) => p - q);
+    let lo = quantile(sorted, 0.004), hi = quantile(sorted, 0.996);
+    if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
+    const pad = 0.04 * (hi - lo); lo -= pad; hi += pad;
+    if (T.yMin != null) lo = Math.max(lo, T.yMin);
+
+    const h = PR.histogram(ys, lo, hi, 60);
+    const histMax = Math.max.apply(null, h.density) || 1;
+
+    // analytic transformed density; non-finite (e.g. the 1/√y spike) → null so the line just exits
+    const yg = PR.linspace(lo, hi, 300);
+    const fy = yg.map((y) => { const v = T.fY(y, src.pdf, a, b); return isFinite(v) ? v : null; });
+
+    Plotly.react("yPlot", [
+      { type: "bar", x: h.centers, y: h.density, width: h.width * 0.98,
+        marker: { color: "#9ed3a8", line: { width: 0 } }, opacity: 0.85,
+        name: "Monte-Carlo Y = g(X)", hoverinfo: "x+y" },
+      { type: "scatter", mode: "lines", x: yg, y: fy,
+        line: { color: "#111", width: 2 }, name: "f_Y(y) — change of vars", hoverinfo: "skip" },
+    ], {
+      title: { text: "Derived — density of Y = " + T.label.replace("Y = ", ""), font: { size: 13 } },
+      margin: { l: 44, r: 12, t: 34, b: 34 },
+      xaxis: { range: [lo, hi], title: { text: "value of Y", font: { size: 11 } } },
+      yaxis: { range: [0, 1.25 * histMax], title: { text: "density f_Y", font: { size: 11 } } },
+      bargap: 0.02, showlegend: true,
+      legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    $("status").innerHTML = statusHTML(src, curG, a, b, PR.mean(ys), PR.std(ys));
+  }
+
+  // ----- wiring -----
+  $("a").addEventListener("input", draw);
+  $("b").addEventListener("input", draw);
+  document.querySelectorAll(".preset[data-src]").forEach((btn) => {
+    btn.onclick = () => { curSrc = btn.dataset.src; draw(); };
+  });
+  document.querySelectorAll(".preset[data-g]").forEach((btn) => {
+    btn.onclick = () => { curG = btn.dataset.g; draw(); };
+  });
+  document.querySelectorAll(".preset[data-p]").forEach((btn) => {
+    btn.onclick = () => {
+      const p = btn.dataset.p.split(",");
+      curSrc = p[0]; curG = p[1];
+      if (p[2] != null) $("a").value = p[2];
+      if (p[3] != null) $("b").value = p[3];
+      draw();
+    };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

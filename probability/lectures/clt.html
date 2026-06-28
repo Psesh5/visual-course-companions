@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Limit theorems — the Central Limit Theorem · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Limit theorems · The Central Limit Theorem</h1>
+  <div class="sub">Take <i>any</i> distribution with a finite mean <code>μ</code> and variance <code>σ²</code>.
+    Average <code>n</code> independent draws. As <code>n</code> grows, the distribution of that average
+    <code>X̄ₙ</code> becomes a <b>normal</b> curve centered at <code>μ</code> with standard deviation
+    <code>σ/√n</code> — <i>no matter what shape you started from</i>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> on the <span style="color:#1f77b4">left</span> is the <b>population</b> — the shape of a
+    single draw, which you choose below and which is usually <i>nothing like</i> a bell. On the
+    <span style="color:#176d2c">right</span> is the <b>sampling distribution of the mean</b>: we draw <code>n</code>
+    values, average them, and record that average — twenty thousand times — then histogram the results. The
+    smooth black curve is the normal <code>N(μ, σ/√n)</code> the theorem <i>predicts</i>. Drag <code>n</code>
+    from 1 upward and watch the ragged population on the left collapse into that bell on the right.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Population (one draw):</span>
+    <button class="preset" data-d="uniform">Uniform [0,1]</button>
+    <button class="preset" data-d="exponential">Exponential · skewed</button>
+    <button class="preset" data-d="bernoulli">Bernoulli(0.3) · two spikes</button>
+    <button class="preset" data-d="die">Fair die {1…6}</button>
+    <button class="preset" data-d="bimodal">Bimodal · twin peaks</button>
+    <button class="preset" data-d="cauchy">Cauchy · ⚠ no variance</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">sample size&nbsp; <b>n = <span id="nval">1</span></b>&nbsp;
+      <input type="range" id="n" min="1" max="50" value="1" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(how many draws get averaged into one X̄)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Right-plot x-axis:</span>
+    <button class="preset" id="zoomFit" style="background:#176d2c;color:#fff;border-color:#176d2c">zoom to the mean (see the bell)</button>
+    <button class="preset" id="zoomFixed">fixed population scale (see it shrink)</button>
+  </div>
+
+  <div class="plots">
+    <div id="popPlot" class="plot"></div>
+    <div id="meanPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>What the theorem actually claims</h2>
+  <p style="font-size:14px;max-width:780px">
+    Let <code>X₁, X₂, …, Xₙ</code> be independent draws from the same distribution, with mean
+    <code>μ = E[X]</code> and variance <code>σ² = Var(X)</code>. Form the average
+    <code>X̄ₙ = (X₁ + ⋯ + Xₙ) / n</code>. Two things happen, and they are different claims:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>Law of large numbers (the center).</b> <code>E[X̄ₙ] = μ</code> exactly, for every <code>n</code>,
+      and the spread <code>SE = σ/√n</code> shrinks to zero. So the average <i>concentrates</i> on the true
+      mean. That is the <span class="preset" style="padding:0">“fixed population scale”</span> view — flip to it
+      and watch the histogram contract toward <code>μ</code> as you raise <code>n</code>.</li>
+    <li><b>Central limit theorem (the shape).</b> The <i>rescaled</i> error
+      <code>(X̄ₙ − μ) / (σ/√n)</code> converges to the <b>standard normal</b>, regardless of the original
+      distribution. That is the <span class="preset" style="padding:0">“zoom to the mean”</span> view — the
+      bell fills the frame and matches the black curve even when the population is a die, a coin, or a skewed
+      exponential.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    The astonishing part is the <b>universality</b>: the limiting bell does not remember where it came from.
+    Uniform, exponential, Bernoulli, a die, twin peaks — all of them flow to the <i>same</i> normal shape.
+    Only two numbers survive the averaging, <code>μ</code> and <code>σ</code>; every other detail of the
+    population is washed out.
+  </p>
+
+  <h2>The √n that runs all of statistics</h2>
+  <p style="font-size:14px;max-width:780px">
+    The standard error <code>SE = σ/√n</code> is the most consequential formula in applied statistics. It says
+    accuracy improves only with the <i>square root</i> of effort: to halve your error bars you need
+    <b>four times</b> the data. Watch the status box — at <code>n = 1</code> the spread is the full population
+    <code>σ</code>; at <code>n = 4</code> it has halved; at <code>n = 25</code> it is a fifth. That single curve
+    is why polls quote a margin of error, why <code>√n</code> appears in every confidence interval, and why
+    “collect more data” has diminishing returns.
+  </p>
+
+  <h2>The bad case — when the CLT does <i>not</i> apply</h2>
+  <p style="font-size:14px;max-width:780px">
+    Press the <b>Cauchy</b> preset and raise <code>n</code>. The histogram of averages refuses to settle — it
+    stays wide and jumps around no matter how large <code>n</code> gets. The Cauchy distribution has such heavy
+    tails that <code>σ²</code> is <b>infinite</b>; the average of <code>n</code> Cauchy draws is no better than a
+    single draw. The CLT’s hypothesis — a <i>finite</i> variance — is not a footnote. This is the same warning
+    that matters in finance: returns with fat tails break the normal approximation, and risk models that assume
+    a bell quietly understate the odds of an extreme move.
+  </p>
+
+  <h2>Why this is the gateway to inference (and to ISLR)</h2>
+  <p style="font-size:14px;max-width:780px">
+    Everything downstream is an application of the right-hand plot. A <b>confidence interval</b> is
+    <code>X̄ ± 1.96·σ/√n</code> — the ±1.96 are the points that capture 95% of that normal curve. A
+    <b>hypothesis test</b> asks how many <code>SE</code>’s the observed mean sits from a claim. The
+    <b>bootstrap</b> in <i>An Introduction to Statistical Learning</i> resamples precisely to <i>simulate</i> this
+    sampling distribution when the formula is out of reach. Once you can see the bell appear on the right, every
+    standard error, p-value, and error bar in the rest of statistics is the same picture read off at different
+    points.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const T = 20000;        // number of sample means simulated
+  const POP = 20000;      // single draws for the population histogram
+
+  // Each population: how to draw one value, its true mean μ and variance σ²,
+  // and a sensible x-range for the left (population-scale) plot.
+  const DISTS = {
+    uniform:     { label: "Uniform [0,1]",        draw: () => PR.uniform(0, 1),       mu: 0.5,  varr: 1 / 12,  range: [0, 1] },
+    exponential: { label: "Exponential (λ=1)",    draw: () => PR.exponential(1),      mu: 1,    varr: 1,       range: [0, 6] },
+    bernoulli:   { label: "Bernoulli (p=0.3)",    draw: () => PR.bernoulli(0.3),      mu: 0.3,  varr: 0.21,    range: [-0.4, 1.4] },
+    die:         { label: "Fair die {1…6}",       draw: () => PR.dieRoll(),           mu: 3.5,  varr: 35 / 12, range: [0.5, 6.5] },
+    bimodal:     { label: "Bimodal (twin peaks)", draw: () => (Math.random() < 0.5 ? PR.normal(0.25, 0.06) : PR.normal(0.75, 0.06)),
+                   mu: 0.5, varr: 0.0661, range: [0, 1] },
+    // Cauchy has no finite mean/variance; mu here is the median, varr=null flags "CLT n/a".
+    cauchy:      { label: "Cauchy (heavy-tailed)", draw: () => PR.cauchy(),           mu: 0,    varr: null,    range: [-6, 6] },
+  };
+
+  let current = "uniform";
+  let zoom = "fit";   // "fit" → μ ± 4·SE ; "fixed" → population scale
+
+  function simulateMeans(desc, n) {
+    const means = new Array(T);
+    for (let t = 0; t < T; t++) {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += desc.draw();
+      means[t] = s / n;
+    }
+    return means;
+  }
+
+  function simulatePop(desc) {
+    const xs = new Array(POP);
+    for (let i = 0; i < POP; i++) xs[i] = desc.draw();
+    return xs;
+  }
+
+  function barTrace(h, color, name) {
+    return {
+      type: "bar", x: h.centers, y: h.density, width: h.width * 0.98,
+      marker: { color, line: { width: 0 } }, opacity: 0.85, name, hoverinfo: "x+y",
+    };
+  }
+
+  function draw() {
+    const desc = DISTS[current];
+    const n = parseInt($("n").value, 10);
+    $("nval").textContent = n;
+
+    const hasVar = desc.varr != null;
+    const sigma = hasVar ? Math.sqrt(desc.varr) : null;
+    const SE    = hasVar ? sigma / Math.sqrt(n) : null;
+
+    // ---- left: population (single draws), fixed range ----
+    const popXs = simulatePop(desc);
+    const popH  = PR.histogram(popXs, desc.range[0], desc.range[1], 44);
+    Plotly.react("popPlot", [barTrace(popH, "#9fc6e8", "one draw X")], {
+      title: { text: "Population — one draw  (" + desc.label + ")", font: { size: 13 } },
+      margin: { l: 40, r: 12, t: 34, b: 34 },
+      xaxis: { range: desc.range, title: { text: "value of X", font: { size: 11 } } },
+      yaxis: { title: { text: "density", font: { size: 11 } }, rangemode: "tozero" },
+      bargap: 0.02, showlegend: false,
+    }, { responsive: true });
+
+    // ---- right: distribution of the sample mean ----
+    const means = simulateMeans(desc, n);
+    const obsMean = PR.mean(means), obsSD = PR.std(means);
+
+    // x-range for the mean plot
+    let lo, hi;
+    if (zoom === "fit" && hasVar) { lo = desc.mu - 4 * SE; hi = desc.mu + 4 * SE; }
+    else { lo = desc.range[0]; hi = desc.range[1]; }       // fixed (or Cauchy fallback)
+    if (!hasVar) { lo = -6; hi = 6; }
+
+    const meanH = PR.histogram(means, lo, hi, 50);
+    const data = [barTrace(meanH, "#9ed3a8", "sample means X̄")];
+
+    // predicted normal overlay N(μ, SE)
+    if (hasVar) {
+      const xs = PR.linspace(lo, hi, 160);
+      data.push({
+        type: "scatter", mode: "lines", x: xs, y: xs.map((x) => PR.normPdf(x, desc.mu, SE)),
+        line: { color: "#111", width: 2 }, name: "N(μ, σ/√n)", hoverinfo: "skip",
+      });
+    }
+
+    Plotly.react("meanPlot", data, {
+      title: { text: "Distribution of the sample mean  (n = " + n + ")", font: { size: 13 } },
+      margin: { l: 40, r: 12, t: 34, b: 34 },
+      xaxis: { range: [lo, hi], title: { text: "value of X̄", font: { size: 11 } } },
+      yaxis: { title: { text: "density", font: { size: 11 } }, rangemode: "tozero" },
+      bargap: 0.02, showlegend: true,
+      legend: { x: 0.02, y: 0.98, font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    // ---- status ----
+    let html;
+    if (!hasVar) {
+      html =
+        '<span class="tag none">⚠ Cauchy has infinite variance — the CLT does not apply.</span><br>' +
+        'There is no <code>σ</code> to shrink, so averaging <code>n</code> draws does <b>not</b> help: the ' +
+        'spread of <code>X̄</code> stays as wide as a single draw. Raise <code>n</code> and watch the histogram ' +
+        'refuse to converge. <i>Finite variance is a required hypothesis, not a technicality.</i>';
+    } else {
+      const fmt = (x) => PR.round(x, 3);
+      html =
+        '<span class="tag one">The bell on the right is N(μ, σ/√n).</span><br>' +
+        'population &nbsp;<code>μ = ' + fmt(desc.mu) + '</code>, &nbsp;<code>σ = ' + fmt(sigma) + '</code> ' +
+        '&nbsp;(σ² = ' + fmt(desc.varr) + ')<br>' +
+        'predicted center of X̄ &nbsp;<code>= μ = ' + fmt(desc.mu) + '</code> &nbsp;→ simulated &nbsp;<code>' + fmt(obsMean) + '</code> ✓<br>' +
+        'predicted spread &nbsp;<code>SE = σ/√n = ' + fmt(sigma) + '/√' + n + ' = ' + fmt(SE) + '</code> ' +
+        '&nbsp;→ simulated SD &nbsp;<code>' + fmt(obsSD) + '</code> ✓<br>' +
+        '<span style="color:#666">shrink factor vs n=1: &nbsp;1/√' + n + ' = ' + fmt(1 / Math.sqrt(n)) +
+        ' &nbsp;(need 4× the data to halve the error).</span>';
+    }
+    $("status").innerHTML = html;
+  }
+
+  // wiring
+  $("n").addEventListener("input", draw);
+  document.querySelectorAll(".preset[data-d]").forEach((b) => {
+    b.onclick = () => { current = b.dataset.d; draw(); };
+  });
+  function setZoom(mode) {
+    zoom = mode;
+    const on = "background:#176d2c;color:#fff;border-color:#176d2c";
+    $("zoomFit").style.cssText = mode === "fit" ? on : "";
+    $("zoomFixed").style.cssText = mode === "fixed" ? on : "";
+    draw();
+  }
+  $("zoomFit").onclick = () => setZoom("fit");
+  $("zoomFixed").onclick = () => setZoom("fixed");
+
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Bayesian inference — MAP and LMS · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Bayesian inference · MAP and LMS estimates</h1>
+  <div class="sub">A coin has an unknown bias <code>θ ∈ [0,1]</code> — the probability of heads. We start with a
+    <b>prior</b> belief <code>θ ~ Beta(a, b)</code>, then flip the coin. Each flip nudges the belief. After
+    <code>h</code> heads and <code>t</code> tails the posterior is exactly <code>Beta(a+h, b+t)</code>: the
+    curve sharpens and slides toward the true value. Bayesian inference turns <i>data</i> into an updated
+    <i>distribution over the unknown</i>, not just a single number.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> the <span style="color:#9aa7b8">faint grey</span> curve is your <b>prior</b> over
+    <code>θ</code> — what you believed before any flip. The <span style="color:#176d2c">bold green</span>
+    curve is the <b>posterior</b> after the data you have collected. The two markers on the axis are the two
+    classic point estimates: the <span style="color:#b00020"><b>MAP</b></span> (the posterior's <i>peak</i>,
+    its most-probable value) and the <span style="color:#1f77b4"><b>LMS</b></span> /
+    posterior <i>mean</i> (its center of mass). Press “flip more” and watch the posterior
+    <b>concentrate</b> — it grows tall and narrow, and the two estimates march together onto the true
+    <code>θ</code> as the data overwhelms the prior.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Prior beliefs:</span>
+    <button class="preset" data-prior="1,1">uniform · Beta(1,1)</button>
+    <button class="preset" data-prior="20,20">strong &amp; fair · Beta(20,20)</button>
+    <button class="preset" data-prior="0.5,0.5">Jeffreys / skeptical · Beta(0.5,0.5)</button>
+    <button class="preset" data-prior="8,2">leans heads · Beta(8,2)</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">prior&nbsp; <b>a = <span id="aval">2</span></b>&nbsp;
+      <input type="range" id="a" min="0.5" max="30" step="0.5" value="2" style="vertical-align:middle;width:200px">
+    </label>
+    <label style="font-size:14px;margin-left:14px">prior&nbsp; <b>b = <span id="bval">2</span></b>&nbsp;
+      <input type="range" id="b" min="0.5" max="30" step="0.5" value="2" style="vertical-align:middle;width:200px">
+    </label>
+    <span class="rng">(a = heads-belief, b = tails-belief; both 0.5 → flat-ish)</span>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">hidden true&nbsp; <b>θ = <span id="tval">0.70</span></b>&nbsp;
+      <input type="range" id="theta" min="0.05" max="0.95" step="0.01" value="0.70" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(the real bias the flips are secretly drawn from)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Collect data:</span>
+    <button class="preset" data-flip="1">flip 1</button>
+    <button class="preset" data-flip="10">flip 10</button>
+    <button class="preset" data-flip="100">flip 100</button>
+    <button class="preset" id="lots" style="background:#176d2c;color:#fff;border-color:#176d2c">flip 1000 (lots of data)</button>
+    <button class="preset" id="reset">reset data</button>
+  </div>
+
+  <div class="plots">
+    <div id="postPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>posterior ∝ prior × likelihood</h2>
+  <p style="font-size:14px;max-width:780px">
+    Bayes' rule is the whole engine: <code>p(θ | data) ∝ p(θ) · p(data | θ)</code>. The unknown here is the
+    continuous bias <code>θ</code>, so the prior <code>p(θ)</code> is a <i>density</i> on <code>[0,1]</code>.
+    If we model flips as independent Bernoulli(<code>θ</code>) trials, then <code>h</code> heads and
+    <code>t</code> tails have likelihood <code>θ<sup>h</sup>(1−θ)<sup>t</sup></code>. Multiply, and the
+    normalizing constant <code>p(data)</code> is just whatever makes the result integrate to 1 — we never
+    need to compute it to find the <i>shape</i>. The posterior is proportional to
+    <code>p(θ) · θ<sup>h</sup>(1−θ)<sup>t</sup></code>, and its shape is everything: it <i>is</i> the answer.
+  </p>
+
+  <h2>Why Beta stays Beta — conjugacy</h2>
+  <p style="font-size:14px;max-width:780px">
+    A <code>Beta(a, b)</code> density is itself proportional to <code>θ<sup>a−1</sup>(1−θ)<sup>b−1</sup></code>.
+    Watch what the multiplication does:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+posterior  ∝  prior            ×  likelihood
+           ∝  θ^(a−1)(1−θ)^(b−1) ×  θ^h (1−θ)^t
+           =  θ^(a+h−1) (1−θ)^(b+t−1)        ← exactly a Beta(a+h, b+t) kernel</pre>
+  <p style="font-size:14px;max-width:780px">
+    The exponents simply <i>add</i>. So the posterior is again a Beta, with updated counts
+    <code>a → a+h</code> and <code>b → b+t</code>. The Beta family is <b>conjugate</b> to the Bernoulli
+    likelihood: data never knocks you out of the family, it just bumps the two parameters. This is why
+    Bayesian updating here is bookkeeping — you can read <code>a</code> as “prior heads” and <code>b</code> as
+    “prior tails,” pseudo-observations you walked in with. A flat <code>Beta(1,1)</code> is one imaginary head
+    and one imaginary tail; the skeptical <code>Beta(0.5,0.5)</code> is half of each.
+  </p>
+
+  <h2>MAP vs LMS — the peak vs the center of mass</h2>
+  <p style="font-size:14px;max-width:780px">
+    A posterior is a full distribution, but often you must report one number. Two principled choices:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>MAP (maximum a posteriori).</b> The <i>mode</i> — the single most probable <code>θ</code>, where
+      the posterior peaks. For <code>Beta(α, β)</code> with <code>α, β &gt; 1</code> that is
+      <code>θ̂<sub>MAP</sub> = (α−1)/(α+β−2) = (a+h−1)/(a+b+h+t−2)</code>.</li>
+    <li><b>LMS (least mean squares) = posterior mean.</b> The center of mass,
+      <code>θ̂<sub>LMS</sub> = E[θ | data] = α/(α+β) = (a+h)/(a+b+h+t)</code>. It is the estimate that
+      <i>minimizes the expected squared error</i> <code>E[(θ−θ̂)²|data]</code> — which is why it is the
+      default for a quadratic loss.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    Worked example: start flat, <code>Beta(1,1)</code>, and observe <code>8</code> heads in <code>10</code>
+    flips. Posterior <code>Beta(9, 3)</code>. The MAP is <code>(9−1)/(12−2) = 8/10 = 0.80</code> — exactly the
+    sample frequency <code>h/N</code>, because with a flat prior the MAP <i>is</i> the maximum-likelihood
+    estimate. The LMS mean is <code>9/12 = 0.75</code>, pulled a hair toward <code>½</code> by that one
+    imaginary head and tail. For a skewed posterior the mode and the mean genuinely disagree; the longer tail
+    drags the mean away from the peak. As data accumulates the posterior turns symmetric and tight, and the
+    two estimates converge — drag the prior around or flip a thousand times and watch
+    <code>θ̂<sub>MAP</sub></code> and <code>θ̂<sub>LMS</sub></code> in the status box collapse onto each other
+    and onto the true <code>θ</code>.
+  </p>
+
+  <h2>The prior washes out</h2>
+  <p style="font-size:14px;max-width:780px">
+    Both estimates are weighted blends of the prior and the data. Write the LMS mean as
+    <code>(a+h)/(a+b+N)</code>: for small <code>N</code> the prior counts <code>a, b</code> dominate, so a
+    strong <code>Beta(20,20)</code> keeps you near <code>0.5</code> no matter what the first few flips say. But
+    the denominator grows with every flip, so for large <code>N</code> the estimate
+    <code>≈ h/N</code> — the prior's fixed contribution is drowned by the mounting evidence. The posterior
+    standard deviation <code>√(αβ / [(α+β)²(α+β+1)])</code> shrinks like <code>1/√N</code>, the same square-root
+    law from the CLT. Two people who started with <i>different</i> priors but see the <i>same</i> long data
+    stream end up with nearly identical posteriors. This is the Bayesian echo of consistency: enough data, and
+    your starting assumptions stop mattering. (The exception: a prior that assigns <i>zero</i> density to the
+    truth — e.g. swearing <code>θ = 0</code> — can never recover. Don't put probability 0 on anything you
+    might have to believe.)
+  </p>
+
+  <h2>The bridge to ISLR — a prior is a penalty</h2>
+  <p style="font-size:14px;max-width:780px">
+    Take logs of <code>posterior ∝ prior × likelihood</code>:
+    <code>log p(θ|data) = log p(data|θ) + log p(θ) + const</code>. Maximizing the posterior (finding the MAP)
+    is therefore maximizing the log-likelihood <i>plus</i> a term from the prior — and that extra term is
+    exactly a <b>regularization penalty</b>. In <i>An Introduction to Statistical Learning</i>, <b>ridge
+    regression</b> adds <code>λ‖β‖²</code> to the least-squares loss; that is the MAP estimate under a
+    <b>Gaussian prior</b> on the coefficients (a Gaussian's log is a negative square). <b>Lasso</b>'s
+    <code>λ‖β‖₁</code> penalty is the MAP under a <b>Laplace prior</b>. The penalty strength <code>λ</code>
+    is just how confident the prior is — a tight prior (large <code>λ</code>) is our strong
+    <code>Beta(20,20)</code> that resists the data; a vague prior (small <code>λ</code>) is the flat
+    <code>Beta(1,1)</code> that lets the data speak. “Regularize to avoid overfitting” and “use a prior to
+    avoid overreacting to small samples” are the same sentence in two dialects: the prior keeps your estimate
+    sane when the data is thin, and politely steps aside once the data is rich.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // --- accumulated data (persists across flips) ---
+  let h = 0, t = 0;   // observed heads / tails
+
+  const betaMean = (al, be) => al / (al + be);
+  const betaSD   = (al, be) => Math.sqrt((al * be) / ((al + be) * (al + be) * (al + be + 1)));
+  // mode of Beta(al,be); returns {x, boundary}
+  function betaMode(al, be) {
+    if (al > 1 && be > 1) return { x: (al - 1) / (al + be - 2), boundary: false };
+    if (al <= 1 && be > 1) return { x: 0, boundary: true };
+    if (al > 1 && be <= 1) return { x: 1, boundary: true };
+    return { x: 0.5, boundary: true }; // al,be ≤ 1: U-shaped, mass at both ends
+  }
+
+  // a vertical line from y=0 to y=top at x, as a scatter trace
+  function vline(x, top, color, dash, name) {
+    return {
+      type: "scatter", mode: "lines", x: [x, x], y: [0, top],
+      line: { color, width: 2, dash: dash || "solid" }, name, hoverinfo: "skip",
+    };
+  }
+
+  function draw() {
+    const a = parseFloat($("a").value), b = parseFloat($("b").value);
+    const th = parseFloat($("theta").value);
+    $("aval").textContent = a;
+    $("bval").textContent = b;
+    $("tval").textContent = th.toFixed(2);
+
+    const N = h + t;
+    const al = a + h, be = b + t;            // posterior parameters
+
+    // densities over θ ∈ (0,1)
+    const xs = PR.linspace(0.001, 0.999, 400);
+    const prior = xs.map((x) => PR.betaPdf(x, a, b));
+    const post  = xs.map((x) => PR.betaPdf(x, al, be));
+    const ymax  = Math.max(1, ...post, ...prior.map((y) => Math.min(y, 8)));
+    const top   = Math.min(Math.max(...post.filter(isFinite)) || 1, ymax) || 1;
+
+    const mode = betaMode(al, be);
+    const mean = betaMean(al, be);
+    const sd   = betaSD(al, be);
+
+    const data = [
+      { type: "scatter", mode: "lines", x: xs, y: prior,
+        line: { color: "#9aa7b8", width: 2, dash: "dot" },
+        name: "prior  Beta(" + a + "," + b + ")", hoverinfo: "x+y" },
+      { type: "scatter", mode: "lines", x: xs, y: post,
+        line: { color: "#176d2c", width: 3 }, fill: "tozeroy", fillcolor: "rgba(23,109,44,0.10)",
+        name: "posterior  Beta(" + PR.round(al, 1) + "," + PR.round(be, 1) + ")", hoverinfo: "x+y" },
+      vline(mode.x, top * 0.96, "#b00020", "dash", "MAP (mode) = " + PR.round(mode.x, 3)),
+      vline(mean,   top * 0.82, "#1f77b4", "dash", "LMS (mean) = " + PR.round(mean, 3)),
+    ];
+    if (N > 0) {
+      data.push(vline(h / N, top * 0.68, "#666", "dot", "data freq h/N = " + PR.round(h / N, 3)));
+    }
+    // mark the hidden true θ at the baseline
+    data.push({ type: "scatter", mode: "markers+text", x: [th], y: [0],
+      text: ["▲ true θ"], textposition: "bottom center",
+      marker: { color: "#d62728", size: 9, symbol: "triangle-up" },
+      textfont: { color: "#d62728", size: 11 }, hoverinfo: "skip", showlegend: false });
+
+    Plotly.react("postPlot", data, {
+      title: { text: "Belief about θ  —  " + N + " flips so far (" + h + " H, " + t + " T)", font: { size: 13 } },
+      margin: { l: 44, r: 12, t: 34, b: 40 },
+      xaxis: { range: [0, 1], title: { text: "θ  (probability of heads)", font: { size: 12 } } },
+      yaxis: { range: [0, top * 1.08], title: { text: "density", font: { size: 11 } }, rangemode: "tozero" },
+      showlegend: true,
+      legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.7)" },
+    }, { responsive: true });
+
+    // ---- status ----
+    const fmt = (x) => PR.round(x, 3);
+    const mapStr = mode.boundary
+      ? fmt(mode.x) + " <span style=\"color:#888\">(boundary — posterior peaks at an end)</span>"
+      : fmt(mode.x);
+    $("status").innerHTML =
+      '<span class="tag one">posterior = Beta(a+h, b+t)</span><br>' +
+      'prior &nbsp;<code>Beta(a, b) = Beta(' + a + ', ' + b + ')</code> &nbsp;·&nbsp; hidden true <code>θ = ' + th.toFixed(2) + '</code><br>' +
+      'data so far &nbsp;<code>N = ' + N + '</code>, &nbsp;<code>h = ' + h + '</code> heads, &nbsp;<code>t = ' + t + '</code> tails' +
+      (N > 0 ? ' &nbsp;→ frequency <code>h/N = ' + fmt(h / N) + '</code>' : '') + '<br>' +
+      'posterior &nbsp;<code>Beta(α, β) = Beta(' + fmt(al) + ', ' + fmt(be) + ')</code><br>' +
+      '<b style="color:#b00020">MAP</b> &nbsp;<code>(α−1)/(α+β−2) = ' + mapStr + '</code> &nbsp;·&nbsp; ' +
+      '<b style="color:#1f77b4">LMS / mean</b> &nbsp;<code>α/(α+β) = ' + fmt(mean) + '</code><br>' +
+      'posterior sd &nbsp;<code>= ' + fmt(sd) + '</code> &nbsp;' +
+      '<span style="color:#666">(shrinks ~1/√N — flip more to sharpen the belief)</span>';
+  }
+
+  // --- simulate flips from the hidden true θ and accumulate ---
+  function flip(n) {
+    const th = parseFloat($("theta").value);
+    for (let i = 0; i < n; i++) { if (Math.random() < th) h++; else t++; }
+    draw();
+  }
+
+  // wiring
+  $("a").addEventListener("input", draw);
+  $("b").addEventListener("input", draw);
+  $("theta").addEventListener("input", draw);
+  document.querySelectorAll(".preset[data-flip]").forEach((btn) => {
+    btn.onclick = () => flip(parseInt(btn.dataset.flip, 10));
+  });
+  $("lots").onclick = () => flip(1000);
+  $("reset").onclick = () => { h = 0; t = 0; draw(); };
+  document.querySelectorAll(".preset[data-prior]").forEach((btn) => {
+    btn.onclick = () => {
+      const [pa, pb] = btn.dataset.prior.split(",");
+      $("a").value = pa; $("b").value = pb;
+      h = 0; t = 0;        // a fresh prior starts a fresh experiment
+      draw();
+    };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

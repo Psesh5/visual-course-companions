@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 9 — Independence, basis, and dimension · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 9 · Independence, basis, and dimension</h1>
+  <div class="sub">Three vectors in <code>R³</code> are <b>independent</b> exactly when no one of them
+    lies in the plane of the other two. Independence is the same statement as
+    <code>det ≠ 0</code>, the same as <i>being a basis</i>, the same as <i>dimension 3</i>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The explorer:</b> two fixed vectors <code>v₁</code>, <code>v₂</code> and one you steer with the
+    sliders below, <code>v₃</code>. The three arrows are the edges of a <b>parallelepiped</b>, and its
+    <b>signed volume is exactly det</b>. Drive <code>v₃</code> into the plane spanned by <code>v₁</code> and
+    <code>v₂</code> and watch the solid collapse to a flat sheet: <code>det → 0</code>, volume <code>0</code>,
+    the vectors become <b>dependent</b>. Use the preset buttons to jump to a clean independent or dependent triple.
+  </div>
+
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Load a preset:</span>
+    <button class="preset" data-p="indep">Independent (volume &gt; 0)</button>
+    <button class="preset" data-p="dep">Dependent · v₃ in the plane (det = 0)</button>
+  </div>
+
+  <div class="controls">
+    <span class="rng">v₃ = (
+      <span id="lx">1</span>,
+      <span id="ly">1</span>,
+      <span id="lz">3</span> )</span>
+    <br/>
+    <label class="rng">x₃
+      <input id="sx" type="range" min="-4" max="4" step="0.1" value="1"/>
+    </label>
+    <label class="rng">y₃
+      <input id="sy" type="range" min="-4" max="4" step="0.1" value="1"/>
+    </label>
+    <label class="rng">z₃
+      <input id="sz" type="range" min="-4" max="4" step="0.1" value="3"/>
+    </label>
+    <button id="flat" class="preset">Snap v₃ into the v₁,v₂ plane</button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div class="plots">
+    <div id="plot" class="plot" style="flex:1 1 720px;height:540px"></div>
+  </div>
+
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:760px">
+    Picture building a box from three arrows out of the origin. If the three arrows genuinely point in three
+    different directions, the box is a real solid with positive volume — and you can reach <i>every</i> point of
+    <code>R³</code> by combining them (they <b>span</b> the space). They are <b>independent</b>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    Now slide <code>v₃</code> until it lies in the plane of <code>v₁</code> and <code>v₂</code>. The third edge
+    no longer lifts the box off that plane, so the solid goes perfectly flat — zero thickness, zero volume. The
+    three vectors are now trapped in a single plane: they are <b>dependent</b>, they span only that plane (a
+    2-dimensional subspace), and you can never escape it no matter how you scale and add them. The number that
+    measures this thickness is the <b>determinant</b>: nonzero for the solid box, zero for the flat sheet.
+  </p>
+
+  <div class="note">
+    <b>One statement, four faces.</b> For three vectors in <code>R³</code> these are all the same thing:
+    <ul style="margin:6px 0 0 18px;padding:0">
+      <li>they are <b>linearly independent</b>;</li>
+      <li><code>det&nbsp;≠&nbsp;0</code> (the parallelepiped has volume);</li>
+      <li>they are a <b>basis</b> of <code>R³</code> (every vector is a unique combination of them);</li>
+      <li>the space they span has <b>dimension 3</b> — it is all of <code>R³</code>.</li>
+    </ul>
+    And the negations match too: dependent ⇔ <code>det = 0</code> ⇔ not a basis ⇔ span has dimension ≤ 2
+    (a plane, line, or point).
+  </div>
+
+  <h2>The worked math</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Linear independence.</b> Vectors <code>v₁, …, vₙ</code> are <b>independent</b> if the only combination
+    equal to the zero vector is the trivial one:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>c₁v₁ + c₂v₂ + ⋯ + cₙvₙ = 0  ⟹  c₁ = c₂ = ⋯ = cₙ = 0.</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    If some nontrivial combination gives <code>0</code>, they are <b>dependent</b> — one of them can be solved
+    for in terms of the others, so it adds no new direction.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>The determinant test.</b> Put the three vectors into the columns of a 3×3 matrix
+    <code>A = [v₁ v₂ v₃]</code>. Then <code>Ac = 0</code> has only the trivial solution
+    <code>c = 0</code> exactly when <code>A</code> is invertible, i.e. <code>det A ≠ 0</code>. So:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>v₁, v₂, v₃ independent  ⟺  det[v₁ v₂ v₃] ≠ 0.</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    Geometrically <code>|det|</code> is the volume of the parallelepiped with those edges, which is why the test
+    is "does the box have volume?"
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Basis and dimension.</b> A <b>basis</b> for a space is a set of vectors that is (i) independent and
+    (ii) spans the space — enough vectors to reach everything, with none wasted. Every basis of a given space
+    has the same number of vectors; that number is the <b>dimension</b>. In <code>R³</code> any independent
+    triple is automatically a basis, and the dimension is <code>3</code>.
+  </p>
+
+  <h2>A worked check — one independent, one dependent</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Independent triple.</b> Take the standard-ish triple
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>v₁ = (1, 1, 0),  v₂ = (1, 0, 1),  v₃ = (0, 1, 1).</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    Stack as columns and expand along the first row:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>det = 1·(0·1 − 1·1) − 1·(1·1 − 1·0) + 0·(1·1 − 0·0)
+      = 1·(−1) − 1·(1) + 0 = −2 ≠ 0.</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    Nonzero, so they are independent — a basis of <code>R³</code>, dimension 3, and the box has volume
+    <code>|det| = 2</code>. (Load the <i>Independent</i> preset to see it.)
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Dependent triple.</b> Now make the third vector a combination of the first two,
+    <code>v₃ = v₁ + v₂</code>:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>v₁ = (1, 1, 0),  v₂ = (1, 0, 1),  v₃ = (2, 1, 1).</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    The nontrivial combination <code>1·v₁ + 1·v₂ − 1·v₃ = 0</code> already proves dependence, and the
+    determinant agrees:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>det = 1·(0·1 − 1·1) − 1·(1·1 − 1·2) + 2·(1·1 − 0·2)
+      = 1·(−1) − 1·(−1) + 2·(1) = −1 + 1 + 2 = 2?</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    Careful with the column order — here the columns are <code>(1,1,0), (1,0,1), (2,1,1)</code>, so
+    <code>det = 1·(0·1 − 1·1) − 1·(1·1 − 1·0) + 2·(1·1 − 0·0) = −1 − 1 + 2 = 0</code>. Zero, as it must be:
+    these three vectors all live in the plane <code>x = y + z</code>, they span only that plane (dimension 2),
+    and they are <b>not</b> a basis of <code>R³</code>. (Load the <i>Dependent</i> preset; the box is flat.)
+  </p>
+
+  <h2>Independence is a question about the nullspace</h2>
+  <p style="font-size:14px;max-width:760px">
+    Strang's key reframing: put the vectors <code>v₁, …, vₙ</code> into the <b>columns</b> of a matrix
+    <code>A</code>. A combination <code>c₁v₁ + ⋯ + cₙvₙ</code> is exactly <code>Ac</code>. So a combination
+    equals zero precisely when <code>c</code> lies in the <b>nullspace</b> of <code>A</code>:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>columns independent  ⟺  N(A) = {0}  (only c = 0 solves Ac = 0)  ⟺  rank r = n, no free variables.</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    They are <b>dependent</b> the moment there is anything else in the nullspace — a nonzero <code>c</code> with
+    <code>Ac = 0</code> spells out which combination of columns collapses to the zero column.
+  </p>
+
+  <div class="note">
+    <b>More columns than rows ⇒ always dependent.</b> If <code>A</code> is <code>m×n</code> with
+    <code>n &gt; m</code> (more unknowns than equations), elimination can produce at most <code>m</code> pivots,
+    so there are at least <code>n − m ≥ 1</code> <b>free variables</b>. A free variable gives a nonzero solution
+    to <code>Ac = 0</code>, so the columns <b>must</b> be dependent. Strang's pocket example: three vectors in the
+    plane <code>R²</code>,
+    <code>v₁ = (2,1)</code>, <code>v₂ = (1,2)</code>, <code>v₃ = (2.5,−1)</code> — a <code>2×3</code> matrix,
+    one free variable guaranteed, so <b>no three vectors in R² can be independent</b>.
+  </div>
+
+  <h2>Strang's worked matrix — rank, basis, dimension, and the nullspace</h2>
+  <p style="font-size:14px;max-width:760px">
+    Now the example Strang builds the whole second half of the lecture around. Take the <code>3×4</code> matrix
+    whose columns are <code>c₁ = (1,1,1)</code>, <code>c₂ = (2,1,2)</code>, then <code>c₃ = c₁ + c₂ = (3,2,3)</code>
+    and <code>c₄ = c₁ = (1,1,1)</code> — the last two are deliberately combinations of the first two:
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>A = [ 1&nbsp;&nbsp;2&nbsp;&nbsp;3&nbsp;&nbsp;1 ; 1&nbsp;&nbsp;1&nbsp;&nbsp;2&nbsp;&nbsp;1 ; 1&nbsp;&nbsp;2&nbsp;&nbsp;3&nbsp;&nbsp;1 ]</code>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    The four columns <b>span</b> the column space (by definition — the column space <i>is</i> their combinations),
+    but they are <b>not independent</b>: e.g. <code>−c₁ − c₂ + c₃ + 0·c₄ = 0</code> is a nonzero combination
+    giving the zero column. Below, each column is plotted in <code>R³</code>; toggle a column off to test whether
+    the rest still reach everything. The <b>pivot columns</b> (1 and 2) are the natural <b>basis</b> of the column
+    space; columns 3 and 4 are <i>free</i> — each is a redundant combination of the pivots.
+  </p>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Show columns of A:</span>
+    <label class="rng"><input id="c1" type="checkbox" checked/> c₁ = (1,1,1)</label>
+    <label class="rng"><input id="c2" type="checkbox" checked/> c₂ = (2,1,2)</label>
+    <label class="rng"><input id="c3" type="checkbox" checked/> c₃ = (3,2,3)</label>
+    <label class="rng"><input id="c4" type="checkbox" checked/> c₄ = (1,1,1)</label>
+  </div>
+
+  <div id="rankStatus" class="status"></div>
+
+  <div class="plots">
+    <div id="rankPlot" class="plot" style="flex:1 1 720px;height:480px"></div>
+  </div>
+
+  <div class="note">
+    <b>The three great facts, all from this one matrix.</b>
+    <ul style="margin:6px 0 0 18px;padding:0">
+      <li><b>rank r = 2</b> = number of pivot columns = <b>dim(column space)</b>. The column space is the
+        <i>plane</i> through the origin spanned by <code>c₁, c₂</code> (shaded), not all of <code>R³</code>.</li>
+      <li><b>A basis of the column space</b> is any 2 independent columns: <code>{c₁, c₂}</code>, or
+        <code>{c₁, c₃}</code>, or even outside vectors like <code>(2,2,2)</code> and <code>(7,5,7)</code> — all
+        bases have exactly <code>r = 2</code> vectors.</li>
+      <li><b>dim(nullspace) = n − r = 4 − 2 = 2</b> = number of free variables (columns 3 and 4). Its basis is
+        the two <b>special solutions</b> below.</li>
+    </ul>
+  </div>
+
+  <p style="font-size:14px;max-width:760px">
+    <b>The nullspace, by Strang's recipe.</b> The free columns are 3 and 4, so set each free variable to
+    <code>1</code> (the other to <code>0</code>) and solve for the pivots. Because <code>c₃ = c₁ + c₂</code> and
+    <code>c₄ = c₁</code>, the two <b>special solutions</b> are
+  </p>
+  <p style="font-size:14px;max-width:760px;text-align:center">
+    <code>s₁ = (−1, −1, 1, 0)</code> &nbsp; (since <code>−c₁ − c₂ + c₃ = 0</code>) &nbsp;·&nbsp;
+    <code>s₂ = (−1, 0, 0, 1)</code> &nbsp; (since <code>−c₁ + c₄ = 0</code>).
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    These two independent vectors are a <b>basis for the nullspace</b>, confirming
+    <code>dim N(A) = 2 = n − r</code>. Every nonzero vector in the nullspace is a recipe for a dependent
+    combination of the columns — it tells you exactly <i>how</i> the columns fail to be independent.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  // Fixed first two vectors; v3 is steered by the sliders.
+  const V1 = [1, 1, 0];
+  const V2 = [1, 0, 1];
+  let   V3 = [1, 1, 3];
+
+  const PRESETS = {
+    indep: [0, 1, 1],   // det[(1,1,0),(1,0,1),(0,1,1)] = -2
+    dep:   [2, 1, 1],   // = V1 + V2, lies in plane x = y + z  -> det 0
+  };
+
+  const sx = document.getElementById("sx");
+  const sy = document.getElementById("sy");
+  const sz = document.getElementById("sz");
+  const lx = document.getElementById("lx");
+  const ly = document.getElementById("ly");
+  const lz = document.getElementById("lz");
+  const statusEl = document.getElementById("status");
+
+  // Edges of a parallelepiped from origin spanned by a,b,c, as a single
+  // line trace tracing the 12 edges (segments separated by nulls).
+  function boxEdges(a, b, c, color) {
+    const O = [0, 0, 0];
+    const add = (p, q) => [p[0]+q[0], p[1]+q[1], p[2]+q[2]];
+    const v = { O, a, b, c,
+      ab: add(a, b), ac: add(a, c), bc: add(b, c),
+      abc: add(add(a, b), c) };
+    // ordered vertex pairs for all 12 edges
+    const segs = [
+      [v.O, v.a], [v.O, v.b], [v.O, v.c],
+      [v.a, v.ab], [v.a, v.ac],
+      [v.b, v.ab], [v.b, v.bc],
+      [v.c, v.ac], [v.c, v.bc],
+      [v.ab, v.abc], [v.ac, v.abc], [v.bc, v.abc],
+    ];
+    const X = [], Y = [], Z = [];
+    for (const [p, q] of segs) {
+      X.push(p[0], q[0], null);
+      Y.push(p[1], q[1], null);
+      Z.push(p[2], q[2], null);
+    }
+    return { type: "scatter3d", mode: "lines", x: X, y: Y, z: Z,
+             line: { color, width: 3 }, opacity: 0.7, showlegend: false };
+  }
+
+  // Solid parallelepiped via mesh3d over its 8 vertices.
+  function boxMesh(a, b, c, color, opacity) {
+    const add = (p, q) => [p[0]+q[0], p[1]+q[1], p[2]+q[2]];
+    const verts = [
+      [0,0,0], a, b, c,
+      add(a,b), add(a,c), add(b,c),
+      add(add(a,b),c),
+    ]; // indices: 0=O 1=a 2=b 3=c 4=ab 5=ac 6=bc 7=abc
+    const tri = [
+      // each of 6 faces split into 2 triangles
+      [0,1,4],[0,4,2],     // a-b face (z-ish)
+      [0,1,5],[0,5,3],     // a-c face
+      [0,2,6],[0,6,3],     // b-c face
+      [7,4,1],[7,1,5],     // opposite of b-c
+      [7,4,2],[7,2,6],     // opposite of a-c
+      [7,5,3],[7,3,6],     // opposite of a-b
+    ];
+    return {
+      type: "mesh3d",
+      x: verts.map(v => v[0]), y: verts.map(v => v[1]), z: verts.map(v => v[2]),
+      i: tri.map(t => t[0]), j: tri.map(t => t[1]), k: tri.map(t => t[2]),
+      color, opacity, flatshading: true, showscale: false,
+    };
+  }
+
+  function draw() {
+    const A = [
+      [V1[0], V2[0], V3[0]],
+      [V1[1], V2[1], V3[1]],
+      [V1[2], V2[2], V3[2]],
+    ];
+    const det = LA.det3(A);
+    const vol = Math.abs(det);
+    const independent = vol > 1e-6;
+
+    const traces = [];
+
+    // The solid (or flat) parallelepiped.
+    traces.push(boxMesh(V1, V2, V3,
+      independent ? "#9ecae1" : "#fdae6b",
+      independent ? 0.35 : 0.55));
+    traces.push(boxEdges(V1, V2, V3, "#555"));
+
+    // The three vectors as arrows.
+    LA.arrow([0,0,0], V1, LA.VEC[0]).forEach(t => traces.push(t));
+    LA.arrow([0,0,0], V2, LA.VEC[1]).forEach(t => traces.push(t));
+    LA.arrow([0,0,0], V3, LA.VEC[2]).forEach(t => traces.push(t));
+
+    // Span shading: the plane through v1, v2 (the span of the first two).
+    // normal = v1 × v2  ->  n·(x) = 0.
+    const n = [
+      V1[1]*V2[2] - V1[2]*V2[1],
+      V1[2]*V2[0] - V1[0]*V2[2],
+      V1[0]*V2[1] - V1[1]*V2[0],
+    ];
+    const plane = LA.planeTrace(n[0], n[1], n[2], 0, 4, "Greys");
+    if (plane) { plane.opacity = independent ? 0.12 : 0.4; traces.push(plane); }
+
+    Plotly.react("plot", traces, {
+      margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: LA.SCENE(),
+      showlegend: false,
+    }, { responsive: true });
+
+    // Status box.
+    const tag = independent
+      ? '<span class="tag one">independent</span>'
+      : '<span class="tag none">dependent</span>';
+    const spanNote = independent
+      ? 'they <b>span all of R³</b> — a <b>basis</b>, dimension <b>3</b>.'
+      : 'they collapse into the <b>shaded plane</b> — span has dimension <b>2</b> (or less), <b>not</b> a basis.';
+    statusEl.innerHTML =
+      `v₁ = (${V1.join(", ")})  ·  v₂ = (${V2.join(", ")})  ·  ` +
+      `v₃ = (${LA.round(V3[0])}, ${LA.round(V3[1])}, ${LA.round(V3[2])})<br/>` +
+      `<code>det = ${LA.round(det)}</code>  ·  ` +
+      `<code>|det| = volume = ${LA.round(vol)}</code><br/>` +
+      `These vectors are ${tag} ⇔ <code>det ${independent ? "≠" : "="} 0</code>: ${spanNote}`;
+  }
+
+  function setV3(v) {
+    V3 = [v[0], v[1], v[2]];
+    sx.value = v[0]; sy.value = v[1]; sz.value = v[2];
+    lx.textContent = LA.round(v[0]);
+    ly.textContent = LA.round(v[1]);
+    lz.textContent = LA.round(v[2]);
+    draw();
+  }
+
+  [sx, sy, sz].forEach((s) => {
+    s.addEventListener("input", () => {
+      setV3([parseFloat(sx.value), parseFloat(sy.value), parseFloat(sz.value)]);
+    });
+  });
+
+  // Snap v3 into the v1,v2 plane: project current v3 onto span(v1,v2).
+  document.getElementById("flat").onclick = () => {
+    // Project V3 onto the plane with normal n = v1 × v2:  V3 - (V3·n / n·n) n
+    const n = [
+      V1[1]*V2[2] - V1[2]*V2[1],
+      V1[2]*V2[0] - V1[0]*V2[2],
+      V1[0]*V2[1] - V1[1]*V2[0],
+    ];
+    const dot = V3[0]*n[0] + V3[1]*n[1] + V3[2]*n[2];
+    const nn  = n[0]*n[0] + n[1]*n[1] + n[2]*n[2];
+    const k   = nn ? dot / nn : 0;
+    setV3([
+      LA.round(V3[0] - k*n[0]),
+      LA.round(V3[1] - k*n[1]),
+      LA.round(V3[2] - k*n[2]),
+    ]);
+  };
+
+  document.querySelectorAll(".preset[data-p]").forEach((btn) => {
+    btn.onclick = () => setV3(PRESETS[btn.dataset.p]);
+  });
+
+  draw();
+
+  /* ----------------------------------------------------------------------
+     Second visual: Strang's 3x4 matrix A = [c1 c2 c3 c4], columns in R^3.
+     c1=(1,1,1) c2=(2,1,2) c3=c1+c2=(3,2,3) c4=c1=(1,1,1).
+     rank = 2, dim(col space) = 2, dim(nullspace) = n - r = 2.
+     -------------------------------------------------------------------- */
+  const COLS = {
+    c1: [1, 1, 1],
+    c2: [2, 1, 2],
+    c3: [3, 2, 3],
+    c4: [1, 1, 1],
+  };
+  const COL_KEYS = ["c1", "c2", "c3", "c4"];
+  const COL_HUES = ["#1f77b4", "#2ca02c", "#ff7f0e", "#d62728"];
+  const rankBoxes = COL_KEYS.map((k) => document.getElementById(k));
+  const rankStatus = document.getElementById("rankStatus");
+
+  // Rank of the set of currently shown columns (vectors live in R^3).
+  // All shown columns lie in span(c1,c2), so rank is 0, 1, or 2.
+  function rankOf(vecs) {
+    const eps = 1e-9;
+    const rows = vecs.map((v) => v.slice());  // treat each vector as a row, row-reduce
+    let r = 0;
+    for (let col = 0; col < 3 && r < rows.length; col++) {
+      let piv = -1;
+      for (let i = r; i < rows.length; i++) if (Math.abs(rows[i][col]) > eps) { piv = i; break; }
+      if (piv < 0) continue;
+      [rows[r], rows[piv]] = [rows[piv], rows[r]];
+      for (let i = 0; i < rows.length; i++) if (i !== r) {
+        const f = rows[i][col] / rows[r][col];
+        for (let c = col; c < 3; c++) rows[i][c] -= f * rows[r][c];
+      }
+      r++;
+    }
+    return r;
+  }
+
+  function drawRank() {
+    const shown = COL_KEYS.filter((k, i) => rankBoxes[i].checked);
+    const vecs = shown.map((k) => COLS[k]);
+    const traces = [];
+
+    // Column space of the FULL matrix = plane spanned by c1, c2.
+    const n = [  // normal = c1 x c2
+      COLS.c1[1]*COLS.c2[2] - COLS.c1[2]*COLS.c2[1],
+      COLS.c1[2]*COLS.c2[0] - COLS.c1[0]*COLS.c2[2],
+      COLS.c1[0]*COLS.c2[1] - COLS.c1[1]*COLS.c2[0],
+    ];
+    const plane = LA.planeTrace(n[0], n[1], n[2], 0, 4, "Greys");
+    if (plane) { plane.opacity = 0.18; traces.push(plane); }
+
+    // Each shown column as a colored arrow (slight jitter on overlapping c1/c4).
+    shown.forEach((k) => {
+      const i = COL_KEYS.indexOf(k);
+      let q = COLS[k];
+      if (k === "c4") q = [q[0] + 0.06, q[1] + 0.06, q[2] - 0.06]; // nudge so c4 is visible over c1
+      LA.arrow([0, 0, 0], q, COL_HUES[i]).forEach((t) => traces.push(t));
+    });
+
+    Plotly.react("rankPlot", traces, {
+      margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: LA.SCENE(),
+      showlegend: false,
+    }, { responsive: true });
+
+    const r = rankOf(vecs);
+    const cnt = shown.length;
+    const indep = (r === cnt && cnt > 0);
+    const tag = indep
+      ? '<span class="tag one">independent</span>'
+      : (cnt === 0 ? '<span class="tag none">no columns</span>'
+                   : '<span class="tag none">dependent</span>');
+    let note;
+    if (cnt === 0) {
+      note = "Pick at least one column.";
+    } else if (indep) {
+      note = `the shown columns are <b>independent</b> — <code>N = {0}</code> among them. They are a ` +
+             `<b>basis for their ${r}-dimensional span</b>.`;
+    } else {
+      note = `some combination of the shown columns gives the zero vector — there is a nonzero <code>c</code> ` +
+             `in the nullspace. rank <code>r = ${r} &lt; ${cnt}</code> columns shown, so <b>${cnt - r} free</b>.`;
+    }
+    rankStatus.innerHTML =
+      `Showing ${cnt} column${cnt === 1 ? "" : "s"}  ·  ` +
+      `<code>rank r = ${r}</code> = #pivot columns = <code>dim(column space) = ${r}</code><br/>` +
+      `For the full 3×4 matrix: <code>r = 2</code>, columns 1 &amp; 2 are pivots (a basis), 3 &amp; 4 are free; ` +
+      `<code>dim N(A) = n − r = 4 − 2 = 2</code>.<br/>` +
+      `These columns are ${tag}: ${note}`;
+  }
+
+  rankBoxes.forEach((b) => b.addEventListener("change", drawRank));
+  drawRank();
+</script>
+</body>
+</html>

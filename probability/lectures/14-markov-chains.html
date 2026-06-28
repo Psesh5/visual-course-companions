@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Markov chains and steady-state · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Markov chains · Steady-state behavior</h1>
+  <div class="sub">A system hops among a few <b>states</b> over time. The only thing that governs where it goes
+    next is <i>where it is now</i> — not how it got there. That is the <b>Markov property</b>. Collect the
+    one-step move probabilities into a matrix <code>P</code> (each row sums to 1), and the whole future is
+    just repeated multiplication: <code>πₜ₊₁ = πₜ P</code>. For a well-behaved chain the distribution
+    <code>πₜ</code> forgets its start and settles onto a single <b>stationary distribution</b> <code>π*</code>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> three states <span style="color:#1f77b4">A</span>,
+    <span style="color:#176d2c">B</span>, <span style="color:#b00020">C</span>. The top-left bars are the
+    distribution <code>πₜ</code> — the probability of being in each state after <code>t</code> steps, starting
+    from wherever you choose. The faint outlined bars behind them are the stationary target <code>π*</code>.
+    Drag <code>t</code> upward and watch the solid bars climb into their outlines. The right panel traces each
+    component versus <code>t</code> as lines flowing into their dashed steady-state levels; the bottom-left
+    diagram is the chain itself, with every arrow labeled by its transition probability.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Chains:</span>
+    <button class="preset" data-p="regular">Regular · mixes fast</button>
+    <button class="preset" data-p="sticky">Sticky · slow to settle</button>
+    <button class="preset" data-p="periodic">Periodic · never settles ⚠</button>
+    <button class="preset" data-p="absorbing">Absorbing C · one-way trap</button>
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Start in:</span>
+    <button class="preset" data-s="0">state A</button>
+    <button class="preset" data-s="1">state B</button>
+    <button class="preset" data-s="2">state C</button>
+    <button class="preset" data-s="u">uniform ⅓,⅓,⅓</button>
+  </div>
+
+  <div class="controls">
+    <label style="font-size:14px">steps&nbsp; <b>t = <span id="tval">0</span></b>&nbsp;
+      <input type="range" id="t" min="0" max="60" value="0" style="vertical-align:middle;width:300px">
+    </label>
+    <span class="rng">(how many times we have multiplied by P)</span>
+  </div>
+
+  <div class="controls" style="display:block;line-height:2.1">
+    <span style="font-size:13px;color:#444">Transition probabilities (each row sums to 1; the diagonal "stay" entry is filled in for you):</span><br>
+    <span style="font-size:13px;color:#1f77b4">A→B</span> <input type="range" id="aB" min="0" max="1" step="0.01" value="0.4" style="width:120px;vertical-align:middle">
+    <span style="font-size:13px;color:#1f77b4">A→C</span> <input type="range" id="aC" min="0" max="1" step="0.01" value="0.3" style="width:120px;vertical-align:middle">
+    &nbsp;|&nbsp;
+    <span style="font-size:13px;color:#176d2c">B→A</span> <input type="range" id="bA" min="0" max="1" step="0.01" value="0.3" style="width:120px;vertical-align:middle">
+    <span style="font-size:13px;color:#176d2c">B→C</span> <input type="range" id="bC" min="0" max="1" step="0.01" value="0.3" style="width:120px;vertical-align:middle">
+    &nbsp;|&nbsp;
+    <span style="font-size:13px;color:#b00020">C→A</span> <input type="range" id="cA" min="0" max="1" step="0.01" value="0.3" style="width:120px;vertical-align:middle">
+    <span style="font-size:13px;color:#b00020">C→B</span> <input type="range" id="cB" min="0" max="1" step="0.01" value="0.3" style="width:120px;vertical-align:middle">
+  </div>
+
+  <div class="plots">
+    <div id="distPlot" class="plot"></div>
+    <div id="trajPlot" class="plot"></div>
+  </div>
+  <div class="plots">
+    <div id="diagPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>The Markov property — memoryless given the present</h2>
+  <p style="font-size:14px;max-width:780px">
+    A Markov chain is the simplest interesting model of something that evolves in time. There is a finite set of
+    <b>states</b> — here just three, <code>A</code>, <code>B</code>, <code>C</code> — and at each tick the
+    process jumps from its current state to a next state at random. The defining assumption is a promise about
+    memory: given that you are in state <code>i</code> right now, the probability you move to state <code>j</code>
+    next depends <i>only</i> on <code>i</code>. The entire past — the route you took to get here — is irrelevant
+    once I tell you the present. In symbols, <code>P(Xₜ₊₁ = j | Xₜ = i, Xₜ₋₁, …, X₀) = P(Xₜ₊₁ = j | Xₜ = i) = Pᵢⱼ</code>.
+    That single sentence is the whole modeling commitment, and it is what makes everything downstream computable.
+  </p>
+
+  <h2>The transition matrix P</h2>
+  <p style="font-size:14px;max-width:780px">
+    Stack the numbers <code>Pᵢⱼ</code> into a matrix. Row <code>i</code> lists where you go <i>from</i> state
+    <code>i</code>, so every row is a probability distribution and must sum to 1 — that is the one rule
+    <code>P</code> obeys (we call it <b>row-stochastic</b>). In the diagram each arrow <code>i → j</code> carries
+    the weight <code>Pᵢⱼ</code>, and the self-loop is the "stay put" probability <code>Pᵢᵢ</code>. The sliders
+    expose the two off-diagonal entries of each row; the diagonal is whatever is left over to make the row total
+    1, which is why you never have to touch it. The status box prints the resulting <code>P</code> so you can
+    always read the chain you have built.
+  </p>
+
+  <h2>Distributions update by matrix multiplication</h2>
+  <p style="font-size:14px;max-width:780px">
+    Suppose you are not sure where the chain starts: your belief is a row vector
+    <code>π₀ = (π₀[A], π₀[B], π₀[C])</code> of probabilities. Where are you likely to be one step later? To land
+    in state <code>j</code> you must have been in <i>some</i> state <code>i</code> and then taken the
+    <code>i → j</code> jump, so you sum over all the ways:
+    <code>π₁[j] = Σᵢ π₀[i] · Pᵢⱼ</code>. That is exactly a vector-times-matrix product,
+    <code>π₁ = π₀ P</code>. Do it again for two steps, <code>π₂ = π₁ P = π₀ P²</code>, and in general
+    <code>πₜ = π₀ Pᵗ</code>. The whole evolution is just hitting your belief vector with <code>P</code> over and
+    over. Every time you nudge the <code>t</code> slider, the page performs one more multiplication and redraws
+    the bars.
+  </p>
+
+  <h2>The stationary distribution π* and when you reach it</h2>
+  <p style="font-size:14px;max-width:780px">
+    Watch the <b>regular</b> preset. From <i>any</i> start — A, B, C, or uniform — the bars march to the same
+    final heights and then stop moving. That limit is the <b>stationary distribution</b> <code>π*</code>, the one
+    belief that reproduces itself under a step: <code>π* = π* P</code>. Multiplying a row vector by <code>P</code>
+    leaving it unchanged is precisely the statement that <code>π*</code> is a <b>left eigenvector of P with
+    eigenvalue 1</b> — the same eigenvalue-1 fixed direction you met in the linear-algebra Markov lecture. A
+    row-stochastic matrix always has eigenvalue 1 (its rows sum to 1, so <code>P</code> times the all-ones
+    <i>column</i> is the all-ones column); the content of the steady-state theorem is that for a
+    <b>regular</b> chain — one where some power <code>Pᵏ</code> has all-positive entries, so every state can reach
+    every other and the timing is not locked into a cycle — that eigenvalue-1 direction is <i>unique</i> and
+    <i>every</i> start flows into it. The chain forgets where it began.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    How fast it forgets is governed by the <b>second-largest eigenvalue</b> <code>|λ₂|</code>. The distance from
+    stationarity shrinks like <code>|λ₂|ᵗ</code>: small <code>|λ₂|</code> means a brisk mixer, while
+    <code>|λ₂|</code> close to 1 means a sluggish one. Press <b>sticky</b> — every state has a fat self-loop, so
+    the chain dawdles in place and <code>πₜ</code> oozes toward <code>π*</code> over dozens of steps. The status
+    box reports both the estimated <code>|λ₂|</code> and a mixing time: the first <code>t</code> at which the
+    total-variation distance to <code>π*</code> drops below 1%.
+  </p>
+
+  <h2>When steady-state fails — periodicity and reducibility</h2>
+  <p style="font-size:14px;max-width:780px">
+    Regularity is not free, and the two failure modes are worth seeing. Press <b>periodic</b>: it is the
+    deterministic cycle <code>A → B → C → A</code>. A unique stationary distribution still <i>exists</i> — it is
+    uniform <code>(⅓, ⅓, ⅓)</code>, the long-run fraction of time spent in each state — but <code>πₜ</code> never
+    settles onto it. Start in A and the probability mass marches around the triangle forever, one state at a time,
+    a single tall bar that hops A → B → C → A and never spreads. The clock is locked: the chain returns to a state
+    only at multiples of its period 3, so <code>Pᵗ</code> never becomes all-positive and the limit
+    <code>limₜ πₜ</code> simply does not exist. Then press <b>absorbing C</b>: state <code>C</code> only points at
+    itself, a one-way trap. Whatever happens early, the chain eventually wanders into C and is stuck, so
+    <code>π* = (0, 0, 1)</code> regardless of start. Here the long-run <i>is</i> unique, but only because the
+    other states are transient — change the trap and you can manufacture chains with several stationary
+    distributions. Mixing-to-a-unique-limit needs <i>both</i> ingredients: you can reach everywhere
+    (irreducible) and your timing is not periodic.
+  </p>
+
+  <h2>The link to PageRank and the eigenvalue-1 picture</h2>
+  <p style="font-size:14px;max-width:780px">
+    This is not a toy. <b>PageRank</b> is exactly a stationary distribution: model a random surfer who, on each
+    web page, follows an outgoing link at random (plus a small chance to teleport anywhere, which is the
+    engineering trick that <i>forces</i> the chain to be regular so a unique <code>π*</code> exists). The
+    importance of a page is its stationary probability — the long-run fraction of time the surfer spends there —
+    and Google computes it by the same iteration you are dragging here: start anywhere, multiply by <code>P</code>
+    repeatedly, and read off the eigenvalue-1 vector. Queueing systems, weather models, card shuffling, Markov
+    chain Monte Carlo, and gene sequence models are all the same machine. Once you see that <code>π* = π* P</code>
+    is just "find the eigenvalue-1 direction and normalize it to sum to 1," the linear algebra and the probability
+    become one picture.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const NAMES = ["A", "B", "C"];
+  const COLORS = ["#1f77b4", "#176d2c", "#b00020"];
+  const SLIDERS = ["aB", "aC", "bA", "bC", "cA", "cB"];
+
+  // Each preset is a full 3x3 row-stochastic matrix P[i][j] = P(i -> j).
+  const PRESETS = {
+    regular:   [[0.3, 0.4, 0.3], [0.3, 0.4, 0.3], [0.3, 0.3, 0.4]],
+    sticky:    [[0.95, 0.05, 0.0], [0.0, 0.9, 0.1], [0.1, 0.05, 0.85]],
+    periodic:  [[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]],
+    absorbing: [[0.5, 0.3, 0.2], [0.3, 0.4, 0.3], [0.0, 0.0, 1.0]],
+  };
+
+  let start = "0";     // "0","1","2" pure state, or "u" uniform
+
+  // --- read the six sliders into a clamped row-stochastic P ----------------
+  function readP() {
+    const v = {};
+    SLIDERS.forEach((id) => { v[id] = parseFloat($(id).value); });
+    // build each row from its two off-diagonal entries; diagonal = remainder.
+    // if the two exposed entries exceed 1, scale them down so the row stays valid.
+    function row(off1, j1, off2, j2, diagIdx) {
+      let a = off1, b = off2;
+      if (a + b > 1) { const s = a + b; a /= s; b /= s; }
+      const r = [0, 0, 0];
+      r[j1] = a; r[j2] = b; r[diagIdx] = 1 - a - b;
+      if (r[diagIdx] < 0) r[diagIdx] = 0;
+      return r;
+    }
+    return [
+      row(v.aB, 1, v.aC, 2, 0),  // row A: A->B, A->C, diag A
+      row(v.bA, 0, v.bC, 2, 1),  // row B: B->A, B->C, diag B
+      row(v.cA, 0, v.cB, 1, 2),  // row C: C->A, C->B, diag C
+    ];
+  }
+
+  function setSlidersFrom(P) {
+    $("aB").value = P[0][1]; $("aC").value = P[0][2];
+    $("bA").value = P[1][0]; $("bC").value = P[1][2];
+    $("cA").value = P[2][0]; $("cB").value = P[2][1];
+  }
+
+  // one step of a row vector: (pi P)[j] = sum_i pi[i] P[i][j]
+  function step(pi, P) {
+    const out = [0, 0, 0];
+    for (let j = 0; j < 3; j++)
+      for (let i = 0; i < 3; i++) out[j] += pi[i] * P[i][j];
+    return out;
+  }
+
+  function startVec() {
+    if (start === "u") return [1 / 3, 1 / 3, 1 / 3];
+    const v = [0, 0, 0]; v[parseInt(start, 10)] = 1; return v;
+  }
+
+  // stationary pi* via Cesaro (time) averaging — robust even for periodic chains,
+  // where the plain limit doesn't exist but the long-run fraction of time does.
+  function stationary(P) {
+    let pi = [1 / 3, 1 / 3, 1 / 3];
+    const acc = [0, 0, 0];
+    const N = 4000;
+    for (let t = 0; t < N; t++) {
+      pi = step(pi, P);
+      if (t >= N / 2) for (let k = 0; k < 3; k++) acc[k] += pi[k];
+    }
+    const half = N / 2;
+    return acc.map((x) => x / half);
+  }
+
+  const tv = (p, q) => 0.5 * (Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) + Math.abs(p[2] - q[2]));
+
+  // estimate |lambda2| and mixing time from the decay of TV distance to pi*.
+  function mixing(P, piStar) {
+    let pi = startVec();
+    let mixT = null;
+    const ratios = [];
+    let prev = tv(pi, piStar);
+    for (let t = 1; t <= 200; t++) {
+      pi = step(pi, P);
+      const d = tv(pi, piStar);
+      if (prev > 1e-9 && d > 1e-9) ratios.push(d / prev);
+      if (mixT === null && d < 0.01) mixT = t;
+      prev = d;
+    }
+    // geometric-mean contraction over the run = |lambda2| estimate
+    let lam2 = null;
+    if (ratios.length) {
+      const logs = ratios.filter((r) => r > 0).map((r) => Math.log(r));
+      lam2 = Math.exp(logs.reduce((s, x) => s + x, 0) / logs.length);
+    }
+    return { mixT, lam2 };
+  }
+
+  // ----- drawing ----------------------------------------------------------
+  function draw() {
+    const P = readP();
+    const t = parseInt($("t").value, 10);
+    $("tval").textContent = t;
+
+    const piStar = stationary(P);
+
+    // trajectory pi_0 .. pi_t (and a little beyond for context up to 60)
+    const horizon = 60;
+    const traj = [startVec()];
+    for (let s = 1; s <= horizon; s++) traj.push(step(traj[s - 1], P));
+    const piNow = traj[t];
+
+    // ---- PLOT 1: current distribution bars vs stationary target ----
+    Plotly.react("distPlot", [
+      { type: "bar", x: NAMES, y: piStar, name: "π* (stationary)",
+        marker: { color: "rgba(0,0,0,0)", line: { color: "#888", width: 2, dash: "dot" } },
+        width: 0.72, hoverinfo: "x+y" },
+      { type: "bar", x: NAMES, y: piNow, name: "πₜ (now)",
+        marker: { color: COLORS, line: { width: 0 } }, opacity: 0.85, width: 0.5, hoverinfo: "x+y" },
+    ], {
+      title: { text: "Distribution πₜ at t = " + t + "  (outline = π*)", font: { size: 13 } },
+      barmode: "overlay",
+      margin: { l: 44, r: 12, t: 34, b: 30 },
+      xaxis: { title: { text: "state", font: { size: 11 } } },
+      yaxis: { range: [0, 1], title: { text: "probability", font: { size: 11 } } },
+      showlegend: true, legend: { x: 0.55, y: 0.98, font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    // ---- PLOT 2: component trajectories vs step, converging to pi* ----
+    const steps = traj.map((_, i) => i);
+    const traces = [];
+    for (let k = 0; k < 3; k++) {
+      traces.push({ type: "scatter", mode: "lines", x: steps, y: traj.map((p) => p[k]),
+        line: { color: COLORS[k], width: 2 }, name: "P(state " + NAMES[k] + ")" });
+      // dashed stationary level
+      traces.push({ type: "scatter", mode: "lines", x: [0, horizon], y: [piStar[k], piStar[k]],
+        line: { color: COLORS[k], width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false });
+    }
+    // vertical marker at current t
+    traces.push({ type: "scatter", mode: "lines", x: [t, t], y: [0, 1],
+      line: { color: "#bbb", width: 1 }, hoverinfo: "skip", showlegend: false });
+    Plotly.react("trajPlot", traces, {
+      title: { text: "Each component vs t  (dotted = π*)", font: { size: 13 } },
+      margin: { l: 44, r: 12, t: 34, b: 34 },
+      xaxis: { range: [0, horizon], title: { text: "step t", font: { size: 11 } } },
+      yaxis: { range: [0, 1], title: { text: "probability", font: { size: 11 } } },
+      showlegend: true, legend: { x: 0.6, y: 0.98, font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    // ---- PLOT 3: transition diagram (nodes on a circle + labeled arrows) ----
+    drawDiagram(P, piNow);
+
+    // ---- status ----
+    const { mixT, lam2 } = mixing(P, piStar);
+    const f = (x) => PR.round(x, 3);
+    const distNow = tv(piNow, piStar);
+
+    const matRow = (i) =>
+      `<code>[${f(P[i][0])}&nbsp;${f(P[i][1])}&nbsp;${f(P[i][2])}]</code>`;
+
+    let verdict;
+    if (mixT === null && (lam2 == null || lam2 > 0.999)) {
+      verdict = '<span class="tag none">⚠ does not settle — πₜ never gets within 1% of π* (periodic / non-mixing).</span>';
+    } else if (mixT === null) {
+      verdict = '<span class="tag none">slow — not within 1% of π* in 200 steps.</span>';
+    } else {
+      verdict = '<span class="tag one">settles to within 1% of π* after t* = ' + mixT + ' steps.</span>';
+    }
+
+    $("status").innerHTML =
+      verdict + '<br>' +
+      'P rows &nbsp;A: ' + matRow(0) + ' &nbsp;B: ' + matRow(1) + ' &nbsp;C: ' + matRow(2) + '<br>' +
+      'now &nbsp;<code>πₜ = (' + f(piNow[0]) + ', ' + f(piNow[1]) + ', ' + f(piNow[2]) + ')</code>' +
+      ' &nbsp;→ stationary &nbsp;<code>π* = (' + f(piStar[0]) + ', ' + f(piStar[1]) + ', ' + f(piStar[2]) + ')</code><br>' +
+      'distance to π* now &nbsp;<code>½‖πₜ − π*‖₁ = ' + f(distNow) + '</code>' +
+      (lam2 != null ? ' &nbsp;·&nbsp; convergence rate <code>|λ₂| ≈ ' + f(lam2) + '</code> (distance ~ |λ₂|ᵗ)' : '') +
+      '<br><span style="color:#666">π* solves <code>π* = π* P</code> — the left eigenvector of P for eigenvalue 1, normalized to sum 1.</span>';
+  }
+
+  function drawDiagram(P, piNow) {
+    // node positions on a circle
+    const ang = [Math.PI / 2, Math.PI / 2 + 2 * Math.PI / 3, Math.PI / 2 + 4 * Math.PI / 3];
+    const pos = ang.map((a) => [Math.cos(a), Math.sin(a)]);
+    const data = [];
+
+    // nodes sized by current probability mass
+    data.push({
+      type: "scatter", mode: "markers+text",
+      x: pos.map((p) => p[0]), y: pos.map((p) => p[1]),
+      text: NAMES.map((n, i) => n + " (" + PR.round(piNow[i], 2) + ")"),
+      textposition: "middle center", textfont: { color: "#fff", size: 13 },
+      marker: { size: pos.map((_, i) => 34 + 46 * piNow[i]), color: COLORS, line: { color: "#333", width: 1 } },
+      hoverinfo: "skip", showlegend: false,
+    });
+
+    const annotations = [];
+    const R = 0.30;       // node radius in data units (to start/end arrows clear of markers)
+    const OFF = 0.14;     // perpendicular offset so i->j and j->i don't overlap
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        const p = P[i][j];
+        if (p < 0.005) continue;
+        if (i === j) {
+          // self-loop: just label the "stay" probability outside the node
+          const o = 1.34;
+          annotations.push({
+            x: pos[i][0] * o, y: pos[i][1] * o, xref: "x", yref: "y",
+            text: "↺ " + PR.round(p, 2), showarrow: false,
+            font: { color: COLORS[i], size: 12 },
+          });
+          continue;
+        }
+        const A = pos[i], B = pos[j];
+        let dx = B[0] - A[0], dy = B[1] - A[1];
+        const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L;
+        const px = -dy, py = dx;                         // perpendicular
+        const tail = [A[0] + dx * R + px * OFF, A[1] + dy * R + py * OFF];
+        const head = [B[0] - dx * R + px * OFF, B[1] - dy * R + py * OFF];
+        annotations.push({
+          x: head[0], y: head[1], ax: tail[0], ay: tail[1],
+          xref: "x", yref: "y", axref: "x", ayref: "y",
+          showarrow: true, arrowhead: 3, arrowsize: 1.2, arrowwidth: 1.6, arrowcolor: "#888",
+          text: "",
+        });
+        annotations.push({
+          x: (tail[0] + head[0]) / 2 + px * 0.06, y: (tail[1] + head[1]) / 2 + py * 0.06,
+          xref: "x", yref: "y", text: PR.round(p, 2), showarrow: false,
+          font: { color: "#555", size: 11 }, bgcolor: "rgba(255,255,255,0.7)",
+        });
+      }
+    }
+
+    Plotly.react("diagPlot", data, {
+      title: { text: "Transition diagram  (node size = πₜ, arrows = Pᵢⱼ)", font: { size: 13 } },
+      margin: { l: 10, r: 10, t: 34, b: 10 },
+      xaxis: { range: [-1.7, 1.7], visible: false, scaleanchor: "y", scaleratio: 1 },
+      yaxis: { range: [-1.7, 1.7], visible: false },
+      annotations, showlegend: false,
+    }, { responsive: true });
+  }
+
+  // ----- wiring -----------------------------------------------------------
+  $("t").addEventListener("input", draw);
+  SLIDERS.forEach((id) => $(id).addEventListener("input", draw));
+  document.querySelectorAll(".preset[data-p]").forEach((b) => {
+    b.onclick = () => { setSlidersFrom(PRESETS[b.dataset.p]); $("t").value = 0; draw(); };
+  });
+  document.querySelectorAll(".preset[data-s]").forEach((b) => {
+    b.onclick = () => { start = b.dataset.s; $("t").value = 0; draw(); };
+  });
+
+  setSlidersFrom(PRESETS.regular);
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Probability models and axioms · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Lecture 1 · Probability models and axioms</h1>
+  <div class="sub">A <b>probability model</b> is two things: a <b>sample space</b> <code>Ω</code> — the set of all
+    possible outcomes — and a <b>probability law</b> that assigns to each event <code>A ⊆ Ω</code> a number
+    <code>P(A)</code> obeying just <i>three</i> axioms. Everything in the course is built on those three rules.
+    Here <code>Ω</code> is the unit square <code>[0,1]²</code>, an event is a region inside it, and
+    <code>P(A)</code> is simply its <b>area</b>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> the big square is the whole sample space <code>Ω</code> — total area
+    <code>P(Ω) = 1</code>. Two events, <span style="color:#1f77b4">A (blue)</span> and
+    <span style="color:#d62728">B (red)</span>, are rectangles you move and resize with the sliders. Where they
+    overlap you get <span style="color:#6a3d9a">A ∩ B (purple)</span>. The scattered dots are
+    <b>1500 uniformly random outcomes</b> — a Monte-Carlo "rain" on the square — colored by which region they
+    landed in. The fraction of dots inside a region tracks its area: that is what <i>probability = area = long-run
+    frequency</i> means, and you can watch the exact areas and the dot-counts agree in the status box.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Presets:</span>
+    <button class="preset" data-p="disjoint">disjoint · A ∩ B = ∅</button>
+    <button class="preset" data-p="nested">nested · A ⊂ B</button>
+    <button class="preset" data-p="overlap">overlapping</button>
+    <button class="preset" data-p="independent">independent · P(A∩B)=P(A)P(B)</button>
+    <button class="preset" id="resample" style="background:#176d2c;color:#fff;border-color:#176d2c">↻ new random outcomes</button>
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#1f77b4;font-weight:bold;margin-right:6px">Event A (blue):</span>
+    <label style="font-size:13px">left <input type="range" id="ax" min="0" max="1" step="0.01" value="0.10" style="vertical-align:middle;width:120px"></label>
+    <label style="font-size:13px">bottom <input type="range" id="ay" min="0" max="1" step="0.01" value="0.20" style="vertical-align:middle;width:120px"></label>
+    <label style="font-size:13px">width <input type="range" id="aw" min="0.02" max="1" step="0.01" value="0.45" style="vertical-align:middle;width:120px"></label>
+    <label style="font-size:13px">height <input type="range" id="ah" min="0.02" max="1" step="0.01" value="0.50" style="vertical-align:middle;width:120px"></label>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#d62728;font-weight:bold;margin-right:6px">Event B (red):</span>
+    <label style="font-size:13px">left <input type="range" id="bx" min="0" max="1" step="0.01" value="0.40" style="vertical-align:middle;width:120px"></label>
+    <label style="font-size:13px">bottom <input type="range" id="by" min="0" max="1" step="0.01" value="0.35" style="vertical-align:middle;width:120px"></label>
+    <label style="font-size:13px">width <input type="range" id="bw" min="0.02" max="1" step="0.01" value="0.45" style="vertical-align:middle;width:120px"></label>
+    <label style="font-size:13px">height <input type="range" id="bh" min="0.02" max="1" step="0.01" value="0.50" style="vertical-align:middle;width:120px"></label>
+  </div>
+
+  <div class="plots">
+    <div id="squarePlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>What a probability model actually is</h2>
+  <p style="font-size:14px;max-width:780px">
+    Tsitsiklis opens the course with a two-step recipe, and it never changes for the rest of the term. <b>Step
+    one:</b> describe the <b>sample space</b> <code>Ω</code>, the set of all possible outcomes of the experiment —
+    here, every point of the unit square. An <b>event</b> is any subset of <code>Ω</code>; A and B above are
+    events. <b>Step two:</b> hand down a <b>probability law</b> that assigns a number <code>P(A)</code> to each
+    event. The model is only as good as the law, and a law is only legal if it obeys the three axioms below. On
+    this square the law is the simplest one imaginable — <code>P(A) =</code> the area of <code>A</code> — and you
+    should check for yourself that it satisfies all three.
+  </p>
+
+  <h2>The three axioms</h2>
+  <p style="font-size:14px;max-width:780px">
+    The entire edifice of probability rests on three rules. They are deliberately spare; everything else is a
+    theorem.
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>(1) Nonnegativity.</b> <code>P(A) ≥ 0</code> for every event <code>A</code>. Areas are never negative,
+      so this is automatic on the square. Probabilities are not allowed to be debts.</li>
+    <li><b>(2) Normalization.</b> <code>P(Ω) = 1</code>. <i>Something</i> happens with certainty, so the whole
+      sample space carries probability 1. The unit square has area exactly 1 — that is why we chose it.</li>
+    <li><b>(3) (Finite) additivity.</b> If <code>A</code> and <code>B</code> are <b>disjoint</b>
+      (<code>A ∩ B = ∅</code>), then <code>P(A ∪ B) = P(A) + P(B)</code>. Two non-overlapping regions have areas
+      that simply add. (The full axiom is <i>countable</i> additivity — it holds for infinitely many disjoint
+      events at once — but the finite version is all we need today.)</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    From these three lines you can <i>derive</i> every identity you will ever use: <code>P(Aᶜ) = 1 − P(A)</code>,
+    <code>P(∅) = 0</code>, monotonicity (<code>A ⊆ B ⇒ P(A) ≤ P(B)</code>), and the union bound. None of these are
+    extra assumptions — they are consequences. That economy is the whole point of an axiomatic theory.
+  </p>
+
+  <h2>The intuition — probability is area</h2>
+  <p style="font-size:14px;max-width:780px">
+    Why draw probabilities as areas? Because area already obeys all three axioms for free, so it is a perfect
+    physical model of a probability law. An area is never negative (axiom 1); the whole square has area 1
+    (axiom 2); and two non-overlapping patches have areas that add (axiom 3). Throw a dart that is equally likely
+    to land anywhere on the square — a <b>uniform</b> outcome — and the chance it lands in region <code>A</code> is
+    exactly the area of <code>A</code>. Every dot in the picture is one such dart. The blue cloud's <i>size</i> is
+    <code>P(A)</code>; you are looking at probability directly. Keep this picture in your head: for the rest of
+    6.041, "probability of an event" and "how much of the sample space the event occupies" are the same sentence.
+  </p>
+
+  <h2>Why additivity needs disjointness</h2>
+  <p style="font-size:14px;max-width:780px">
+    Axiom 3 has a <i>hypothesis</i> that students love to drop: the events must be <b>disjoint</b>. Press the
+    <b>disjoint</b> preset — A and B don't touch, no purple appears, and the status box confirms
+    <code>P(A ∪ B) = P(A) + P(B)</code> on the nose. Now drag B so it slides into A. The moment they overlap, the
+    naive sum <code>P(A) + P(B)</code> <b>overcounts</b>: every purple dart got counted twice, once for being in A
+    and once for being in B. Adding areas double-charges the shared patch. So <code>P(A) + P(B)</code> is no longer
+    the area of the union — it is the area of the union <i>plus</i> the area of the overlap. Disjointness is exactly
+    the condition that makes the overlap empty, and the double-count vanish.
+  </p>
+
+  <h2>Inclusion–exclusion — the fix for overlap</h2>
+  <p style="font-size:14px;max-width:780px">
+    The repair is to subtract back the part you counted twice:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(A ∪ B) = P(A) + P(B) − P(A ∩ B)
+                              └──── the overlap, added once too often, removed once</pre>
+  <p style="font-size:14px;max-width:780px">
+    This is the <b>inclusion–exclusion</b> formula, and it is not a new axiom — it follows from the three axioms by
+    cutting the union into <i>disjoint</i> pieces and applying additivity to each. Write
+    <code>A ∪ B = (A only) ∪ (A ∩ B) ∪ (B only)</code>, three non-overlapping regions; then
+    <code>P(A) = (A only) + (A ∩ B)</code> and <code>P(B) = (B only) + (A ∩ B)</code>, and a line of algebra gives
+    the formula above. Notice it gracefully contains axiom 3 as a special case: when A and B are disjoint,
+    <code>P(A ∩ B) = 0</code> and the correction term disappears. The status box computes both sides live, so you
+    can watch <code>P(A) + P(B) − P(A ∩ B)</code> stay locked to the true area of the union no matter how you drag
+    the rectangles.
+  </p>
+
+  <h2>Independence is a different idea — don't confuse it with disjoint</h2>
+  <p style="font-size:14px;max-width:780px">
+    Press the <b>independent</b> preset. Here A is a vertical strip (full height) and B is a horizontal strip
+    (full width), so they cross in a small rectangle. Their areas multiply:
+    <code>P(A ∩ B) = P(A) · P(B)</code> — that algebraic equation is the <i>definition</i> of
+    <b>independent</b> events (knowing the dart is in the A-strip tells you nothing about whether it is in the
+    B-strip). This is a trap worth flagging now, even though independence is a later lecture: <b>disjoint and
+    independent are opposites, not synonyms.</b> Disjoint events can't both happen, so
+    <code>P(A ∩ B) = 0</code>; if they also have positive probability, knowing A happened tells you B
+    <i>did not</i> — the strongest possible dependence. Inclusion–exclusion holds for <i>all</i> events;
+    multiplication <code>P(A)P(B)</code> is the special, fragile case of independence.
+  </p>
+
+  <h2>Worked numbers — the overlapping preset</h2>
+  <p style="font-size:14px;max-width:780px">
+    Take the <b>overlapping</b> preset, where A is the rectangle <code>[0.15, 0.60] × [0.20, 0.70]</code> and B is
+    <code>[0.40, 0.85] × [0.35, 0.85]</code>. Areas of axis-aligned rectangles are just width × height:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(A) = (0.60 − 0.15)·(0.70 − 0.20) = 0.45 · 0.50 = 0.225
+P(B) = (0.85 − 0.40)·(0.85 − 0.35) = 0.45 · 0.50 = 0.225
+
+A ∩ B  spans  x ∈ [0.40, 0.60],  y ∈ [0.35, 0.70]
+P(A ∩ B) = (0.60 − 0.40)·(0.70 − 0.35) = 0.20 · 0.35 = 0.070
+
+inclusion–exclusion:
+P(A ∪ B) = P(A) + P(B) − P(A ∩ B)
+         = 0.225 + 0.225 − 0.070 = 0.380     ← NOT 0.45, which would double-count the overlap</pre>
+  <p style="font-size:14px;max-width:780px">
+    The naive sum <code>0.225 + 0.225 = 0.450</code> is wrong by exactly <code>0.070</code> — the area of the
+    purple intersection, counted twice and removed once. Read these four numbers off the status box and confirm
+    the <code>≈ 1500</code> random dots reproduce them: roughly <code>0.38 × 1500 ≈ 570</code> dots should be
+    colored (in A or B), with about <code>0.07 × 1500 ≈ 105</code> of them purple.
+  </p>
+
+  <h2>The frequentist meaning — area ≈ long-run fraction</h2>
+  <p style="font-size:14px;max-width:780px">
+    The dots are not decoration; they are the bridge between the axioms and reality. Each press of <b>↻ new
+    random outcomes</b> reruns the experiment 1500 times. The <b>law of large numbers</b> (Lecture 19) promises
+    that the <i>fraction</i> of darts landing in A converges to the area <code>P(A)</code> as the number of darts
+    grows — probability is the long-run frequency of an event. With 1500 darts the empirical fractions in the
+    status box already sit within a percent or two of the exact areas; resample a few times and watch them
+    jitter around the true value rather than drift away from it. That convergence is <i>why</i> the area-model of
+    probability predicts anything about the real world, and it is the experimental fact the rest of the course
+    makes precise.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const N = 1500;                 // Monte-Carlo outcomes ("darts")
+  const SLIDERS = ["ax","ay","aw","ah","bx","by","bw","bh"];
+
+  // Fixed pool of uniform outcomes on the unit square; resample button regenerates it.
+  let pts = [];
+  function resample() {
+    pts = new Array(N);
+    for (let i = 0; i < N; i++) pts[i] = [PR.uniform(0, 1), PR.uniform(0, 1)];
+  }
+  resample();
+
+  // Read a rectangle from its sliders and CLIP it to the unit square,
+  // so P(A) is always the area that actually lives inside Ω.
+  function rect(px, py, pw, ph) {
+    const x0 = Math.max(0, +$(px).value), y0 = Math.max(0, +$(py).value);
+    const x1 = Math.min(1, +$(px).value + +$(pw).value);
+    const y1 = Math.min(1, +$(py).value + +$(ph).value);
+    return { x0, y0, x1: Math.max(x0, x1), y1: Math.max(y0, y1) };
+  }
+  const area = (r) => (r.x1 - r.x0) * (r.y1 - r.y0);
+  const inRect = (p, r) => p[0] >= r.x0 && p[0] <= r.x1 && p[1] >= r.y0 && p[1] <= r.y1;
+
+  // Rectangle intersection (axis-aligned) → exact P(A ∩ B).
+  function inter(A, B) {
+    const x0 = Math.max(A.x0, B.x0), x1 = Math.min(A.x1, B.x1);
+    const y0 = Math.max(A.y0, B.y0), y1 = Math.min(A.y1, B.y1);
+    if (x1 <= x0 || y1 <= y0) return { empty: true, x0, y0, x1: x0, y1: y0 };
+    return { empty: false, x0, y0, x1, y1 };
+  }
+
+  const PRESETS = {
+    //          ax    ay    aw    ah     bx    by    bw    bh
+    disjoint:   [0.08, 0.20, 0.34, 0.55,  0.56, 0.30, 0.34, 0.55],
+    nested:     [0.32, 0.32, 0.28, 0.28,  0.10, 0.10, 0.80, 0.80],
+    overlap:    [0.15, 0.20, 0.45, 0.50,  0.40, 0.35, 0.45, 0.50],
+    independent:[0.10, 0.00, 0.60, 1.00,  0.00, 0.15, 1.00, 0.45],
+  };
+
+  function shadeRect(r, color, op) {
+    return {
+      type: "rect", xref: "x", yref: "y",
+      x0: r.x0, y0: r.y0, x1: r.x1, y1: r.y1,
+      line: { color, width: 1.5 }, fillcolor: color, opacity: op, layer: "below",
+    };
+  }
+
+  function draw() {
+    const A = rect("ax", "ay", "aw", "ah");
+    const B = rect("bx", "by", "bw", "bh");
+    const I = inter(A, B);
+
+    const PA = area(A), PB = area(B);
+    const PI = I.empty ? 0 : (I.x1 - I.x0) * (I.y1 - I.y0);
+    const PU = PA + PB - PI;
+
+    // classify the random outcomes
+    const cats = { both: [[], []], aOnly: [[], []], bOnly: [[], []], none: [[], []] };
+    let cA = 0, cB = 0, cI = 0, cU = 0;
+    for (const p of pts) {
+      const ia = inRect(p, A), ib = inRect(p, B);
+      if (ia) cA++; if (ib) cB++; if (ia && ib) cI++; if (ia || ib) cU++;
+      const bucket = ia && ib ? "both" : ia ? "aOnly" : ib ? "bOnly" : "none";
+      cats[bucket][0].push(p[0]); cats[bucket][1].push(p[1]);
+    }
+
+    const mk = (c, color, name, size) => ({
+      type: "scatter", mode: "markers", x: cats[c][0], y: cats[c][1],
+      marker: { color, size: size || 4, opacity: c === "none" ? 0.35 : 0.85, line: { width: 0 } },
+      name, hoverinfo: "skip",
+    });
+
+    const data = [
+      mk("none", "#bbbbbb", "neither (Aᶜ ∩ Bᶜ)"),
+      mk("aOnly", "#1f77b4", "A only", 5),
+      mk("bOnly", "#d62728", "B only", 5),
+      mk("both", "#6a3d9a", "A ∩ B (both)", 6),
+    ];
+
+    const shapes = [
+      shadeRect({ x0: 0, y0: 0, x1: 1, y1: 1 }, "#000", 0),   // Ω border
+      shadeRect(A, "#1f77b4", 0.16),
+      shadeRect(B, "#d62728", 0.16),
+    ];
+    if (!I.empty) shapes.push(shadeRect(I, "#6a3d9a", 0.30));
+    shapes[0].line = { color: "#444", width: 2 };
+    shapes[0].fillcolor = "rgba(0,0,0,0)";
+
+    Plotly.react("squarePlot", data, {
+      title: { text: "Sample space Ω = [0,1]²   (P(Ω) = 1)", font: { size: 13 } },
+      margin: { l: 36, r: 12, t: 34, b: 32 },
+      xaxis: { range: [-0.02, 1.02], zeroline: false, scaleanchor: "y", scaleratio: 1, constrain: "domain" },
+      yaxis: { range: [-0.02, 1.02], zeroline: false },
+      shapes,
+      showlegend: true,
+      legend: { x: 1.02, y: 1, font: { size: 11 }, bgcolor: "rgba(255,255,255,0.7)" },
+    }, { responsive: true });
+
+    // ----- status: exact areas + inclusion–exclusion + Monte-Carlo agreement -----
+    const f = (x) => PR.round(x, 3);
+    const disjoint = PI < 1e-9;
+    const indep = Math.abs(PI - PA * PB) < 1e-3;
+    const tag = disjoint
+      ? '<span class="tag one">A ∩ B = ∅ — disjoint, so additivity applies directly.</span>'
+      : '<span class="tag none">A and B overlap — you must subtract P(A ∩ B).</span>';
+
+    const html =
+      tag + '<br>' +
+      '<b>Exact areas (the probability law):</b><br>' +
+      'P(A) = <code>' + f(PA) + '</code> &nbsp; P(B) = <code>' + f(PB) + '</code> &nbsp; ' +
+      'P(A ∩ B) = <code>' + f(PI) + '</code> &nbsp; P(A ∪ B) = <code>' + f(PU) + '</code><br>' +
+      '<b>Inclusion–exclusion:</b> &nbsp;P(A) + P(B) − P(A ∩ B) = <code>' +
+        f(PA) + ' + ' + f(PB) + ' − ' + f(PI) + ' = ' + f(PU) + '</code> ✓ &nbsp; ' +
+      '<span style="color:#666">(naive sum ' + f(PA + PB) +
+        (disjoint ? ' is already correct)' : ' would over-count by ' + f(PI) + ')') + '</span><br>' +
+      (indep
+        ? '<span style="color:#176d2c">independent: P(A)·P(B) = ' + f(PA * PB) +
+          ' = P(A ∩ B) ✓ — the two strips are independent events.</span><br>'
+        : '') +
+      '<b>Monte-Carlo (' + N + ' outcomes):</b> &nbsp;' +
+      'A: <code>' + cA + '/' + N + ' = ' + f(cA / N) + '</code> vs ' + f(PA) + ' &nbsp;·&nbsp; ' +
+      'B: <code>' + f(cB / N) + '</code> vs ' + f(PB) + ' &nbsp;·&nbsp; ' +
+      'A∩B: <code>' + f(cI / N) + '</code> vs ' + f(PI) + ' &nbsp;·&nbsp; ' +
+      'A∪B: <code>' + f(cU / N) + '</code> vs ' + f(PU) + '<br>' +
+      '<span style="color:#666">the dot-fractions approximate the areas — probability ≈ long-run frequency.</span>';
+    $("status").innerHTML = html;
+  }
+
+  // wiring
+  SLIDERS.forEach((id) => $(id).addEventListener("input", draw));
+  $("resample").addEventListener("click", () => { resample(); draw(); });
+  document.querySelectorAll(".preset[data-p]").forEach((b) => {
+    b.onclick = () => {
+      const v = PRESETS[b.dataset.p];
+      SLIDERS.forEach((id, i) => { $(id).value = v[i]; });
+      draw();
+    };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

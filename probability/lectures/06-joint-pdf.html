@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Joint PDFs and conditioning · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Lecture 6 · Joint PDFs and conditioning</h1>
+  <div class="sub">Two continuous variables <code>X</code> and <code>Y</code> share a single surface, the
+    <b>joint density</b> <code>f(x,y)</code>. Probability is the <i>volume</i> sitting under that surface
+    over a region. To <b>condition</b> on a measurement <code>X = x₀</code> is to take a vertical slice
+    through the joint and stretch it back up to area one — a renormalized cross-section.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> on the <span style="color:#1f77b4">left</span> is the joint density of a standard
+    <b>bivariate normal</b> with correlation <code>ρ</code> — a hill over the plane, drawn as a
+    <b>contour map</b> (the rings are level curves, like a topographic map; tight rings = steep, high
+    density). The vertical white line marks where you have measured <code>X = x₀</code>. On the
+    <span style="color:#176d2c">right</span> is the <b>conditional density</b> <code>f(Y | X = x₀)</code>:
+    exactly the heights of the joint <i>along that line</i>, rescaled so the area under the curve is 1.
+    Move <code>ρ</code> and watch the rings tilt; move <code>x₀</code> and watch the green curve slide and
+    narrow. The faint grey bell is the <b>marginal</b> <code>f<sub>Y</sub> = N(0,1)</code> — conditioning
+    pulls the center toward <code>ρx₀</code> and squeezes the spread.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Correlation presets:</span>
+    <button class="preset" data-p="0">ρ = 0 · independent</button>
+    <button class="preset" data-p="0.5">ρ = 0.5</button>
+    <button class="preset" data-p="0.9">ρ = 0.9 · tight</button>
+    <button class="preset" data-p="-0.8">ρ = −0.8 · anti-correlated</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">correlation&nbsp; <b>ρ = <span id="rhoval">0.5</span></b>&nbsp;
+      <input type="range" id="rho" min="-0.95" max="0.95" step="0.01" value="0.5" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(how the two variables lean together)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <label style="font-size:14px">slice at&nbsp; <b>x₀ = <span id="x0val">1.0</span></b>&nbsp;
+      <input type="range" id="x0" min="-3" max="3" step="0.05" value="1.0" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(the value of X you condition on)</span>
+  </div>
+
+  <div class="plots">
+    <div id="jointPlot" class="plot"></div>
+    <div id="condPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>A density is a surface, and probability is volume</h2>
+  <p style="font-size:14px;max-width:780px">
+    For a single continuous variable the density <code>f<sub>X</sub>(x)</code> is a curve, and probability is
+    the <i>area</i> underneath it: <code>P(a ≤ X ≤ b) = ∫f<sub>X</sub>(x) dx</code>. With two variables the
+    density <code>f(x,y)</code> is a <b>surface</b> over the plane, and probability becomes <b>volume</b>:
+    <code>P((X,Y) ∈ B) = ∬<sub>B</sub> f(x,y) dx dy</code>. The whole surface integrates to 1, just as the whole
+    curve had area 1. The contour map on the left is that surface seen from above; each ring is a height level,
+    and the volume over any region is "how much hill" sits above it.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Our running example is the standard <b>bivariate normal</b>, whose closed form is
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+f(x,y) = 1 / (2π√(1−ρ²)) · exp( −(x² − 2ρxy + y²) / (2(1−ρ²)) )</pre>
+  <p style="font-size:14px;max-width:780px">
+    Both marginals are standard normals; only the single number <code>ρ</code> (the correlation) ties them
+    together. At <code>ρ = 0</code> the contours are perfect circles. As <code>|ρ|</code> grows the circles
+    stretch into tilted ellipses — positive <code>ρ</code> leans up the 45° line, negative <code>ρ</code> leans
+    down it — and at the extremes the hill collapses onto a single ridge.
+  </p>
+
+  <h2>Marginals: flatten the hill onto one wall</h2>
+  <p style="font-size:14px;max-width:780px">
+    To recover the density of <code>Y</code> alone, you no longer care about <code>X</code>, so you
+    <i>integrate it out</i>: <code>f<sub>Y</sub>(y) = ∫ f(x,y) dx</code>. Picture sweeping all the volume of the
+    hill sideways and letting it pile up against the <code>y</code>-wall — the shadow it casts is the marginal.
+    For our bivariate normal this collapsing always yields <code>f<sub>Y</sub> = N(0,1)</code>, no matter what
+    <code>ρ</code> is. That is the faint grey bell on the right, and it is your baseline: it is what you'd
+    believe about <code>Y</code> <b>before</b> you learn anything about <code>X</code>.
+  </p>
+
+  <h2>Conditioning = slice, then renormalize</h2>
+  <p style="font-size:14px;max-width:780px">
+    Now suppose you measure <code>X</code> and it comes out <code>x₀</code>. The conditional density of
+    <code>Y</code> is defined exactly as in the discrete case — joint over marginal:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+f(y | X = x₀) = f(x₀, y) / f_X(x₀)</pre>
+  <p style="font-size:14px;max-width:780px">
+    Read it geometrically. The numerator <code>f(x₀, y)</code>, as <code>y</code> varies, is the
+    <i>profile of the hill along the vertical line</i> <code>x = x₀</code> — the slice marked in white on the
+    contour map. That profile has the right <i>shape</i> but the wrong <i>area</i>: it doesn't integrate to 1,
+    because most of the hill's volume lives at other <code>x</code> values. Dividing by the constant
+    <code>f<sub>X</sub>(x₀)</code> is precisely the rescaling that lifts the slice back up to total area 1. So
+    <b>conditioning is a slice followed by a renormalization</b>, nothing more. The green curve on the right is
+    that lifted slice.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    For the standard bivariate normal the algebra is clean: complete the square in the exponent and the
+    conditional comes out normal again,
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+f(Y | X = x₀) = N( mean = ρ·x₀ ,  sd = √(1−ρ²) )</pre>
+  <p style="font-size:14px;max-width:780px">
+    Two things move, and they are exactly what the picture shows. The <b>mean shifts</b> from 0 to
+    <code>ρx₀</code>: learning that <code>X</code> is large drags your belief about <code>Y</code> in the
+    correlated direction. And the <b>variance shrinks</b> from 1 to <code>1 − ρ²</code>: a measurement always
+    sharpens your knowledge, never blurs it. At <code>ρ = 0.9</code> the conditional sd is
+    <code>√(1−0.81) ≈ 0.44</code> — less than half the original spread.
+  </p>
+
+  <h2>Independence is a factoring of the surface</h2>
+  <p style="font-size:14px;max-width:780px">
+    Press the <b>ρ = 0</b> preset. The contours become circles, and now slide <code>x₀</code> back and forth:
+    the green conditional <i>does not move</i> — it sits exactly on top of the grey marginal for every slice.
+    That is the visual meaning of <b>independence</b>: knowing <code>X</code> tells you nothing about
+    <code>Y</code>, so <code>f(y | x₀) = f<sub>Y</sub>(y)</code> always. Equivalently, the joint surface
+    <i>factors</i>, <code>f(x,y) = f<sub>X</sub>(x) · f<sub>Y</sub>(y)</code> — the hill is a simple product of
+    two bells with no tilt. For the bivariate normal this factoring happens <b>if and only if</b>
+    <code>ρ = 0</code>. (That last "iff" is special to the normal; in general zero correlation does <i>not</i>
+    force independence, but for jointly normal variables it does.)
+  </p>
+
+  <h2>The conditional mean is the regression line — the bridge to ISLR</h2>
+  <p style="font-size:14px;max-width:780px">
+    Track the green curve's center as you drag <code>x₀</code>: it sits at <code>E[Y | X = x₀] = ρx₀</code>.
+    Plot that center against <code>x₀</code> and you trace the <b>straight line</b> <code>y = ρx</code> — the
+    population <b>regression of Y on X</b>. This is not a coincidence of the normal; it is the deep link
+    between probability and prediction. If you must guess <code>Y</code> from a measured <code>X = x₀</code>
+    and you are scored by mean-squared error, the optimal guess is the conditional expectation
+    <code>E[Y | X = x₀]</code>. That single fact is the theoretical spine of <i>An Introduction to Statistical
+    Learning</i>: regression is the business of estimating this conditional mean from data, and least squares
+    works so cleanly for Gaussian-like data precisely because here the conditional mean is genuinely the
+    straight line <code>ρx</code>. The slope <code>ρ</code> also explains <b>regression to the mean</b>: since
+    <code>|ρ| ≤ 1</code>, the predicted <code>Y</code> is always <i>closer to its mean than x₀ is to its
+    own</i> — extreme inputs forecast less-extreme outputs.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // Closed-form standard bivariate-normal density (unit marginals, correlation rho).
+  function biNorm(x, y, rho) {
+    const omr2 = 1 - rho * rho;                       // 1 − ρ²
+    const z = (x * x - 2 * rho * x * y + y * y) / (2 * omr2);
+    return Math.exp(-z) / (2 * Math.PI * Math.sqrt(omr2));
+  }
+
+  // Grid for the contour plot.
+  const G = PR.linspace(-3.4, 3.4, 70);
+
+  let rho = 0.5;
+  let x0 = 1.0;
+
+  function draw() {
+    rho = parseFloat($("rho").value);
+    x0  = parseFloat($("x0").value);
+    $("rhoval").textContent = PR.round(rho, 2);
+    $("x0val").textContent  = PR.round(x0, 2);
+
+    // ---- left: joint density as a contour map ----
+    const Z = G.map((y) => G.map((x) => biNorm(x, y, rho)));   // Z[row=y][col=x]
+    const contour = {
+      type: "contour", x: G, y: G, z: Z,
+      colorscale: "YlGnBu", reversescale: true,
+      contours: { coloring: "fill" },
+      line: { width: 0.5, color: "rgba(255,255,255,0.35)" },
+      showscale: false, hoverinfo: "skip", name: "f(x,y)",
+    };
+    // the vertical slice line x = x0
+    const sliceLine = {
+      type: "scatter", mode: "lines", x: [x0, x0], y: [-3.4, 3.4],
+      line: { color: "#fff", width: 2.5 }, hoverinfo: "skip", showlegend: false,
+    };
+    // marker at the conditional mean (x0, ρx0) sitting on the slice
+    const meanDot = {
+      type: "scatter", mode: "markers", x: [x0], y: [rho * x0],
+      marker: { color: "#b00020", size: 9, line: { color: "#fff", width: 1.5 } },
+      hoverinfo: "skip", showlegend: false,
+    };
+    Plotly.react("jointPlot", [contour, sliceLine, meanDot], {
+      title: { text: "Joint density f(x,y) — slice at x₀ = " + PR.round(x0, 2), font: { size: 13 } },
+      margin: { l: 40, r: 12, t: 34, b: 36 },
+      xaxis: { range: [-3.4, 3.4], title: { text: "x", font: { size: 12 } }, constrain: "domain" },
+      yaxis: { range: [-3.4, 3.4], title: { text: "y", font: { size: 12 } }, scaleanchor: "x", scaleratio: 1 },
+    }, { responsive: true });
+
+    // ---- right: conditional density f(Y | X = x0) vs the marginal f_Y ----
+    const cmu = rho * x0;                              // conditional mean ρx₀
+    const csd = Math.sqrt(1 - rho * rho);              // conditional sd √(1−ρ²)
+    const ys = PR.linspace(-3.6, 3.6, 200);
+    const condY = ys.map((y) => PR.normPdf(y, cmu, csd));
+    const margY = ys.map((y) => PR.normPdf(y, 0, 1));
+
+    Plotly.react("condPlot", [
+      // faint marginal baseline N(0,1)
+      { type: "scatter", mode: "lines", x: ys, y: margY,
+        line: { color: "#999", width: 1.5, dash: "dot" },
+        name: "marginal f_Y = N(0,1)", hoverinfo: "skip" },
+      // the conditional (renormalized slice)
+      { type: "scatter", mode: "lines", x: ys, y: condY, fill: "tozeroy",
+        fillcolor: "rgba(46,139,87,0.18)", line: { color: "#176d2c", width: 2.5 },
+        name: "conditional f(Y | X=x₀)", hoverinfo: "skip" },
+      // vertical marker at the conditional mean
+      { type: "scatter", mode: "lines", x: [cmu, cmu], y: [0, PR.normPdf(cmu, cmu, csd)],
+        line: { color: "#b00020", width: 2, dash: "dash" }, hoverinfo: "skip", showlegend: false },
+    ], {
+      title: { text: "Conditional density of Y given X = x₀", font: { size: 13 } },
+      margin: { l: 40, r: 12, t: 34, b: 36 },
+      xaxis: { range: [-3.6, 3.6], title: { text: "y", font: { size: 12 } } },
+      yaxis: { title: { text: "density", font: { size: 11 } }, rangemode: "tozero" },
+      showlegend: true,
+      legend: { x: 0.02, y: 0.98, font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    // ---- status ----
+    const f = (x) => PR.round(x, 3);
+    const indep = Math.abs(rho) < 1e-9;
+    $("status").innerHTML =
+      '<span class="tag one">Slice the joint at X = x₀, renormalize → a Normal(ρx₀, √(1−ρ²)).</span><br>' +
+      'correlation <code>ρ = ' + f(rho) + '</code>, &nbsp;slice <code>x₀ = ' + f(x0) + '</code><br>' +
+      'conditional mean &nbsp;<code>E[Y | X=x₀] = ρ·x₀ = ' + f(rho) + '·' + f(x0) + ' = ' + f(cmu) + '</code> ' +
+      '&nbsp;(marginal mean was 0)<br>' +
+      'conditional sd &nbsp;<code>√(1−ρ²) = √(1−' + f(rho * rho) + ') = ' + f(csd) + '</code> ' +
+      '&nbsp;(marginal sd was 1 → variance 1 shrinks to 1−ρ² = ' + f(1 - rho * rho) + ')<br>' +
+      '<span style="color:#666">regression of Y on X is the line <code>y = ρx</code>; the red dot rides it as you drag x₀' +
+      (indep ? '. &nbsp;<b>ρ = 0: independent</b> — the slice never moves the mean, f(y|x₀) = f_Y(y).' : '.') +
+      '</span>';
+  }
+
+  // wiring
+  $("rho").addEventListener("input", draw);
+  $("x0").addEventListener("input", draw);
+  document.querySelectorAll(".preset[data-p]").forEach((b) => {
+    b.onclick = () => { $("rho").value = b.dataset.p; draw(); };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

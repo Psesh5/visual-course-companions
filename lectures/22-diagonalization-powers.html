@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 22 — Diagonalization and powers of A · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 22 · Diagonalization and powers of A</h1>
+  <div class="sub">If <code>A</code> has independent eigenvectors, then <code>A = SΛS⁻¹</code> — and powers
+    become trivial: <code>Aᵏ = SΛᵏS⁻¹</code>. The eigenvectors stay put; only the eigenvalues get raised to
+    the <code>k</code>-th power, so the largest <code>|λ|</code> takes over.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>Running example.</b> <code>A = [[2, 1], [1, 2]]</code>. Its eigenvalues are
+    <code>λ₁ = 1</code> (eigenvector <code>(1, −1)</code>) and <code>λ₂ = 3</code> (eigenvector
+    <code>(1, 1)</code>). Because <code>|3| &gt; |1|</code>, repeated multiplication by <code>A</code> bends
+    every starting vector toward the <code>(1, 1)</code> line — the <b>dominant eigenvector</b>.
+  </div>
+
+  <h2>Figure 1 · Repeated application of A</h2>
+  <p style="font-size:14px;max-width:760px">
+    Pick a starting vector <code>v</code> with the angle slider, then sweep the power slider to watch the
+    iterates <code>v, Av, A²v, A³v, …</code>. The dashed grey lines are the two eigen-directions. The drawn
+    arrows are <b>normalized to unit length</b> so they stay on screen — the true length grows roughly like
+    <code>3ᵏ</code>, which the status line reports. Notice how the iterate snaps onto the <code>(1,1)</code>
+    direction almost immediately.
+  </p>
+  <div class="controls">
+    start angle θ:
+    <input id="ang" type="range" min="0" max="360" step="2" value="20" style="width:240px;vertical-align:middle">
+    <span class="rng" id="ang_lbl">20°</span>
+  </div>
+  <div class="controls">
+    power k:
+    <input id="pow" type="range" min="0" max="8" step="1" value="3" style="width:240px;vertical-align:middle">
+    <span class="rng" id="pow_lbl">3</span>
+  </div>
+  <div id="status1" class="status"></div>
+  <div class="plots">
+    <div id="iterPlot" class="plot"></div>
+  </div>
+
+  <h2>Figure 2 · Aᵏ on eigenvectors, and Λᵏ</h2>
+  <p style="font-size:14px;max-width:760px">
+    On an eigenvector, <code>A</code> is just a number: <code>Aᵏxᵢ = λᵢᵏ xᵢ</code>. The blue arrow is the
+    <code>λ₁ = 1</code> eigenvector (it never moves — <code>1ᵏ = 1</code>); the green arrow is the
+    <code>λ₂ = 3</code> eigenvector, stretched by <code>3ᵏ</code> (drawn shortened by a constant factor so it
+    fits). The diagonal matrix <code>Λᵏ = diag(1ᵏ, 3ᵏ)</code> is shown numerically as you move the slider.
+  </p>
+  <div class="controls">
+    power k:
+    <input id="pow2" type="range" min="0" max="6" step="1" value="2" style="width:240px;vertical-align:middle">
+    <span class="rng" id="pow2_lbl">2</span>
+  </div>
+  <div id="lambdaBox" class="status"></div>
+  <div class="plots">
+    <div id="eigPlot" class="plot"></div>
+  </div>
+
+  <h2>Figure 3 · The unit grid deformed by Aᵏ</h2>
+  <p style="font-size:14px;max-width:760px">
+    The same idea on a whole region: the light grid is the unit square's lattice; the colored grid is its image
+    under <code>Aᵏ</code>. The square is squashed flat along <code>(1,−1)</code> (where <code>λ = 1</code> does
+    nothing) and blown up along <code>(1,1)</code> (where <code>λ = 3</code> dominates), so the cloud stretches
+    into a thin sliver pointing along the dominant eigenvector.
+  </p>
+  <div class="controls">
+    power k:
+    <input id="pow3" type="range" min="0" max="3" step="1" value="1" style="width:240px;vertical-align:middle">
+    <span class="rng" id="pow3_lbl">1</span>
+  </div>
+  <div class="plots">
+    <div id="gridPlot" class="plot"></div>
+  </div>
+
+  <h2>Figure 4 · Strang's centerpiece — the Fibonacci recurrence</h2>
+  <div class="note">
+    <b>Strang's trick.</b> The Fibonacci rule <code>Fₖ₊₂ = Fₖ₊₁ + Fₖ</code> is a single
+    <i>second-order</i> equation. Stack two numbers into a vector
+    <code>uₖ = (Fₖ₊₁, Fₖ)</code> and add the trivial equation <code>Fₖ₊₁ = Fₖ₊₁</code>, and it becomes a
+    <i>first-order</i> system <code>uₖ₊₁ = A uₖ</code> with the matrix
+    <code>A = [[1, 1], [1, 0]]</code>. Starting from <code>u₀ = (F₁, F₀) = (1, 0)</code>, each multiply by
+    <code>A</code> shifts the window one step down the sequence.
+  </div>
+  <p style="font-size:14px;max-width:760px">
+    The eigenvalues of <code>[[1,1],[1,0]]</code> solve <code>λ² − λ − 1 = 0</code> (the Fibonacci
+    recurrence itself!), giving the <b>golden ratio</b> <code>φ = (1+√5)/2 ≈ 1.618</code> and
+    <code>ψ = (1−√5)/2 ≈ −0.618</code>. Since <code>|φ| &gt; 1 &gt; |ψ|</code>, the <code>φ</code> piece
+    takes over: <code>Fₖ ≈ c₁ φᵏ</code> and the ratio <code>Fₖ₊₁/Fₖ → φ</code>. Sweep <code>k</code> and watch
+    the vector <code>uₖ</code> swing onto the dominant eigen-direction <code>(φ, 1)</code> while the ratio
+    converges to the golden ratio.
+  </p>
+  <div class="controls">
+    step k:
+    <input id="fibK" type="range" min="0" max="14" step="1" value="6" style="width:240px;vertical-align:middle">
+    <span class="rng" id="fibK_lbl">6</span>
+  </div>
+  <div id="fibBox" class="status"></div>
+  <div class="plots">
+    <div id="fibSeq" class="plot" style="flex:1 1 360px;min-width:300px;height:360px"></div>
+    <div id="fibVec" class="plot" style="flex:1 1 360px;min-width:300px;height:360px"></div>
+  </div>
+  <p style="font-size:14px;max-width:760px">
+    <b>Left:</b> the Fibonacci numbers <code>0,1,1,2,3,5,8,13,…</code> plotted against the pure exponential
+    <code>φᵏ/√5</code> (Binet's formula) — they lock together almost instantly. <b>Right:</b> the iterate
+    <code>uₖ = (Fₖ₊₁, Fₖ)</code>, drawn normalized to unit length, rotating onto the <code>(φ, 1)</code>
+    eigenline (slope <code>1/φ ≈ 0.618</code>). The second eigen-direction <code>(ψ, 1)</code> has
+    <code>|ψ| &lt; 1</code>, so its contribution dies out.
+  </p>
+
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:760px">
+    Eigenvectors are the directions <code>A</code> does <i>not</i> rotate — it only scales them, by their
+    eigenvalue. Write any vector in the eigenvector basis,
+    <code>v = c₁x₁ + c₂x₂</code>. Then applying <code>A</code> <code>k</code> times just scales each piece:
+    <code>Aᵏv = c₁λ₁ᵏx₁ + c₂λ₂ᵏx₂</code>. Here that is
+    <code>c₁·1ᵏ·(1,−1) + c₂·3ᵏ·(1,1)</code>. As <code>k</code> grows the <code>3ᵏ</code> term swamps the
+    constant <code>1ᵏ</code> term, so <code>Aᵏv ≈ c₂·3ᵏ·(1,1)</code> — every vector lines up with the
+    dominant eigenvector, and its length multiplies by <code>≈3</code> each step. That single fact is the
+    engine behind the <b>power method</b>, <b>PageRank</b>, <b>Markov chains</b>, and the long-run behavior of
+    any linear recurrence.
+  </p>
+
+  <h2>The worked math</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>1 · Eigenvalues of</b> <code>A = [[2,1],[1,2]]</code>. Solve <code>det(A − λI) = 0</code>:
+  </p>
+  <pre style="font-size:14px;background:#f7f7f7;border:1px solid #eee;border-radius:8px;padding:10px 14px;overflow:auto">det([[2−λ, 1], [1, 2−λ]]) = (2−λ)² − 1 = λ² − 4λ + 3 = (λ−1)(λ−3) = 0
+   ⇒  λ₁ = 1,   λ₂ = 3</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>2 · Eigenvectors.</b> For <code>λ₁ = 1</code>, <code>(A − I)x = 0</code> gives
+    <code>x + y = 0 ⇒ x₁ = (1, −1)</code>. For <code>λ₂ = 3</code>, <code>(A − 3I)x = 0</code> gives
+    <code>−x + y = 0 ⇒ x₂ = (1, 1)</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>3 · Diagonalize.</b> Put the eigenvectors in the columns of <code>S</code> and the eigenvalues on the
+    diagonal of <code>Λ</code>:
+  </p>
+  <pre style="font-size:14px;background:#f7f7f7;border:1px solid #eee;border-radius:8px;padding:10px 14px;overflow:auto">S = [[1,  1],     Λ = [[1, 0],     S⁻¹ = ½·[[ 1, −1],
+     [−1, 1]]          [0, 3]]              [ 1,  1]]
+
+A = S Λ S⁻¹      (check:  S Λ S⁻¹ = [[2,1],[1,2]] = A ✓)</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>4 · Powers collapse.</b> The middle <code>S⁻¹S</code> factors cancel:
+  </p>
+  <pre style="font-size:14px;background:#f7f7f7;border:1px solid #eee;border-radius:8px;padding:10px 14px;overflow:auto">A² = (SΛS⁻¹)(SΛS⁻¹) = S Λ (S⁻¹S) Λ S⁻¹ = S Λ² S⁻¹
+Aᵏ = S Λᵏ S⁻¹,     Λᵏ = [[1ᵏ, 0], [0, 3ᵏ]] = [[1, 0], [0, 3ᵏ]]</pre>
+  <p style="font-size:14px;max-width:760px">
+    So computing <code>A¹⁰⁰</code> is just <code>3¹⁰⁰</code> on the diagonal, sandwiched by <code>S</code> and
+    <code>S⁻¹</code> — no hundred matrix multiplies needed.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>5 · Why iterates approach the dominant eigenvector.</b> Expand <code>v = c₁x₁ + c₂x₂</code>. Since
+    <code>Aᵏxᵢ = λᵢᵏxᵢ</code>,
+  </p>
+  <pre style="font-size:14px;background:#f7f7f7;border:1px solid #eee;border-radius:8px;padding:10px 14px;overflow:auto">Aᵏv = c₁·1ᵏ·(1,−1) + c₂·3ᵏ·(1,1)
+    = 3ᵏ · [ c₂·(1,1) + c₁·(1/3)ᵏ·(1,−1) ]
+    ⟶ 3ᵏ · c₂ · (1,1)        as k → ∞   (the (1/3)ᵏ term dies)</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>6 · The growth / Fibonacci interpretation</b> (Strang's centerpiece — see <b>Figure 4</b> above). A
+    linear recurrence <code>uₖ₊₁ = A uₖ</code> has solution
+    <code>uₖ = Aᵏu₀ = S Λᵏ S⁻¹ u₀ = c₁λ₁ᵏx₁ + c₂λ₂ᵏx₂</code>. The largest eigenvalue sets the long-run growth
+    rate. Strang turns the second-order rule <code>Fₖ₊₂ = Fₖ₊₁ + Fₖ</code> into a first-order system with
+    <code>uₖ = (Fₖ₊₁, Fₖ)</code>:
+  </p>
+  <pre style="font-size:14px;background:#f7f7f7;border:1px solid #eee;border-radius:8px;padding:10px 14px;overflow:auto">[ Fₖ₊₂ ]   [ 1  1 ] [ Fₖ₊₁ ]
+[ Fₖ₊₁ ] = [ 1  0 ] [  Fₖ  ]      A = [[1,1],[1,0]],   u₀ = (F₁, F₀) = (1, 0)
+
+det(A − λI) = λ² − λ − 1 = 0   ⇒   λ = (1 ± √5)/2
+   φ = (1+√5)/2 ≈ 1.618  (golden ratio),   ψ = (1−√5)/2 ≈ −0.618
+eigenvectors:  x = (λ, 1)   ⇒   x₁ = (φ, 1),  x₂ = (ψ, 1)
+Fₖ = (φᵏ − ψᵏ)/√5   (Binet),   since |ψ|&lt;1:   Fₖ ≈ φᵏ/√5,   Fₖ₊₁/Fₖ → φ</pre>
+  <p style="font-size:14px;max-width:760px">
+    The characteristic equation <code>λ² − λ − 1 = 0</code> is literally the Fibonacci recurrence, and its
+    roots add to <code>1</code> (the trace) and multiply to <code>−1</code> (the determinant). The
+    <code>φ</code> term dominates while the <code>ψ</code> term dies — same mechanism as our running example:
+    eigenvalue powers dominate, and the dominant eigenvector dictates the direction.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  const round = LA.round, linspace = LA.linspace;
+
+  // --- The running example -------------------------------------------------
+  const A  = [[2, 1], [1, 2]];
+  const L1 = 1, X1 = [1, -1];     // eigenvalue 1, eigenvector (1,-1)
+  const L2 = 3, X2 = [1,  1];     // eigenvalue 3, eigenvector (1, 1)
+
+  // 2x2 helpers (kept local: linalg.js ships 3x3 helpers).
+  const mul = (M, v) => [M[0][0]*v[0] + M[0][1]*v[1], M[1][0]*v[0] + M[1][1]*v[1]];
+  const norm = (v) => Math.hypot(v[0], v[1]);
+  const scale = (v, s) => [v[0]*s, v[1]*s];
+  // 2D arrow as a single scatter trace (line + a small V at the tip).
+  function arrow2(p, q, color, width, name, dash) {
+    const dx = q[0]-p[0], dy = q[1]-p[1], len = Math.hypot(dx, dy) || 1;
+    const ux = dx/len, uy = dy/len, h = 0.13*len, w = 0.07*len;
+    const bx = q[0]-h*ux, by = q[1]-h*uy;
+    const lx = bx - w*uy, ly = by + w*ux, rx = bx + w*uy, ry = by - w*ux;
+    return {
+      type:"scatter", mode:"lines",
+      x:[p[0], q[0], lx, q[0], rx], y:[p[1], q[1], ly, q[1], ry],
+      line:{ color, width: width||3, dash: dash||"solid" },
+      name: name||"", showlegend: !!name, hoverinfo:"name"
+    };
+  }
+  function eigLine(dir, color, label) {     // dashed full-length eigen-direction line
+    const R = 6, d = norm(dir), u = [dir[0]/d, dir[1]/d];
+    return { type:"scatter", mode:"lines", x:[-R*u[0], R*u[0]], y:[-R*u[1], R*u[1]],
+             line:{ color, width:1.5, dash:"dash" }, name: label, hoverinfo:"name", showlegend:true };
+  }
+  const LAYOUT = (R) => ({
+    margin:{l:30,r:10,t:10,b:30},
+    xaxis:{ range:[-R,R], zeroline:true, zerolinecolor:"#ccc", scaleanchor:"y", scaleratio:1 },
+    yaxis:{ range:[-R,R], zeroline:true, zerolinecolor:"#ccc" },
+    legend:{ orientation:"h", y:1.02, x:0 }
+  });
+
+  // ======================================================================
+  // Figure 1 — repeated application of A, with normalization
+  // ======================================================================
+  (function () {
+    const angEl = document.getElementById("ang"),  angLbl = document.getElementById("ang_lbl");
+    const powEl = document.getElementById("pow"),  powLbl = document.getElementById("pow_lbl");
+
+    function draw() {
+      const deg = parseFloat(angEl.value), K = parseInt(powEl.value, 10);
+      angLbl.textContent = deg + "°";  powLbl.textContent = K;
+      const th = deg * Math.PI / 180;
+      let v = [Math.cos(th), Math.sin(th)];          // unit start vector
+
+      // build iterates v, Av, ..., A^K v (keep true lengths for reporting)
+      const iters = [v.slice()];
+      for (let i = 0; i < K; i++) iters.push(mul(A, iters[i]));
+      const trueLen = norm(iters[K]);
+
+      const data = [ eigLine(X2, "#2ca02c", "λ=3 dir (1,1)"),
+                     eigLine(X1, "#1f77b4", "λ=1 dir (1,−1)") ];
+
+      // draw each iterate normalized to unit length, fading older ones
+      for (let i = 0; i <= K; i++) {
+        const u = scale(iters[i], 1 / (norm(iters[i]) || 1));
+        const isLast = i === K;
+        const col = isLast ? "#d62728" : `rgba(120,120,120,${0.25 + 0.5*i/Math.max(K,1)})`;
+        data.push(arrow2([0,0], u, col, isLast ? 4 : 2.5,
+                         isLast ? `Aᵏv (k=${K}), normalized` : ""));
+      }
+
+      const c2 = (v[0] + v[1]) / 2;     // coordinate on x2=(1,1) in eigen-basis
+      const angNow = Math.atan2(iters[K][1], iters[K][0]) * 180 / Math.PI;
+      document.getElementById("status1").innerHTML =
+        `Start <code>v = (${round(v[0])}, ${round(v[1])})</code>. ` +
+        `After <b>k = ${K}</b>: true length ≈ <code>${round(trueLen)}</code> ` +
+        `(grows like 3ᵏ = <code>${round(Math.pow(3,K))}</code>), ` +
+        `direction ≈ <code>${round(angNow)}°</code> ` +
+        `→ heading to the (1,1) line at 45°. ` +
+        (Math.abs(c2) < 1e-9
+          ? `<b>Special case:</b> v is on the (1,−1) eigenline, so it never leaves it.`
+          : ``);
+
+      Plotly.react("iterPlot", data, LAYOUT(1.4), { responsive:true });
+    }
+    angEl.addEventListener("input", draw);
+    powEl.addEventListener("input", draw);
+    draw();
+  })();
+
+  // ======================================================================
+  // Figure 2 — A^k on eigenvectors + Lambda^k numeric
+  // ======================================================================
+  (function () {
+    const powEl = document.getElementById("pow2"), powLbl = document.getElementById("pow2_lbl");
+    function draw() {
+      const K = parseInt(powEl.value, 10);
+      powLbl.textContent = K;
+      const lam1 = Math.pow(L1, K), lam2 = Math.pow(L2, K);   // 1, 3^k
+
+      // draw the eigenvectors scaled by lambda^k; green shortened so it fits
+      const DISP = Math.pow(0.6, K) * 3;   // shrink factor so 3^k stays on screen
+      const g1 = scale([1,-1], lam1 * 1);          // length unchanged (1^k = 1)
+      const g2 = scale([1, 1], lam2 * DISP / norm([1,1]) * 0.7);
+
+      const data = [
+        eigLine(X1, "#cfd8e6", ""), eigLine(X2, "#cfe6d2", ""),
+        arrow2([0,0], g1, "#1f77b4", 4, "x₁ scaled by 1ᵏ"),
+        arrow2([0,0], g2, "#2ca02c", 4, "x₂ scaled by 3ᵏ (drawn shortened)")
+      ];
+
+      document.getElementById("lambdaBox").innerHTML =
+        `<b>Λᵏ = </b><code>[[ ${lam1}, 0 ], [ 0, ${lam2} ]]</code> ` +
+        `&nbsp; ( = diag(1ᵏ, 3ᵏ) ). ` +
+        `On <code>x₁=(1,−1)</code>: <code>Aᵏx₁ = ${lam1}·x₁</code>. ` +
+        `On <code>x₂=(1,1)</code>: <code>Aᵏx₂ = ${lam2}·x₂</code>.`;
+
+      Plotly.react("eigPlot", data, LAYOUT(4), { responsive:true });
+    }
+    powEl.addEventListener("input", draw);
+    draw();
+  })();
+
+  // ======================================================================
+  // Figure 3 — unit grid deformed by A^k
+  // ======================================================================
+  (function () {
+    const powEl = document.getElementById("pow3"), powLbl = document.getElementById("pow3_lbl");
+    // A^k by repeated 2x2 multiply
+    function matpow(M, k) {
+      let R = [[1,0],[0,1]];
+      for (let i = 0; i < k; i++) R = [
+        [R[0][0]*M[0][0]+R[0][1]*M[1][0], R[0][0]*M[0][1]+R[0][1]*M[1][1]],
+        [R[1][0]*M[0][0]+R[1][1]*M[1][0], R[1][0]*M[0][1]+R[1][1]*M[1][1]]
+      ];
+      return R;
+    }
+    function gridTraces(M, color, name) {
+      const N = 6, g = linspace(-1, 1, N), traces = [];
+      // map a polyline of points by M
+      const map = (pts) => pts.map((p) => mul(M, p));
+      for (let i = 0; i < N; i++) {
+        const horiz = map(g.map((x) => [x, g[i]]));
+        const vert  = map(g.map((y) => [g[i], y]));
+        for (const line of [horiz, vert]) {
+          traces.push({ type:"scatter", mode:"lines",
+            x: line.map(p=>p[0]), y: line.map(p=>p[1]),
+            line:{ color, width:1 }, showlegend:false, hoverinfo:"skip" });
+        }
+      }
+      if (name) traces[0].showlegend = true, traces[0].name = name;
+      return traces;
+    }
+    function draw() {
+      const K = parseInt(powEl.value, 10);
+      powLbl.textContent = K;
+      const M = matpow(A, K);
+      const R = Math.max(2, Math.pow(3, K) * 1.3);
+      const data = [].concat(
+        gridTraces([[1,0],[0,1]], "#dddddd", "unit grid"),
+        gridTraces(M, "#d62728", `image under Aᵏ (k=${K})`),
+        [ eigLine(X2, "#2ca02c", "λ=3 (1,1)"), eigLine(X1, "#1f77b4", "λ=1 (1,−1)") ]
+      );
+      Plotly.react("gridPlot", data, LAYOUT(R), { responsive:true });
+    }
+    powEl.addEventListener("input", draw);
+    draw();
+  })();
+
+  // ======================================================================
+  // Figure 4 — Strang's Fibonacci centerpiece
+  //   A = [[1,1],[1,0]],  u_k = (F_{k+1}, F_k),  u_0 = (1,0)
+  //   eigenvalues phi = (1+sqrt5)/2, psi = (1-sqrt5)/2  (roots of l^2 - l - 1)
+  //   eigenvectors x = (lambda, 1);  F_k = (phi^k - psi^k)/sqrt5  (Binet)
+  // ======================================================================
+  (function () {
+    const SQRT5 = Math.sqrt(5);
+    const PHI = (1 + SQRT5) / 2;       // 1.6180...  dominant
+    const PSI = (1 - SQRT5) / 2;       // -0.6180... dies out
+    const FA  = [[1, 1], [1, 0]];      // Fibonacci matrix
+    const XPHI = [PHI, 1], XPSI = [PSI, 1];  // eigenvectors (lambda, 1)
+
+    // exact Fibonacci numbers via integer recurrence (F0=0, F1=1, ...)
+    const FIB = [0, 1];
+    for (let i = 2; i <= 30; i++) FIB.push(FIB[i-1] + FIB[i-2]);
+    const binet = (k) => (Math.pow(PHI, k) - Math.pow(PSI, k)) / SQRT5;
+
+    const kEl = document.getElementById("fibK"), kLbl = document.getElementById("fibK_lbl");
+
+    function draw() {
+      const K = parseInt(kEl.value, 10);
+      kLbl.textContent = K;
+
+      // --- Left: sequence vs phi^k / sqrt5 ------------------------------
+      const ks = [], fibPts = [], binPts = [];
+      for (let i = 0; i <= K; i++) { ks.push(i); fibPts.push(FIB[i]); binPts.push(binet(i)); }
+      const seqData = [
+        { type:"scatter", mode:"lines", x: ks, y: binPts, name:"φᵏ/√5  (Binet)",
+          line:{ color:"#999", width:2, dash:"dash" } },
+        { type:"scatter", mode:"markers+lines", x: ks, y: fibPts, name:"Fₖ (exact)",
+          line:{ color:"#d62728", width:2 }, marker:{ size:6, color:"#d62728" } }
+      ];
+      const seqLayout = {
+        margin:{l:48,r:10,t:10,b:34},
+        xaxis:{ title:"k", zeroline:true, zerolinecolor:"#ccc" },
+        yaxis:{ title:"Fₖ", zeroline:true, zerolinecolor:"#ccc" },
+        legend:{ orientation:"h", y:1.04, x:0 }
+      };
+      Plotly.react("fibSeq", seqData, seqLayout, { responsive:true });
+
+      // --- Right: u_k = (F_{k+1}, F_k) normalized, rotating onto (phi,1) -
+      const uk = [FIB[K+1], FIB[K]];                 // current iterate
+      const un = scale(uk, 1 / (norm(uk) || 1));     // unit-length for display
+      const vecData = [
+        eigLine(XPHI, "#2ca02c", "φ dir (φ,1)"),
+        eigLine(XPSI, "#1f77b4", "ψ dir (ψ,1)"),
+        arrow2([0,0], un, "#d62728", 4, `uₖ=(Fₖ₊₁,Fₖ), k=${K} (unit)`)
+      ];
+      Plotly.react("fibVec", vecData, LAYOUT(1.3), { responsive:true });
+
+      // --- status -------------------------------------------------------
+      const ratio = FIB[K] === 0 ? NaN : FIB[K+1] / FIB[K];
+      const slope = un[0] === 0 ? Infinity : un[1] / un[0];
+      document.getElementById("fibBox").innerHTML =
+        `<code>uₖ = (Fₖ₊₁, Fₖ) = (${FIB[K+1]}, ${FIB[K]})</code>. ` +
+        `Ratio <code>Fₖ₊₁/Fₖ = ${isNaN(ratio) ? "—" : round(ratio)}</code> ` +
+        `&rarr; <b>φ = ${round(PHI)}</b> (golden ratio). ` +
+        `Binet says <code>Fₖ ≈ φᵏ/√5 = ${round(binet(K))}</code>, exact <code>${FIB[K]}</code>. ` +
+        `Eigenvalues <code>φ=${round(PHI)}</code>, <code>ψ=${round(PSI)}</code> ` +
+        `(roots of <code>λ²−λ−1=0</code>; sum=1=trace, product=−1=det).`;
+    }
+    kEl.addEventListener("input", draw);
+    draw();
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 24 — Markov matrices &amp; Fourier series · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 24 · Markov matrices, and a note on Fourier series</h1>
+  <div class="sub">A <b>Markov matrix</b> has nonnegative entries and <b>columns that sum to 1</b>.
+    Such a matrix always has eigenvalue <code>λ = 1</code>; every other eigenvalue has <code>|λ| &lt; 1</code>.
+    So repeated multiplication drives any starting state to a single <b>steady state</b> — the eigenvector for
+    <code>λ = 1</code>. We close with the same idea applied to functions: Fourier coefficients are projections onto
+    an orthonormal basis.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The example.</b> We use Strang's classic matrix
+    <code>A = [[0.9, 0.2], [0.1, 0.8]]</code>. Think of two cities: each year 10% of city 1's people move to city 2,
+    and 20% of city 2's people move to city 1. The total population is conserved (columns sum to 1), and no matter
+    how it starts, the populations settle to a fixed split — the steady state.
+  </div>
+
+  <h2>Interactive · watch any start converge</h2>
+  <div class="note" style="background:#f7fbff;border-color:#bcd6ef">
+    Edit the matrix (columns must sum to 1 — the page renormalizes if they don't) and the starting state
+    <code>u₀</code>. Drag the <b>step</b> slider or press <b>Step / Play</b>. The left plot traces
+    <code>uₖ = Aᵏ u₀</code> as a path that spirals into the steady state ★; the right plot shows the two
+    components at step <code>k</code> as bars.
+  </div>
+
+  <div class="controls" style="margin-bottom:6px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Load a preset:</span>
+    <button class="preset" data-p="strang">Strang [[.9,.2],[.1,.8]]</button>
+    <button class="preset" data-p="lazy">Slow mixing [[.98,.05],[.02,.95]]</button>
+    <button class="preset" data-p="fast">Fast mixing [[.6,.5],[.4,.5]]</button>
+  </div>
+
+  <table class="sys">
+    <tr>
+      <td rowspan="2" style="font-weight:600;padding-right:8px">A =</td>
+      <td><input class="coef" id="a00" value="0.9"></td>
+      <td><input class="coef" id="a01" value="0.2"></td>
+      <td rowspan="2" style="padding-left:18px;font-weight:600">u₀ =</td>
+      <td><input class="coef" id="u0" value="0"></td>
+    </tr>
+    <tr>
+      <td><input class="coef" id="a10" value="0.1"></td>
+      <td><input class="coef" id="a11" value="0.8"></td>
+      <td><input class="coef" id="u1" value="1000"></td>
+    </tr>
+  </table>
+
+  <div class="controls">
+    step k: <input id="step" type="range" min="0" max="40" step="1" value="0" style="width:300px;vertical-align:middle">
+    <span class="rng" id="kval">k = 0</span>
+    <button id="play" class="primary">▶ Play</button>
+    <button id="reset">Reset</button>
+  </div>
+
+  <div class="plots">
+    <div id="pathPlot" class="plot"></div>
+    <div id="barPlot" class="plot"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <h2>Intuition · why a steady state must exist</h2>
+  <p style="font-size:14px;max-width:780px">
+    A Markov matrix moves "stuff" (people, probability, dollars) between states without creating or destroying it —
+    that is exactly what <b>columns summing to 1</b> guarantees. The total <code>1ᵀuₖ</code> is conserved at every
+    step. Because nothing leaks out and the entries are nonnegative, the state cannot blow up and cannot collapse to
+    zero; it has to head somewhere and stay there. That somewhere is the <b>steady state</b>: the one distribution
+    that <code>A</code> leaves unchanged, <code>Au = u</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Why does it forget where it started? Write <code>u₀</code> in the eigenvector basis,
+    <code>u₀ = c₁x₁ + c₂x₂ + …</code>. Then <code>uₖ = c₁λ₁ᵏx₁ + c₂λ₂ᵏx₂ + …</code>. The <code>λ = 1</code> term
+    holds its size forever; every other term has <code>|λ| &lt; 1</code>, so <code>λᵏ → 0</code>. The transient
+    parts decay and only the steady-state direction survives. The <b>second-largest</b> <code>|λ|</code> sets the
+    <i>speed</i>: closer to 1 means slower mixing (try the "Slow mixing" preset).
+  </p>
+
+  <h2>Worked math · the example A = [[0.9, 0.2], [0.1, 0.8]]</h2>
+  <p style="font-size:14px;max-width:780px"><b>1 · Columns sum to 1 ⇒ λ = 1 is an eigenvalue.</b>
+    Let <code>1 = (1, 1, …, 1)</code>. "Columns of <code>A</code> sum to 1" means
+    <code>1ᵀA = 1ᵀ</code>, i.e. <code>1ᵀ(A − I) = 0</code>. So the rows of <code>A − I</code> are dependent
+    (they add to the zero row), which makes <code>A − I</code> singular: <code>det(A − I) = 0</code>. That is the
+    statement that <code>λ = 1</code> is an eigenvalue. (Equivalently: <code>A</code> and <code>Aᵀ</code> share
+    eigenvalues, and <code>Aᵀ1 = 1</code>, so <code>1</code> is a left eigenvector for <code>λ = 1</code>.)
+  </p>
+  <p style="font-size:14px;max-width:780px"><b>2 · Find both eigenvalues.</b> For our matrix,
+    <code>trace = 0.9 + 0.8 = 1.7</code> and <code>det = 0.9·0.8 − 0.2·0.1 = 0.72 − 0.02 = 0.70</code>.
+    The eigenvalues satisfy <code>λ² − 1.7λ + 0.70 = 0</code>, giving <code>λ = 1</code> and
+    <code>λ = 0.7</code>. Note <code>λ₁ + λ₂ = trace</code> and <code>λ₁λ₂ = det</code>. The second eigenvalue
+    <code>0.7 &lt; 1</code>, so its contribution decays like <code>0.7ᵏ</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px"><b>3 · The steady-state eigenvector (λ = 1).</b> Solve
+    <code>(A − I)x = 0</code>:
+    <code>A − I = [[−0.1, 0.2], [0.1, −0.2]]</code>. Both rows give <code>−x₁ + 2x₂ = 0</code>, so
+    <code>x₁ = 2x₂</code> and <code>x₁ = (2, 1)</code> spans the line. Normalizing so the entries sum to the total
+    population gives the split <b>⅔, ⅓</b>. With <code>u₀ = (0, 1000)</code> (total 1000) the steady state is
+    <code>(666.7, 333.3)</code> — and that is exactly where the path lands, independent of the start.
+  </p>
+  <p style="font-size:14px;max-width:780px"><b>4 · The eigenvector for λ = 0.7.</b> Solve
+    <code>(A − 0.7I)x = 0</code>: <code>[[0.2, 0.2],[0.1, 0.1]]x = 0</code> gives <code>x = (1, −1)</code>. Its
+    entries sum to 0 — it carries <i>no</i> total, only the imbalance that mixing erases. So
+    <code>uₖ = (steady state) + c·(0.7)ᵏ(1, −1)</code>, and the wobble dies out as <code>0.7ᵏ → 0</code>.
+  </p>
+
+  <h2>Visual · why λ = 1, on Strang's invented 3×3 Markov matrix</h2>
+  <p style="font-size:14px;max-width:780px">
+    In lecture Strang first writes down a "totally just invented" 3×3 Markov matrix
+    <code>A = [[.1, .2, .7], [.01, .99, 0], [.3, .3, .4]]</code> to show <i>why</i> <code>λ = 1</code> is forced.
+    The trick: subtract the identity. Each <b>column of A</b> sums to 1, so each <b>column of A − I</b> sums to
+    <code>1 − 1 = 0</code>. A matrix whose columns add to the zero column is singular — and the combination that
+    kills the <i>rows</i> is the all-ones vector <code>1ᵀ(A − I) = 0</code>. So <code>1 = (1,1,1)</code> is a left
+    eigenvector, <code>det(A − I) = 0</code>, and <code>λ = 1</code> is an eigenvalue. The plot makes the
+    "columns sum to 0" fact literal: every red bar lands on zero.
+  </p>
+  <div class="controls">
+    <button id="why-shift" class="primary">Show A − I</button>
+    <button id="why-reset">Show A</button>
+  </div>
+  <div id="whyPlot" class="plot" style="max-width:760px"></div>
+  <div class="status" id="whyStatus"></div>
+
+  <h2>A note on Fourier series · projection onto an orthonormal basis</h2>
+  <p style="font-size:14px;max-width:780px">
+    The same projection idea that finds a steady state from eigenvectors also explains <b>Fourier series</b>.
+    To project a vector <code>v</code> onto an orthonormal basis <code>q₁, q₂, …</code> you take inner products:
+    <code>v = (q₁ᵀv) q₁ + (q₂ᵀv) q₂ + …</code> — each coefficient is just a dot product.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Functions work the same way, with the inner product
+    <code>⟨f, g⟩ = ∫₀²π f(x)g(x) dx</code>. The functions
+    <code>1, cos x, sin x, cos 2x, sin 2x, …</code> are <b>orthogonal</b> under this inner product
+    (e.g. <code>∫₀²π cos x · sin x dx = 0</code>). A Fourier series writes
+    <code>f(x) = a₀ + a₁cos x + b₁sin x + a₂cos 2x + …</code>, and each coefficient is a projection:
+    <code>aₖ = ⟨f, cos kx⟩ / ⟨cos kx, cos kx⟩</code>, <code>bₖ = ⟨f, sin kx⟩ / ⟨sin kx, sin kx⟩</code> —
+    the continuous twin of <code>qₖᵀv</code>. Below, a square wave is rebuilt from its sine projections; add terms
+    and watch the partial sum close in.
+  </p>
+
+  <div class="controls">
+    Fourier terms (odd harmonics): <input id="nterms" type="range" min="1" max="25" step="2" value="1" style="width:280px;vertical-align:middle">
+    <span class="rng" id="ntval">1 term</span>
+  </div>
+  <div id="fourierPlot" class="plot" style="max-width:760px"></div>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  // ---------- Markov iteration demo ----------
+  const PRESETS = {
+    strang: { A: [[0.9, 0.2], [0.1, 0.8]], u: [0, 1000] },
+    lazy:   { A: [[0.98, 0.05], [0.02, 0.95]], u: [0, 1000] },
+    fast:   { A: [[0.6, 0.5], [0.4, 0.5]], u: [1000, 0] },
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const cells = ["a00", "a01", "a10", "a11"];
+
+  function readMatrix() {
+    // read, then renormalize each column to sum to 1 so it stays a Markov matrix
+    let A = [
+      [parseFloat($("a00").value) || 0, parseFloat($("a01").value) || 0],
+      [parseFloat($("a10").value) || 0, parseFloat($("a11").value) || 0],
+    ];
+    for (let c = 0; c < 2; c++) {
+      const s = A[0][c] + A[1][c];
+      if (Math.abs(s) > 1e-9) { A[0][c] /= s; A[1][c] /= s; }
+    }
+    return A;
+  }
+
+  function matVec(A, v) { return [A[0][0]*v[0] + A[0][1]*v[1], A[1][0]*v[0] + A[1][1]*v[1]]; }
+
+  // eigen-analysis of a 2x2 via trace/det (Markov => real eigenvalues here)
+  function eig2(A) {
+    const tr = A[0][0] + A[1][1];
+    const dt = A[0][0]*A[1][1] - A[0][1]*A[1][0];
+    const disc = Math.sqrt(Math.max(0, tr*tr - 4*dt));
+    const l1 = (tr + disc) / 2, l2 = (tr - disc) / 2; // l1 should be the larger (=1 for Markov)
+    return { l1, l2, tr, dt };
+  }
+
+  // steady state: eigenvector for lambda=1, scaled so entries sum to total
+  function steadyState(A, total) {
+    // (A - I)x = 0  ->  for 2x2 a null-space direction is (A01, -(A00-1)) = (a01, 1-a00)
+    let x = [A[0][1], 1 - A[0][0]];
+    if (Math.abs(x[0]) + Math.abs(x[1]) < 1e-9) x = [1 - A[1][1], A[1][0]];
+    const s = x[0] + x[1];
+    if (Math.abs(s) > 1e-9) { x = [x[0]/s*total, x[1]/s*total]; }
+    return x;
+  }
+
+  function trajectory(A, u0, K) {
+    const path = [u0.slice()];
+    for (let k = 0; k < K; k++) path.push(matVec(A, path[path.length - 1]));
+    return path;
+  }
+
+  const MAXK = 40;
+  let playTimer = null;
+
+  function draw() {
+    const A = readMatrix();
+    const u0 = [parseFloat($("u0").value) || 0, parseFloat($("u1").value) || 0];
+    const total = u0[0] + u0[1];
+    const k = parseInt($("step").value, 10);
+    const path = trajectory(A, u0, MAXK);
+    const ss = steadyState(A, total);
+    const eig = eig2(A);
+    const cur = path[k];
+
+    $("kval").textContent = "k = " + k;
+
+    // ----- left: trajectory path in (state1, state2) plane -----
+    const xs = path.map((p) => p[0]), ys = path.map((p) => p[1]);
+    const pathData = [
+      { type: "scatter", mode: "lines+markers", x: xs.slice(0, k + 1), y: ys.slice(0, k + 1),
+        line: { color: "#bcd0e6", width: 2 }, marker: { size: 5, color: LA.VEC[0] },
+        name: "uₖ path" },
+      { type: "scatter", mode: "markers+text", x: [cur[0]], y: [cur[1]],
+        text: ["  u" + k], textposition: "top right",
+        marker: { size: 11, color: "#b00020" }, name: "current uₖ" },
+      { type: "scatter", mode: "markers+text", x: [ss[0]], y: [ss[1]],
+        text: ["  steady ★"], textposition: "bottom right",
+        marker: { size: 14, color: "#176d2c", symbol: "star" }, name: "steady state" },
+    ];
+    Plotly.react("pathPlot", pathData, {
+      title: { text: "Trajectory  uₖ = Aᵏ u₀", font: { size: 14 } },
+      xaxis: { title: "state 1", zeroline: true },
+      yaxis: { title: "state 2", zeroline: true },
+      margin: { l: 50, r: 12, t: 34, b: 44 }, showlegend: true,
+      legend: { font: { size: 11 }, x: 0.55, y: 0.98 },
+    }, { responsive: true });
+
+    // ----- right: bar chart of the two components at step k -----
+    const barData = [
+      { type: "bar", x: ["state 1", "state 2"], y: [cur[0], cur[1]],
+        marker: { color: [LA.VEC[0], LA.VEC[1]] }, name: "uₖ",
+        text: [LA.round(cur[0]), LA.round(cur[1])], textposition: "outside" },
+      { type: "scatter", mode: "markers", x: ["state 1", "state 2"], y: [ss[0], ss[1]],
+        marker: { size: 16, color: "#176d2c", symbol: "line-ew", line: { width: 3, color: "#176d2c" } },
+        name: "steady state" },
+    ];
+    const ymax = Math.max(total, Math.max(...path.map((p) => Math.max(p[0], p[1])))) * 1.18;
+    Plotly.react("barPlot", barData, {
+      title: { text: "State at step k", font: { size: 14 } },
+      yaxis: { range: [Math.min(0, Math.min(cur[0], cur[1])) * 1.1, ymax || 1] },
+      margin: { l: 50, r: 12, t: 34, b: 30 }, showlegend: true,
+      legend: { font: { size: 11 } },
+    }, { responsive: true });
+
+    // ----- status box -----
+    $("status").innerHTML =
+      `Eigenvalues: <code>λ₁ = ${LA.round(eig.l1)}</code>, <code>λ₂ = ${LA.round(eig.l2)}</code> ` +
+      `(trace ${LA.round(eig.tr)}, det ${LA.round(eig.dt)}). ` +
+      `Total <code>${LA.round(total)}</code> is conserved. ` +
+      `<b>Steady state</b> = <code>(${LA.round(ss[0])}, ${LA.round(ss[1])})</code>. ` +
+      `Current <code>u${k} = (${LA.round(cur[0])}, ${LA.round(cur[1])})</code> — ` +
+      `transient decays like <code>|λ₂|ᵏ = ${LA.round(Math.pow(Math.abs(eig.l2), k))}</code>.`;
+  }
+
+  // wire controls
+  cells.concat(["u0", "u1"]).forEach((id) => $(id).addEventListener("input", () => { stopPlay(); draw(); }));
+  $("step").addEventListener("input", () => { stopPlay(); draw(); });
+
+  function stopPlay() {
+    if (playTimer) { clearInterval(playTimer); playTimer = null; $("play").textContent = "▶ Play"; }
+  }
+  $("play").addEventListener("click", () => {
+    if (playTimer) { stopPlay(); return; }
+    $("play").textContent = "❚❚ Pause";
+    if (parseInt($("step").value, 10) >= MAXK) $("step").value = 0;
+    playTimer = setInterval(() => {
+      let k = parseInt($("step").value, 10);
+      if (k >= MAXK) { stopPlay(); return; }
+      $("step").value = k + 1; draw();
+    }, 350);
+  });
+  $("reset").addEventListener("click", () => { stopPlay(); $("step").value = 0; draw(); });
+
+  document.querySelectorAll(".preset").forEach((btn) => {
+    btn.onclick = () => {
+      stopPlay();
+      const p = PRESETS[btn.dataset.p];
+      $("a00").value = p.A[0][0]; $("a01").value = p.A[0][1];
+      $("a10").value = p.A[1][0]; $("a11").value = p.A[1][1];
+      $("u0").value = p.u[0]; $("u1").value = p.u[1];
+      $("step").value = 0; draw();
+    };
+  });
+
+  draw();
+
+  // ---------- "why lambda = 1" demo on Strang's invented 3x3 ----------
+  (function () {
+    // Strang's "totally just invented" Markov matrix from the lecture.
+    const A3 = [[0.1, 0.2, 0.7], [0.01, 0.99, 0], [0.3, 0.3, 0.4]];
+    const I3 = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    const sub = (M, N) => M.map((row, i) => row.map((v, j) => v - N[i][j]));
+    const colSums = (M) => [0, 1, 2].map((c) => M[0][c] + M[1][c] + M[2][c]);
+
+    function drawWhy(shifted) {
+      const M = shifted ? sub(A3, I3) : A3;
+      const sums = colSums(M);
+      const cols = ["col 1", "col 2", "col 3"];
+      // grouped bars: the three entries of each column, plus a marker at the column sum
+      const traces = [0, 1, 2].map((r) => ({
+        type: "bar", x: cols, y: [M[r][0], M[r][1], M[r][2]],
+        name: "row " + (r + 1), marker: { color: LA.VEC[r] },
+      }));
+      traces.push({
+        type: "scatter", mode: "markers+text", x: cols, y: sums,
+        text: sums.map((s) => LA.round(s)), textposition: "top center",
+        marker: { size: 14, color: "#b00020", symbol: "diamond" },
+        name: "column sum",
+      });
+      Plotly.react("whyPlot", traces, {
+        barmode: "group",
+        title: { text: shifted
+          ? "A − I : every column sums to 0  ⇒  singular  ⇒  λ = 1"
+          : "A : every column sums to 1  (Markov)", font: { size: 13 } },
+        xaxis: { title: "column" },
+        yaxis: { title: "entry value", range: [shifted ? -1.05 : -0.05, 1.05], zeroline: true },
+        margin: { l: 50, r: 12, t: 34, b: 40 }, showlegend: true,
+        legend: { font: { size: 11 } },
+      }, { responsive: true });
+
+      $("whyStatus").innerHTML = shifted
+        ? `Columns of <code>A − I</code> sum to <code>(${sums.map(LA.round).join(", ")})</code> — all zero. ` +
+          `So <code>1ᵀ(A − I) = 0</code>: the all-ones vector <code>1 = (1,1,1)</code> is a <b>left eigenvector</b>, ` +
+          `<code>A − I</code> is singular, and <code>λ = 1</code> is an eigenvalue. ` +
+          `The matching right eigenvector (in the null space of <code>A − I</code>) is the steady state.`
+        : `Columns of <code>A</code> sum to <code>(${sums.map(LA.round).join(", ")})</code> — all 1, and every ` +
+          `entry is ≥ 0. That is exactly what makes <code>A</code> a Markov matrix. Press <b>Show A − I</b> to see why λ = 1 follows.`;
+    }
+    $("why-shift").addEventListener("click", () => drawWhy(true));
+    $("why-reset").addEventListener("click", () => drawWhy(false));
+    drawWhy(false);
+  })();
+
+  // ---------- Fourier square-wave demo ----------
+  (function () {
+    const slider = $("nterms");
+    // target: square wave, +1 on (0,pi), -1 on (pi,2pi). Sine series: (4/pi) * sum_{odd k} sin(kx)/k
+    function drawFourier(N) {
+      const xs = LA.linspace(0, 2 * Math.PI, 400);
+      const target = xs.map((x) => (x < Math.PI ? 1 : -1));
+      const approx = xs.map((x) => {
+        let s = 0;
+        for (let k = 1; k <= N; k += 2) s += Math.sin(k * x) / k;
+        return (4 / Math.PI) * s;
+      });
+      const terms = (N + 1) / 2;
+      $("ntval").textContent = terms + (terms === 1 ? " term" : " terms");
+      Plotly.react("fourierPlot", [
+        { type: "scatter", mode: "lines", x: xs, y: target, name: "square wave f(x)",
+          line: { color: "#999", width: 2, dash: "dot" } },
+        { type: "scatter", mode: "lines", x: xs, y: approx, name: "Fourier partial sum",
+          line: { color: LA.VEC[2], width: 3 } },
+      ], {
+        title: { text: "f(x) = (4/π) Σ sin(kx)/k  —  coefficients bₖ are projections ⟨f, sin kx⟩", font: { size: 13 } },
+        xaxis: { title: "x", range: [0, 2 * Math.PI] },
+        yaxis: { title: "f(x)", range: [-1.6, 1.6] },
+        margin: { l: 50, r: 12, t: 34, b: 44 }, showlegend: true,
+        legend: { font: { size: 11 } },
+      }, { responsive: true });
+    }
+    slider.addEventListener("input", () => drawFourier(parseInt(slider.value, 10)));
+    drawFourier(1);
+  })();
+</script>
+</body>
+</html>

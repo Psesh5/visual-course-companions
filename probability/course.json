@@ -1,0 +1,59 @@
+{
+  "id": "6.041-probability",
+  "title": "Probability & Random Processes (Tsitsiklis)",
+  "institution": "MIT",
+  "ocwBase": "https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/",
+  "playlist": "https://www.youtube.com/playlist?list=PLUl4u3cNGP60A3XMwZ5sep719_nh95qOe",
+  "domainLib": "lib/prob.js",
+  "units": [
+    {
+      "unit": "Unit 1 · Probability models, conditioning & Bayes",
+      "lectures": [
+        {"n": 1, "title": "Probability models and axioms", "slug": "models-axioms", "module": "lectures/01-models-axioms.html", "status": "interactive"},
+        {"n": 2, "title": "Conditioning and Bayes' rule", "slug": "bayes", "module": "lectures/02-bayes.html", "status": "interactive"}
+      ]
+    },
+    {
+      "unit": "Unit 2 · Discrete random variables",
+      "lectures": [
+        {"n": 3, "title": "PMFs and expectation", "slug": "pmf-expectation", "module": "lectures/03-pmf-expectation.html", "status": "interactive"},
+        {"n": 4, "title": "Variance; joint PMFs", "slug": "variance-joint", "module": "lectures/04-variance-joint.html", "status": "interactive"}
+      ]
+    },
+    {
+      "unit": "Unit 3 · Continuous random variables",
+      "lectures": [
+        {"n": 5, "title": "PDFs, CDFs, and the normal", "slug": "pdf-cdf-normal", "module": "lectures/05-pdf-cdf-normal.html", "status": "interactive"},
+        {"n": 6, "title": "Joint PDFs; conditioning", "slug": "joint-pdf", "module": "lectures/06-joint-pdf.html", "status": "interactive"}
+      ]
+    },
+    {
+      "unit": "Unit 4 · Further topics on random variables",
+      "lectures": [
+        {"n": 7, "title": "Derived distributions", "slug": "derived-distributions", "module": "lectures/07-derived-distributions.html", "status": "interactive"},
+        {"n": 8, "title": "Covariance and correlation", "slug": "covariance-correlation", "module": "lectures/08-covariance-correlation.html", "status": "interactive"}
+      ]
+    },
+    {
+      "unit": "Unit 5 · Limit theorems",
+      "lectures": [
+        {"n": 9,  "title": "Markov & Chebyshev inequalities; weak law", "slug": "inequalities-wlln", "module": "lectures/09-inequalities-wlln.html", "status": "interactive"},
+        {"n": 10, "title": "The Central Limit Theorem", "slug": "central-limit-theorem", "module": "lectures/clt.html", "status": "interactive"}
+      ]
+    },
+    {
+      "unit": "Unit 6 · Bayesian inference",
+      "lectures": [
+        {"n": 11, "title": "Bayesian inference; MAP & LMS", "slug": "bayesian-inference", "module": "lectures/11-bayesian-inference.html", "status": "interactive"}
+      ]
+    },
+    {
+      "unit": "Unit 7 · Random processes",
+      "lectures": [
+        {"n": 12, "title": "The Bernoulli process", "slug": "bernoulli-process", "module": "lectures/12-bernoulli-process.html", "status": "interactive"},
+        {"n": 13, "title": "The Poisson process", "slug": "poisson-process", "module": "lectures/13-poisson-process.html", "status": "interactive"},
+        {"n": 14, "title": "Markov chains; steady-state", "slug": "markov-chains", "module": "lectures/14-markov-chains.html", "status": "interactive"}
+      ]
+    }
+  ]
+}

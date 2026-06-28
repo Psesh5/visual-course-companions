@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 2 — Elimination with matrices · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* page-local: the numeric augmented-matrix display */
+  table.aug { border-collapse: collapse; margin: 8px 0; font-variant-numeric: tabular-nums; }
+  table.aug td { padding: 5px 12px; text-align: right; font-size: 16px; border: 1px solid transparent; }
+  table.aug .bar { border-left: 2px solid #999; }
+  table.aug tr { background: #fbfbfb; }
+  table.aug .pivot { background: #fff3cd; border: 1px solid #e0c97a; border-radius: 4px; font-weight: 700; }
+  table.aug .changed { color: #b00020; }
+  .matlabel { font-size: 12px; color: var(--muted); margin: 10px 0 2px; }
+  .emat { display: inline-block; margin: 6px 18px 6px 0; vertical-align: top; }
+  .emat table { border-collapse: collapse; }
+  .emat td { padding: 3px 10px; text-align: right; font-variant-numeric: tabular-nums; }
+  .emat .br { border-left: 2px solid #555; } .emat .brr { border-right: 2px solid #555; }
+  .step-desc { font-size: 14px; margin: 8px 0; min-height: 20px; }
+  .step-desc code { background: #e8eef6; padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 2 · Elimination with matrices</h1>
+  <div class="sub">Strang's method: turn <code>Ax = b</code> into an <b>upper-triangular</b> system
+    <code>Ux = c</code> by subtracting multiples of one row from another — then read the answer off
+    by <b>back-substitution</b>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The example (straight from lecture):</b>
+    <code>A = [[1,2,1],[3,8,1],[0,4,1]]</code>, <code>b = [2,12,2]</code>.
+    Press <b>Step</b> to apply each elimination step. The left panel is the <b>row picture</b> — one plane
+    per equation; watch the planes tilt as rows are combined, but the crossing point never moves. The right
+    panel keeps the <b>augmented matrix</b> <code>[A | b]</code> in sync, highlighting the pivots
+    <b>1, 2, 5</b> as they appear.
+  </div>
+
+  <div class="controls">
+    <button id="prev">◀ Back</button>
+    <button id="next" class="primary">Step ▶</button>
+    <button id="reset">Reset</button>
+    <span class="rng" id="stepname"></span>
+  </div>
+
+  <div class="step-desc" id="desc"></div>
+
+  <div class="plots">
+    <div class="plot" id="rowpic"></div>
+    <div class="plot" id="matpanel" style="display:flex;flex-direction:column;justify-content:center;padding:18px;background:#fff;">
+      <div class="matlabel">Augmented matrix <b>[ A | b ]</b></div>
+      <div id="augmount"></div>
+      <div class="status" id="status" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:780px">
+    Each of the three equations is a plane (the row picture from Lecture 1). They all pass through the single
+    solution point, drawn as a black dot. <b>Elimination never moves that point</b>: when we replace
+    "row 2" by "row 2 − 3·row 1" we are subtracting one true equation from another, so the new equation is
+    still satisfied by the same solution. Geometrically the plane swivels about the line where it met plane 1,
+    but it keeps passing through the meeting point of all three. By the last step the system is
+    <i>triangular</i>: the third plane has been tilted until its equation involves only <code>z</code>, the
+    second only <code>y, z</code>, and the first all three — that staircase is exactly what makes
+    back-substitution work.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The yellow boxes mark the <b>pivots</b> — the first nonzero entry in each row once we reach it. Here they
+    are <b>1, 2, 5</b>. Pivots are the numbers we divide by, so they must be nonzero; their product
+    (<code>1·2·5 = 10</code>) equals <code>det A</code>, which is why a zero pivot signals a singular matrix.
+  </p>
+
+  <h2>The math, step by step</h2>
+  <p style="font-size:14px;max-width:780px">We start with</p>
+  <div class="emat">
+    <table><tr><td class="br">1</td><td>2</td><td class="brr">1</td></tr>
+    <tr><td class="br">3</td><td>8</td><td class="brr">1</td></tr>
+    <tr><td class="br">0</td><td>4</td><td class="brr">1</td></tr></table>
+  </div>
+  <span style="font-size:14px">x =</span>
+  <div class="emat" style="margin-left:8px">
+    <table><tr><td class="br brr">2</td></tr><tr><td class="br brr">12</td></tr><tr><td class="br brr">2</td></tr></table>
+  </div>
+
+  <p style="font-size:14px;max-width:780px">
+    <b>Step 1 — clear the entry below the first pivot.</b> Pivot 1 is the top-left <b>1</b>. The entry below it
+    is <code>3</code>, so the multiplier is <code>ℓ₂₁ = 3/1 = 3</code>. Do
+    <code>row 2 ← row 2 − 3·row 1</code>:
+  </p>
+  <p style="font-size:14px;max-width:780px;margin-left:16px">
+    <code>[3,8,1 | 12] − 3·[1,2,1 | 2] = [0, 2, −2 | 6]</code>. &nbsp;Row 3 already starts with 0, nothing to do.
+  </p>
+
+  <p style="font-size:14px;max-width:780px">
+    <b>Step 2 — clear the entry below the second pivot.</b> Pivot 2 is now the <b>2</b> in position (2,2). The
+    entry below it is <code>4</code>, so <code>ℓ₃₂ = 4/2 = 2</code>. Do <code>row 3 ← row 3 − 2·row 2</code>:
+  </p>
+  <p style="font-size:14px;max-width:780px;margin-left:16px">
+    <code>[0,4,1 | 2] − 2·[0,2,−2 | 6] = [0, 0, 5 | −10]</code>. &nbsp;Pivot 3 is the <b>5</b> that appears.
+  </p>
+
+  <p style="font-size:14px;max-width:780px">We have reached the upper-triangular system <code>Ux = c</code>:</p>
+  <div class="emat">
+    <table><tr><td class="br">1</td><td>2</td><td class="brr">1</td></tr>
+    <tr><td class="br">0</td><td>2</td><td class="brr">−2</td></tr>
+    <tr><td class="br">0</td><td>0</td><td class="brr">5</td></tr></table>
+  </div>
+  <span style="font-size:14px">x =</span>
+  <div class="emat" style="margin-left:8px">
+    <table><tr><td class="br brr">2</td></tr><tr><td class="br brr">6</td></tr><tr><td class="br brr">−10</td></tr></table>
+  </div>
+
+  <p style="font-size:14px;max-width:780px">
+    <b>Step 3 — back-substitution.</b> Read the equations from the bottom up:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><code>5z = −10  ⟹  z = −2</code></li>
+    <li><code>2y − 2z = 6  ⟹  2y = 6 + 2(−2) = 2  ⟹  y = 1</code></li>
+    <li><code>x + 2y + z = 2  ⟹  x = 2 − 2(1) − (−2) = 2  ⟹  x = 2</code></li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    So <code>x = (2, 1, −2)</code> — the black dot where the three planes meet.
+  </p>
+
+  <h2>The elimination matrices</h2>
+  <p style="font-size:14px;max-width:780px">
+    Each row operation <i>is</i> a matrix multiplying <code>A</code> from the left. Subtracting 3·row 1 from
+    row 2 is multiplication by <code>E₂₁</code>; subtracting 2·row 2 from row 3 is <code>E₃₂</code>. They are
+    identity matrices with one off-diagonal entry — the negative of the multiplier:
+  </p>
+  <div>
+    <span style="font-size:14px">E₂₁ =</span>
+    <div class="emat" style="margin-left:6px">
+      <table><tr><td class="br">1</td><td>0</td><td class="brr">0</td></tr>
+      <tr><td class="br">−3</td><td>1</td><td class="brr">0</td></tr>
+      <tr><td class="br">0</td><td>0</td><td class="brr">1</td></tr></table>
+    </div>
+    <span style="font-size:14px;margin-left:24px">E₃₂ =</span>
+    <div class="emat" style="margin-left:6px">
+      <table><tr><td class="br">1</td><td>0</td><td class="brr">0</td></tr>
+      <tr><td class="br">0</td><td>1</td><td class="brr">0</td></tr>
+      <tr><td class="br">0</td><td>−2</td><td class="brr">1</td></tr></table>
+    </div>
+  </div>
+  <p style="font-size:14px;max-width:780px">
+    Applied in order, the whole forward elimination is a single matrix
+    <code>E = E₃₂·E₂₁</code> (right-most acts first), and <code>E·A = U</code>:
+  </p>
+  <div>
+    <span style="font-size:14px">E = E₃₂·E₂₁ =</span>
+    <div class="emat" style="margin-left:6px">
+      <table><tr><td class="br">1</td><td>0</td><td class="brr">0</td></tr>
+      <tr><td class="br">−3</td><td>1</td><td class="brr">0</td></tr>
+      <tr><td class="br">6</td><td>−2</td><td class="brr">1</td></tr></table>
+    </div>
+  </div>
+  <p style="font-size:14px;max-width:780px">
+    (The <code>6</code> in the corner is <code>(−2)·(−3)</code>: E₃₂ also acts on the change E₂₁ made to row 2.
+    Note <code>E₃₂·E₂₁ ≠ E₂₁·E₃₂</code> in general — order matters.) The same <code>E</code> applied to
+    <code>b = (2,12,2)</code> gives <code>c = (2, 6, −10)</code>, matching the right-hand column above.
+  </p>
+
+  <h2>Why a matrix on the left does row operations</h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang justifies the elimination matrices with one fact about multiplication. Last lecture: a
+    <b>matrix × column = a combination of the columns</b> — his example, <code>A·(3,4,5)</code> is
+    <code>3·col₁ + 4·col₂ + 5·col₃</code>. Today he needs the mirror image: a
+    <b>row × matrix = a combination of the rows</b>. His example is the row <code>(1, 2, 7)</code> times
+    <code>A</code>, which equals <code>1·row₁ + 2·row₂ + 7·row₃</code>. Click the toggle to see the same
+    matrix read both ways — that is exactly why <code>E₂₁</code>'s second row <code>(−3, 1, 0)</code> means
+    "take −3 of row 1 plus 1 of row 2."
+  </p>
+  <div class="controls">
+    <button id="cvBtn" class="primary">Show: row × matrix (combine rows)</button>
+    <span id="cvMode" style="font-size:14px;margin-left:8px"></span>
+  </div>
+  <div id="cvMount" style="font-size:14px;max-width:780px"></div>
+
+  <h2>Permutation matrices — and why rows go left, columns go right</h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang's "slight digression": the other elementary matrix, the one that <b>exchanges two rows</b>, is a
+    <b>permutation matrix</b> <code>P</code>. The easy way to build it is to do the swap to the identity. On a
+    2×2 <code>[[a,b],[c,d]]</code>, multiplying <code>P = [[0,1],[1,0]]</code> on the <b>left</b> swaps the rows
+    to <code>[[c,d],[a,b]]</code>. To exchange <b>columns</b> instead, the same <code>P</code> must go on the
+    <b>right</b>, giving <code>[[b,a],[d,c]]</code>. His rule: <i>"to do row operations the matrix multiplies on
+    the left; to do column operations it multiplies on the right."</i>
+  </p>
+  <div class="controls">
+    <button id="permRow" class="primary">P · A  (exchange rows)</button>
+    <button id="permCol">A · P  (exchange columns)</button>
+  </div>
+  <div id="permMount" style="font-size:14px"></div>
+  <div id="permNote" class="step-desc" style="max-width:780px"></div>
+
+  <h2>The inverse — undoing one elimination step</h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang's closing "leg up on inverses." Take <code>E = E₂₁ = [[1,0,0],[−3,1,0],[0,0,1]]</code>, which
+    subtracts 3·row 1 from row 2. To undo it you <b>add 3·row 1 back to row 2</b>, so
+    <code>E⁻¹ = [[1,0,0],[3,1,0],[0,0,1]]</code> — same matrix with the sign of the multiplier flipped. Their
+    product is the identity: <code>E⁻¹·E = I</code>. Concretely, <code>E</code> turned <code>b = (2,12,2)</code>
+    into <code>(2,6,2)</code>; <code>E⁻¹</code> turns it straight back.
+  </p>
+  <div id="invMount" style="font-size:14px"></div>
+
+  <h2>Pivots, row exchanges, and breakdown</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>"No row exchange needed"</b> means every pivot — the entry we divide by at each stage — came out nonzero
+    on its own (here 1, then 2, then 5), so we could march straight down the diagonal. That is the lucky,
+    typical case.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>When elimination breaks down:</b> if a pivot position holds a <b>0</b>, we cannot divide by it. Two
+    things can happen:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>Temporary zero — fix with a permutation.</b> If some <i>lower</i> row has a nonzero entry in that
+      column, swap the two rows (multiply by a permutation matrix <code>P</code>) and continue. For example,
+      <code>[[0,2],[3,4]]</code> has a 0 in the first pivot, but exchanging rows gives the nonzero pivot 3.</li>
+    <li><b>Fatal zero — singular matrix.</b> If the whole column below is also 0, no exchange helps. A pivot is
+      genuinely missing, the matrix is <b>singular</b> (<code>det = 0</code>, since det = product of pivots),
+      and the system has either no solution or infinitely many — the singular cases from Lecture 1.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    <b>Strang's own "what if" tweaks to this matrix.</b> He poked at the example to show where trouble would
+    hide:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li>If the <code>(2,2)</code> entry <b>8</b> were a <b>6</b> instead, then after <code>row 2 − 3·row 1</code>
+      the second pivot would be <code>6 − 6 = 0</code> — a temporary zero, but row 3 has a nonzero entry below
+      it, so a <i>row exchange</i> rescues us. "If this 8 had been a 6 … I would survive by a row exchange."</li>
+    <li>If the <code>(3,3)</code> entry <b>1</b> were a <b>−4</b> instead, the third pivot becomes
+      <code>5 + (−4) − 1 = 0</code> with <i>nothing below</i> to swap in — a fatal zero. "There wouldn't have
+      been a third pivot. The matrix would not have been invertible." That is the one tweak Strang couldn't get
+      out of. Use the slider below to dial that bottom-right entry and watch the third pivot collapse.</li>
+  </ul>
+  <div class="controls">
+    bottom-right entry <code>A₃₃</code>:
+    <input id="brkSlider" type="range" min="-5" max="3" step="1" value="1" style="width:260px;vertical-align:middle">
+    <b id="brkVal">1</b>
+    <span id="brkStatus" style="font-size:14px;margin-left:10px"></span>
+  </div>
+  <div class="matlabel">Forward elimination on <b>A</b> with this bottom-right entry — pivots in yellow, fatal zero in red</div>
+  <div id="brkMount"></div>
+  <p style="font-size:14px;max-width:780px">
+    Use the <b>Back</b>/<b>Step</b> buttons above to watch the augmented matrix fill in its zeros and the
+    pivots light up, while the planes tilt into triangular form without ever losing their meeting point.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  // ---- Strang's example ----
+  const A0 = [[1,2,1],[3,8,1],[0,4,1]];
+  const b0 = [2,12,2];
+  const SOL = [2, 1, -2];          // x = (2,1,-2)
+  const R = 6;                     // plane half-width for the row picture
+
+  // Snapshots of [A|b] at each step, plus which cell just changed and which are pivots.
+  // pivots: list of [row,col] cells (0-indexed within the 3-col A part) to highlight.
+  const STEPS = [
+    {
+      name: "Start",
+      M: [[1,2,1,2],[3,8,1,12],[0,4,1,2]],
+      changed: [], pivots: [[0,0]],
+      desc: "Original system <code>Ax = b</code>. The first pivot is the top-left <b>1</b>.",
+    },
+    {
+      name: "E₂₁:  row 2 − 3·row 1",
+      M: [[1,2,1,2],[0,2,-2,6],[0,4,1,2]],
+      changed: [[1,0],[1,1],[1,2],[1,3]], pivots: [[0,0],[1,1]],
+      desc: "Multiplier <code>ℓ₂₁ = 3/1 = 3</code>. Row 2 becomes <code>[0, 2, −2 | 6]</code>. " +
+            "Second pivot is the <b>2</b> in position (2,2).",
+    },
+    {
+      name: "E₃₂:  row 3 − 2·row 2",
+      M: [[1,2,1,2],[0,2,-2,6],[0,0,5,-10]],
+      changed: [[2,1],[2,2],[2,3]], pivots: [[0,0],[1,1],[2,2]],
+      desc: "Multiplier <code>ℓ₃₂ = 4/2 = 2</code>. Row 3 becomes <code>[0, 0, 5 | −10]</code>. " +
+            "Third pivot is the <b>5</b>. System is now upper-triangular <code>Ux = c</code>.",
+    },
+    {
+      name: "Back-substitution → solution",
+      M: [[1,2,1,2],[0,2,-2,6],[0,0,5,-10]],
+      changed: [], pivots: [[0,0],[1,1],[2,2]], showSol: true,
+      desc: "<code>5z=−10 ⟹ z=−2</code>, then <code>2y−2z=6 ⟹ y=1</code>, then " +
+            "<code>x+2y+z=2 ⟹ x=2</code>.  Solution <code>x = (2, 1, −2)</code>.",
+    },
+  ];
+
+  let step = 0;
+
+  // ---------- numeric augmented-matrix table ----------
+  function fmt(v) { const r = LA.round(v); return (r < 0 ? "−" + Math.abs(r) : "" + r); }
+
+  function isCell(list, i, j) { return list.some((c) => c[0] === i && c[1] === j); }
+
+  function renderAug() {
+    const s = STEPS[step];
+    let html = '<table class="aug">';
+    for (let i = 0; i < 3; i++) {
+      html += "<tr>";
+      for (let j = 0; j < 4; j++) {
+        const cls = [];
+        if (j === 3) cls.push("bar");
+        if (j < 3 && isCell(s.pivots, i, j)) cls.push("pivot");
+        if (isCell(s.changed, i, j)) cls.push("changed");
+        html += '<td class="' + cls.join(" ") + '">' + fmt(s.M[i][j]) + "</td>";
+      }
+      html += "</tr>";
+    }
+    html += "</table>";
+    document.getElementById("augmount").innerHTML = html;
+
+    // status box
+    const st = document.getElementById("status");
+    if (s.showSol) {
+      st.innerHTML = '<span class="tag one">Solution</span> &nbsp;' +
+        '<code>x = 2</code>, <code>y = 1</code>, <code>z = −2</code><br>' +
+        'pivots <code>1 · 2 · 5 = 10 = det A</code> → one unique solution.';
+    } else if (step === STEPS.length - 2) {
+      st.innerHTML = 'Triangular form reached. Pivots <b>1, 2, 5</b> on the diagonal — ready for ' +
+        'back-substitution. Press <b>Step ▶</b>.';
+    } else {
+      st.innerHTML = 'Pivots so far: <b>' + s.pivots.map((p) => fmt(s.M[p[0]][p[1]])).join(", ") +
+        '</b>. No row exchange needed (every pivot is nonzero).';
+    }
+  }
+
+  // ---------- row picture (3 planes) ----------
+  function renderPlanes() {
+    const s = STEPS[step];
+    const traces = [];
+    for (let i = 0; i < 3; i++) {
+      const t = LA.planeTrace(s.M[i][0], s.M[i][1], s.M[i][2], s.M[i][3], R, LA.COLORS[i]);
+      if (t) traces.push(t);
+    }
+    // solution point — always at (2,1,-2), the invariant of elimination
+    traces.push({
+      type: "scatter3d", mode: "markers",
+      x: [SOL[0]], y: [SOL[1]], z: [SOL[2]],
+      marker: { size: 6, color: "#111" },
+      name: "solution", showlegend: false,
+      hovertext: "solution (2, 1, −2)", hoverinfo: "text",
+    });
+
+    const layout = {
+      margin: { l: 0, r: 0, t: 0, b: 0 },
+      scene: Object.assign(LA.SCENE(), {
+        xaxis: { title: "x", range: [-R, R] },
+        yaxis: { title: "y", range: [-R, R] },
+        zaxis: { title: "z", range: [-R, R] },
+      }),
+      showlegend: false,
+    };
+    Plotly.react("rowpic", traces, layout, { responsive: true, displayModeBar: false });
+  }
+
+  // ---------- driver ----------
+  function draw() {
+    document.getElementById("stepname").textContent =
+      "Step " + step + " of " + (STEPS.length - 1) + " — " + STEPS[step].name;
+    document.getElementById("desc").innerHTML = STEPS[step].desc;
+    document.getElementById("prev").disabled = (step === 0);
+    document.getElementById("next").disabled = (step === STEPS.length - 1);
+    renderAug();
+    renderPlanes();
+  }
+
+  document.getElementById("next").onclick  = () => { if (step < STEPS.length - 1) { step++; draw(); } };
+  document.getElementById("prev").onclick  = () => { if (step > 0) { step--; draw(); } };
+  document.getElementById("reset").onclick = () => { step = 0; draw(); };
+
+  draw();
+
+  // ---------- small local 2D/matrix helpers (LA.arrow etc. are 3D-only) ----------
+  function matHTML(rows, opts) {
+    // rows: 2D array; opts.hi: list of [i,j] cells to highlight; opts.bad: [i,j] in red
+    opts = opts || {};
+    const hi = opts.hi || [], bad = opts.bad || [];
+    const has = (L, i, j) => L.some((c) => c[0] === i && c[1] === j);
+    let h = '<div class="emat"><table>';
+    for (let i = 0; i < rows.length; i++) {
+      h += "<tr>";
+      for (let j = 0; j < rows[i].length; j++) {
+        const cls = [];
+        if (j === 0) cls.push("br");
+        if (j === rows[i].length - 1) cls.push("brr");
+        let style = "";
+        if (has(bad, i, j)) style = ' style="background:#f8d7da;color:#b00020;font-weight:700"';
+        else if (has(hi, i, j)) style = ' style="background:#fff3cd;font-weight:700"';
+        h += '<td class="' + cls.join(" ") + '"' + style + ">" + fmt(rows[i][j]) + "</td>";
+      }
+      h += "</tr>";
+    }
+    return h + "</table></div>";
+  }
+  const eq = (s) => '<span style="font-size:16px;margin:0 6px;vertical-align:24px">' + s + "</span>";
+
+  // ---------- breakdown slider: dial bottom-right entry, watch 3rd pivot ----------
+  (function () {
+    function elim(a33) {
+      // A with A[2][2] = a33; run the same fixed-multiplier forward elimination Strang did.
+      const A = [[1,2,1],[3,8,1],[0,4,a33]];
+      const r2 = A[1].map((v, j) => v - 3 * A[0][j]);          // row2 - 3 row1  -> [0,2,-2]
+      const U  = [A[0].slice(), r2, A[2].map((v, j) => v - 2 * r2[j])]; // row3 - 2 row2
+      return U;
+    }
+    function draw(a33) {
+      document.getElementById("brkVal").textContent = fmt(a33);
+      const U = elim(a33);
+      const p3 = U[2][2];
+      const zero = Math.abs(p3) < 1e-9;
+      const hi = [[0,0],[1,1]].concat(zero ? [] : [[2,2]]);
+      const bad = zero ? [[2,2]] : [];
+      document.getElementById("brkMount").innerHTML = matHTML(U, { hi, bad });
+      const st = document.getElementById("brkStatus");
+      if (zero) {
+        st.innerHTML = '<b style="color:#b00020">third pivot = 0</b> — nothing below to swap in. ' +
+          'Singular: not invertible (Strang’s <code>−4</code> case).';
+      } else if (a33 === 1) {
+        st.innerHTML = 'Pivots <b>1, 2, 5</b> — the lecture matrix. <code>det = 10</code>.';
+      } else {
+        st.innerHTML = 'Pivots <b>1, 2, ' + fmt(p3) + '</b>. <code>det = ' + fmt(2 * p3) + '</code>.';
+      }
+    }
+    const sl = document.getElementById("brkSlider");
+    sl.addEventListener("input", () => draw(parseFloat(sl.value)));
+    draw(1);
+  })();
+
+  // ---------- row x matrix = combination of rows (Strang's (1,2,7)·A) ----------
+  (function () {
+    const A = [[1,2,1],[3,8,1],[0,4,1]];
+    let byRows = true;
+    function render() {
+      document.getElementById("cvMode").textContent =
+        byRows ? "row (1,2,7) times A" : "A times column (3,4,5)";
+      document.getElementById("cvBtn").textContent =
+        byRows ? "Switch: matrix × column (combine columns)" : "Switch: row × matrix (combine rows)";
+      let h = "";
+      if (byRows) {
+        const w = [1, 2, 7];
+        const res = [0,1,2].map((j) => w[0]*A[0][j] + w[1]*A[1][j] + w[2]*A[2][j]);
+        h = eq("(1, 2, 7) · A  =  1·row₁ + 2·row₂ + 7·row₃  =") +
+            "<div style='margin-top:6px'>" +
+            eq("1·(1,2,1) + 2·(3,8,1) + 7·(0,4,1)  =") +
+            matHTML([res]) + "</div>" +
+            "<p style='max-width:780px'>A <b>row</b> times a matrix is a <b>combination of the rows</b> — " +
+            "the weights are the row's entries. This is the rule behind every elimination matrix.</p>";
+      } else {
+        const x = [3, 4, 5];
+        const res = [0,1,2].map((i) => A[i][0]*x[0] + A[i][1]*x[1] + A[i][2]*x[2]);
+        h = eq("A · (3, 4, 5)  =  3·col₁ + 4·col₂ + 5·col₃  =") +
+            "<div style='margin-top:6px'>" +
+            eq("3·(1,3,0) + 4·(2,8,4) + 5·(1,1,1)  =") +
+            matHTML(res.map((v) => [v])) + "</div>" +
+            "<p style='max-width:780px'>A matrix times a <b>column</b> is a <b>combination of the columns</b> — " +
+            "the picture from Lecture 1.</p>";
+      }
+      document.getElementById("cvMount").innerHTML = h;
+    }
+    document.getElementById("cvBtn").onclick = () => { byRows = !byRows; render(); };
+    render();
+  })();
+
+  // ---------- permutation: P·A swaps rows, A·P swaps columns ----------
+  (function () {
+    const A = [["a","b"],["c","d"]], P = [[0,1],[1,0]];
+    function show(mode) {
+      let out, expr;
+      if (mode === "row") {
+        out = [A[1], A[0]];
+        expr = eq("P · A  =") + matHTML([[0,1],[1,0]]) + eq("·") +
+               '<div class="emat"><table><tr><td class="br">a</td><td class="brr">b</td></tr>' +
+               '<tr><td class="br">c</td><td class="brr">d</td></tr></table></div>' + eq("=");
+      } else {
+        out = [[A[0][1], A[0][0]], [A[1][1], A[1][0]]];
+        expr =
+          '<div class="emat"><table><tr><td class="br">a</td><td class="brr">b</td></tr>' +
+          '<tr><td class="br">c</td><td class="brr">d</td></tr></table></div>' + eq("·") +
+          matHTML([[0,1],[1,0]]) + eq("=");
+      }
+      const res = '<div class="emat"><table>' +
+        '<tr><td class="br">' + out[0][0] + '</td><td class="brr">' + out[0][1] + '</td></tr>' +
+        '<tr><td class="br">' + out[1][0] + '</td><td class="brr">' + out[1][1] + '</td></tr></table></div>';
+      document.getElementById("permMount").innerHTML = expr + res;
+      document.getElementById("permNote").innerHTML = mode === "row"
+        ? "P on the <b>left</b> exchanged the <b>rows</b> → <code>[[c,d],[a,b]]</code>. Row operations multiply on the left."
+        : "The same P on the <b>right</b> exchanged the <b>columns</b> → <code>[[b,a],[d,c]]</code>. Column operations multiply on the right.";
+    }
+    document.getElementById("permRow").onclick = () => show("row");
+    document.getElementById("permCol").onclick = () => show("col");
+    show("row");
+  })();
+
+  // ---------- inverse of E (E^-1 · E = I) ----------
+  (function () {
+    const E    = [[1,0,0],[-3,1,0],[0,0,1]];
+    const Einv = [[1,0,0],[ 3,1,0],[0,0,1]];
+    // product Einv · E
+    const prod = [0,1,2].map((i) => [0,1,2].map((j) =>
+      Einv[i][0]*E[0][j] + Einv[i][1]*E[1][j] + Einv[i][2]*E[2][j]));
+    document.getElementById("invMount").innerHTML =
+      eq("E⁻¹ · E  =") + matHTML(Einv) + eq("·") + matHTML(E) + eq("=") +
+      matHTML(prod, { hi: [[0,0],[1,1],[2,2]] }) +
+      "<p style='max-width:780px'>The product is the identity <code>I</code> — flipping the multiplier's sign " +
+      "(−3 → +3) exactly undoes the step. <code>E</code> sent <code>b=(2,12,2)→(2,6,2)</code>; " +
+      "<code>E⁻¹</code> sends it back.</p>";
+  })();
+})();
+</script>
+</body>
+</html>

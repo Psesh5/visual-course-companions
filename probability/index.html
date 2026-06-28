@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>6.041 — Probability & Random Processes Visualizer</title>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../catalog.html">← All courses</a></div>
+  <h1>Probability &amp; Random Processes Visualizer</h1>
+  <div class="sub">Interactive companions to John Tsitsiklis's <b>MIT 6.041 / 6.431x</b>
+    (<i>Introduction to Probability</i>), organized by his unit list.
+    Choose a distribution · drag sliders · watch the simulation redraw live.</div>
+  <div class="note">
+    📺 Watch the lectures:
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">MIT OpenCourseWare (RES.6-012)</a>
+    &nbsp;·&nbsp;
+    <a href="https://www.youtube.com/playlist?list=PLUl4u3cNGP60A3XMwZ5sep719_nh95qOe" target="_blank">Full YouTube playlist</a>.
+    <br><b>Legend:</b>
+    <span class="badge live">interactive</span> has a working visual — every lecture below is live.
+    Built with Plotly.js + a shared <code>lib/prob.js</code>; no build step.
+  </div>
+
+  <div class="unit">Unit 1 · Probability models, conditioning &amp; Bayes</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 1</span><span class="ttl">Probability models and axioms</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/01-models-axioms.html">Open →</a>
+      <div class="links">Probability = area · events on the unit square · inclusion–exclusion · Monte-Carlo points</div></div>
+    <div class="card live"><span class="num">Lecture 2</span><span class="ttl">Conditioning and Bayes' rule</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/02-bayes.html">Open →</a>
+      <div class="links">The Bayes box · disease-test posterior · the base-rate fallacy</div></div>
+  </div>
+
+  <div class="unit">Unit 2 · Discrete random variables</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 3</span><span class="ttl">PMFs and expectation</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/03-pmf-expectation.html">Open →</a>
+      <div class="links">PMF bars · expectation as the balance point · binomial/Poisson/geometric/die</div></div>
+    <div class="card live"><span class="num">Lecture 4</span><span class="ttl">Variance; joint PMFs</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/04-variance-joint.html">Open →</a>
+      <div class="links">Spread the mass, watch σ² grow · two-dice joint · variance of a sum</div></div>
+  </div>
+
+  <div class="unit">Unit 3 · Continuous random variables</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 5</span><span class="ttl">PDFs, CDFs, and the normal</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/05-pdf-cdf-normal.html">Open →</a>
+      <div class="links">Area = probability · shade P(a≤X≤b) · CDF = running area · 68–95–99.7</div></div>
+    <div class="card live"><span class="num">Lecture 6</span><span class="ttl">Joint PDFs; conditioning</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/06-joint-pdf.html">Open →</a>
+      <div class="links">Bivariate-normal contour · drag ρ · slice for the conditional density</div></div>
+  </div>
+
+  <div class="unit">Unit 4 · Further topics on random variables</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 7</span><span class="ttl">Derived distributions</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/07-derived-distributions.html">Open →</a>
+      <div class="links">Y = g(X) warps the density · change-of-variables · the lognormal</div></div>
+    <div class="card live"><span class="num">Lecture 8</span><span class="ttl">Covariance and correlation</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/08-covariance-correlation.html">Open →</a>
+      <div class="links">Drag ρ from −1→+1 · best-fit line · the U-shape blind spot</div></div>
+  </div>
+
+  <div class="unit">Unit 5 · Limit theorems</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 9</span><span class="ttl">Inequalities &amp; the weak law</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/09-inequalities-wlln.html">Open →</a>
+      <div class="links">Running average funnels to μ · Chebyshev bound vs the true tail</div></div>
+    <div class="card live"><span class="num">Lecture 10</span><span class="ttl">The Central Limit Theorem</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/clt.html">Open →</a>
+      <div class="links">Average any distribution → watch the bell appear · SE = σ/√n · Cauchy counterexample</div></div>
+  </div>
+
+  <div class="unit">Unit 6 · Bayesian inference</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 11</span><span class="ttl">Bayesian inference; MAP &amp; LMS</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/11-bayesian-inference.html">Open →</a>
+      <div class="links">Beta–Bernoulli · prior → posterior as data arrives · MAP vs posterior mean</div></div>
+  </div>
+
+  <div class="unit">Unit 7 · Random processes</div>
+  <div class="cards">
+    <div class="card live"><span class="num">Lecture 12</span><span class="ttl">The Bernoulli process</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/12-bernoulli-process.html">Open →</a>
+      <div class="links">Coin-flip stream · Binomial counts · Geometric gaps · memorylessness</div></div>
+    <div class="card live"><span class="num">Lecture 13</span><span class="ttl">The Poisson process</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/13-poisson-process.html">Open →</a>
+      <div class="links">Arrivals on a timeline · Poisson(λT) counts · Exponential gaps</div></div>
+    <div class="card live"><span class="num">Lecture 14</span><span class="ttl">Markov chains; steady-state</span>
+      <span class="badge live">interactive</span><a class="go" href="lectures/14-markov-chains.html">Open →</a>
+      <div class="links">3-state chain · πₜ₊₁ = πₜP · converge to the stationary distribution</div></div>
+  </div>
+
+  <div class="sub" style="margin-top:28px">
+    14 interactive modules across all 7 units. Built with Plotly.js + a shared <code>lib/prob.js</code>; no build step.
+  </div>
+</div>
+</body>
+</html>

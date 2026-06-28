@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 6 — Column space and nullspace · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 6 · Column space and nullspace</h1>
+  <div class="sub">Two subspaces hide inside every matrix <code>A</code>: the
+    <b>column space</b> <code>C(A)</code> — everything <code>Ax</code> can reach — and the
+    <b>nullspace</b> <code>N(A)</code> — every <code>x</code> with <code>Ax = 0</code>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>Our matrix.</b> We use a singular 3×3 matrix on purpose, so both subspaces are
+    interesting and both live in <code>R³</code> where we can draw them:
+    <code>A = [[1,0,1],[2,1,3],[3,1,4]]</code>. Its third column is the sum of the first two
+    (<code>col₃ = col₁ + col₂</code>), so <code>A</code> has rank 2 — not 3.
+  </div>
+
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Toggle:</span>
+    <button class="preset primary" id="btn-cols">Columns + column-space plane</button>
+    <button class="preset" id="btn-null">Nullspace line</button>
+    <button class="preset" id="btn-both">Both</button>
+  </div>
+
+  <div class="plots">
+    <div id="colspace" class="plot"></div>
+    <div id="nullspace" class="plot"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Column space <code>C(A)</code> — what <code>b</code>'s are reachable.</b> Multiplying
+    <code>Ax</code> is the same as taking the combination
+    <code>x₁·col₁ + x₂·col₂ + x₃·col₃</code>. So the set of all possible outputs <code>Ax</code>
+    is exactly the set of all combinations of the columns — that is the column space. The three
+    column arrows (left panel) are <b>not</b> independent: <code>col₃ = col₁ + col₂</code> lies
+    flat in the plane already spanned by <code>col₁</code> and <code>col₂</code>. So instead of
+    filling all of <code>R³</code>, the columns span only a <b>plane through the origin</b>
+    (shaded blue). The system <code>Ax = b</code> is solvable <i>exactly when</i> <code>b</code>
+    sits on that plane; pick a <code>b</code> poking off the plane and no combination of columns
+    can reach it.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Nullspace <code>N(A)</code> — what gets crushed to zero.</b> Because
+    <code>col₁ + col₂ − col₃ = 0</code>, the vector <code>n = (1, 1, −1)</code> satisfies
+    <code>Ax = 0</code>. Every multiple <code>c·n</code> also gives <code>0</code>, so the
+    nullspace is the <b>red line through the origin</b> in the direction of <code>n</code>
+    (right panel). The nullspace measures the failure of uniqueness: if <code>x₀</code> solves
+    <code>Ax = b</code>, then so does <code>x₀ + c·n</code> for every <code>c</code> — a whole line
+    of solutions, parallel to the nullspace.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>The dimension count.</b> Here <code>n = 3</code> columns. There are <b>2 pivots</b>, so
+    <code>dim C(A) = rank = 2</code> (a plane). The remaining <code>n − rank = 1</code> free column
+    gives <code>dim N(A) = 1</code> (a line). Both subspaces live inside <code>R³</code>: the column
+    space is a 2-D plane of reachable outputs, the nullspace is a 1-D line of inputs sent to zero.
+  </p>
+
+  <h2>The worked math — elimination</h2>
+  <p style="font-size:14px;max-width:760px">We row-reduce <code>A</code> to find the pivots
+    (they fix <code>C(A)</code>) and the free column (it fixes <code>N(A)</code>).</p>
+  <pre style="font-size:13px;background:#f6f8fa;border:1px solid #e3e6ea;border-radius:8px;padding:12px 14px;overflow:auto">
+A = | 1  0  1 |        R2 ← R2 − 2·R1        | 1  0  1 |     R3 ← R3 − R2     | 1  0  1 |
+    | 2  1  3 |   -->   R3 ← R3 − 3·R1   -->  | 0  1  1 |       -->           | 0  1  1 | = U
+    | 3  1  4 |                               | 0  1  1 |                     | 0  0  0 |
+
+Pivots in columns 1 and 2 (the boxed leading 1's).  Column 3 has NO pivot -> it is FREE.</pre>
+
+  <p style="font-size:14px;max-width:760px">
+    <b>Column space.</b> The pivot columns are columns 1 and 2, so a basis for <code>C(A)</code> is
+    the <i>original</i> first two columns <code>{(1,2,3), (0,1,1)}</code>. They span the plane.
+    <code>dim C(A) = 2</code>. (Equivalently, the plane has normal
+    <code>col₁ × col₂ = (−1, −1, 1)</code>, giving the plane equation
+    <code>−x − y + z = 0</code>; check that all three columns satisfy it.)
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Nullspace.</b> From <code>U</code>, with free variable <code>x₃ = 1</code>, back-substitute:
+    row 2 gives <code>x₂ + x₃ = 0 ⇒ x₂ = −1</code>; row 1 gives <code>x₁ + x₃ = 0 ⇒ x₁ = −1</code>.
+    The special solution is <code>(−1, −1, 1)</code> — the same line as <code>n = (1, 1, −1)</code>
+    (just the opposite sign). So <code>N(A) = { c·(1, 1, −1) }</code>, a line; <code>dim N(A) = 1</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>The dependency, confirmed.</b> <code>col₁ + col₂ = (1,2,3) + (0,1,1) = (1,3,4) = col₃</code>.
+    Equivalently <code>A·(1,1,−1) = 0</code> — verified numerically in the status box above
+    once the plots load.
+  </p>
+
+  <h2>Strang's question: is the union of two subspaces a subspace?</h2>
+  <p style="font-size:14px;max-width:760px">
+    Before the column space, Strang stops to make <i>the</i> central point about what "subspace"
+    means. Take a plane <code>P</code> through the origin and a line <code>L</code> through the
+    origin — each is a subspace of <code>R³</code>. Now form their <b>union</b>
+    <code>P ∪ L</code> (every vector that lies in <code>P</code> <i>or</i> <code>L</code>).
+    He asks the class point-blank: "Is that a subspace?" The answer is <b>no</b> — and the reason
+    is exactly the one rule that defines a subspace: <i>you must be able to add and stay inside.</i>
+    Pick a vector <code>p</code> in the plane and a vector <code>ℓ</code> on the line; their sum
+    <code>p + ℓ</code> normally flies off to a point that is neither in the plane nor on the line.
+    "Because I can't add," as Strang puts it. (The <b>intersection</b> <code>P ∩ L</code>, by
+    contrast, <i>is</i> a subspace — here just the zero vector — since a sum of vectors lying in
+    both stays in both.)
+  </p>
+  <div class="controls" style="margin-bottom:6px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Add tip-to-tail:</span>
+    <label style="font-size:13px;margin-right:10px"><input type="checkbox" id="uni-add" checked> show <code>p + ℓ</code> leaving the union</label>
+    p along plane: <input id="uni-p" type="range" min="-3" max="3" step="0.5" value="2" style="vertical-align:middle;width:150px">
+    ℓ along line: <input id="uni-l" type="range" min="-3" max="3" step="0.5" value="2" style="vertical-align:middle;width:150px">
+  </div>
+  <div id="union" class="plot" style="max-width:640px"></div>
+  <div class="status" id="union-status"></div>
+
+  <h2>Strang's actual example — the 4×3 matrix in R⁴</h2>
+  <div class="note">
+    In lecture Strang works a <b>4×3</b> matrix, not a 3×3:
+    <code>A = [[1,1,2],[2,1,3],[3,1,4],[4,1,5]]</code>, i.e. columns
+    <code>col₁ = (1,2,3,4)</code>, <code>col₂ = (1,1,1,1)</code>, <code>col₃ = (2,3,4,5)</code>.
+    Again <code>col₃ = col₁ + col₂</code>. The columns live in <code>R⁴</code>, so we can't draw
+    them — but the <i>logic</i> is identical to the 3×3 picture above, and the numbers are worth
+    seeing because the exam questions use them.
+  </div>
+  <p style="font-size:14px;max-width:760px">
+    <b>Column space = a 2-D subspace of R⁴.</b> Three columns, but the third is dependent
+    (<code>col₃ = col₁ + col₂</code>), so they span only a 2-dimensional plane sitting inside the
+    4-dimensional space — not all of <code>R⁴</code>. This is why <code>Ax = b</code> (four
+    equations, three unknowns) usually has <b>no</b> solution: most right-hand sides <code>b</code>
+    poke off that plane. The boxes below let you test Strang's two "good" right-hand sides against
+    a "bad" one.
+  </p>
+  <div class="controls" style="margin-bottom:6px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Pick a right-hand side b:</span>
+    <button class="preset primary" id="b-col1">b = col₁ = (1,2,3,4)</button>
+    <button class="preset" id="b-col2">b = col₂ = (1,1,1,1)</button>
+    <button class="preset" id="b-bad">b = (1,0,0,0) — off the plane</button>
+  </div>
+  <div class="status" id="r4-status"></div>
+  <p style="font-size:14px;max-width:760px">
+    <b>Nullspace = a line in R³.</b> The weights that kill the columns satisfy
+    <code>x₁·col₁ + x₂·col₂ + x₃·col₃ = 0</code>. Since <code>col₁ + col₂ − col₃ = 0</code>, the
+    vector <code>(1, 1, −1)</code> works — and so does <b>every</b> multiple
+    <code>c·(1, 1, −1)</code> (Strang's class offers <code>(1,1,−1)</code>, then
+    <code>(2,2,−2)</code>, before he says "tell me the whole lot": all of
+    <code>c·(1,1,−1)</code>). The <code>x</code>'s have 3 components, so the nullspace is a
+    <b>line through the origin in R³</b> — exactly the red line drawn in the right panel up top,
+    because this 4×3 matrix has the same dependency as our 3×3 one.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Why the nullspace is genuinely a subspace.</b> Suppose <code>Av = 0</code> and
+    <code>Aw = 0</code>. Then <code>A(v + w) = Av + Aw = 0 + 0 = 0</code> (the distributive law),
+    so <code>v + w</code> is in the nullspace too. And <code>A(cv) = c·(Av) = c·0 = 0</code>, so
+    every scalar multiple stays in. Both closure rules hold — and the zero vector is automatically
+    in (take <code>c = 0</code>) — so <code>N(A)</code> earns the word "space." Contrast this with
+    the union <code>P ∪ L</code> above, where adding broke closure.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  const A = [[1,0,1],[2,1,3],[3,1,4]];
+
+  // columns of A as vectors in R^3
+  const col = (j) => [A[0][j], A[1][j], A[2][j]];
+  const c1 = col(0), c2 = col(1), c3 = col(2);
+
+  // nullspace direction: col1 + col2 - col3 = 0  ->  n = (1,1,-1)
+  const n = [1, 1, -1];
+
+  // A * v
+  const matvec = (M, v) => M.map((row) => LA.round(row[0]*v[0] + row[1]*v[1] + row[2]*v[2]));
+  const An = matvec(A, n);
+
+  // plane spanned by columns: normal = c1 x c2, plane through origin (d = 0)
+  const cross = (a, b) => [
+    a[1]*b[2] - a[2]*b[1],
+    a[2]*b[0] - a[0]*b[2],
+    a[0]*b[1] - a[1]*b[0],
+  ];
+  const N = cross(c1, c2);           // (-1,-1,1)
+  const R = 6;
+
+  // ---- left panel: columns + column-space plane ----
+  function drawColspace() {
+    const data = [];
+    const plane = LA.planeTrace(N[0], N[1], N[2], 0, R, "Blues");
+    if (plane) data.push(plane);
+    data.push(...LA.arrow([0,0,0], c1, LA.VEC[0]));
+    data.push(...LA.arrow([0,0,0], c2, LA.VEC[1]));
+    data.push(...LA.arrow([0,0,0], c3, LA.VEC[2]));
+    Plotly.react("colspace", data, {
+      title: { text: "Column space C(A): the plane the columns span", font: { size: 13 } },
+      scene: LA.SCENE(), margin: { l:0, r:0, t:28, b:0 }, showlegend: false,
+    }, { responsive: true });
+  }
+
+  // ---- right panel: nullspace line (+ faint plane for context) ----
+  function drawNullspace() {
+    const t = 4;
+    const line = {
+      type: "scatter3d", mode: "lines",
+      x: [-t*n[0], t*n[0]], y: [-t*n[1], t*n[1]], z: [-t*n[2], t*n[2]],
+      line: { color: "#b00020", width: 8 }, showlegend: false,
+    };
+    const data = [];
+    const plane = LA.planeTrace(N[0], N[1], N[2], 0, R, "Greys");
+    if (plane) { plane.opacity = 0.18; data.push(plane); }
+    data.push(line);
+    data.push(...LA.arrow([0,0,0], n, "#b00020"));
+    Plotly.react("nullspace", data, {
+      title: { text: "Nullspace N(A): the line Ax = 0 (dir n = (1,1,−1))", font: { size: 13 } },
+      scene: LA.SCENE(), margin: { l:0, r:0, t:28, b:0 }, showlegend: false,
+    }, { responsive: true });
+  }
+
+  function setMode(mode) {
+    const cEl = document.getElementById("colspace");
+    const nEl = document.getElementById("nullspace");
+    cEl.style.display = (mode === "null") ? "none" : "";
+    nEl.style.display = (mode === "cols") ? "none" : "";
+    if (mode !== "null") drawColspace();
+    if (mode !== "cols") drawNullspace();
+  }
+
+  document.getElementById("status").innerHTML =
+    "<b>Numeric check.</b> " +
+    "<code>col₁ + col₂ = (" + c1.join(",") + ") + (" + c2.join(",") + ") = (" +
+      c1.map((v,i)=>v+c2[i]).join(",") + ")</code> = <code>col₃ = (" + c3.join(",") + ")</code> ✓ &nbsp;·&nbsp; " +
+    "<code>A·n = A·(" + n.join(",") + ") = (" + An.join(",") + ")</code> = <b>0</b> ✓ &nbsp;·&nbsp; " +
+    "<span class='tag inf'>rank 2</span>: dim C(A)=2 (plane), dim N(A)=3−2=1 (line).";
+
+  document.getElementById("btn-cols").onclick = () => { setActive("btn-cols"); setMode("cols"); };
+  document.getElementById("btn-null").onclick = () => { setActive("btn-null"); setMode("null"); };
+  document.getElementById("btn-both").onclick = () => { setActive("btn-both"); setMode("both"); };
+
+  function setActive(id) {
+    ["btn-cols","btn-null","btn-both"].forEach((b) =>
+      document.getElementById(b).classList.toggle("primary", b === id));
+  }
+
+  setActive("btn-both");
+  setMode("both");
+
+  // ===== Strang's "is the union of two subspaces a subspace?" demo =====
+  (function () {
+    const Rg = 5;
+    // plane P through origin (z = 0, the xy-plane) and line L through origin (the z-axis)
+    const planeNormal = [0, 0, 1];        // P: z = 0
+    const lineDir = [0, 0, 1];            // L: the z-axis
+    // a fixed direction inside the plane for the draggable p
+    const pDir = [1, 0.4, 0];             // lies in z=0 plane
+    function draw() {
+      const tp = parseFloat(document.getElementById("uni-p").value);
+      const tl = parseFloat(document.getElementById("uni-l").value);
+      const showAdd = document.getElementById("uni-add").checked;
+      const p = [pDir[0]*tp, pDir[1]*tp, pDir[2]*tp];     // a vector in P
+      const l = [lineDir[0]*tl, lineDir[1]*tl, lineDir[2]*tl]; // a vector in L
+      const sum = [p[0]+l[0], p[1]+l[1], p[2]+l[2]];
+
+      const data = [];
+      const plane = LA.planeTrace(planeNormal[0], planeNormal[1], planeNormal[2], 0, Rg, "Blues");
+      if (plane) { plane.opacity = 0.35; data.push(plane); }
+      // the line L (z-axis)
+      data.push({ type:"scatter3d", mode:"lines",
+        x:[0,0], y:[0,0], z:[-Rg,Rg], line:{color:"#b00020", width:8}, showlegend:false });
+      // p in the plane (blue), l on the line (red)
+      data.push(...LA.arrow([0,0,0], p, LA.VEC[0]));
+      data.push(...LA.arrow([0,0,0], l, "#b00020"));
+      if (showAdd) {
+        // tip-to-tail: from p, add l; the result sum leaves the union
+        data.push(...LA.arrow(p, sum, "#888"));
+        data.push(...LA.arrow([0,0,0], sum, "#9a6b00"));
+        data.push({ type:"scatter3d", mode:"markers+text",
+          x:[sum[0]], y:[sum[1]], z:[sum[2]],
+          text:["  p + ℓ"], textposition:"top center",
+          marker:{size:5, color:"#9a6b00"}, showlegend:false });
+      }
+      Plotly.react("union", data, {
+        title:{ text:"P (plane) ∪ L (line): the sum p + ℓ escapes both", font:{size:13} },
+        scene: LA.SCENE(), margin:{l:0,r:0,t:28,b:0}, showlegend:false,
+      }, { responsive:true });
+
+      // is p+l in the union? in P iff z≈0; on L iff x≈0 and y≈0
+      const inP = Math.abs(sum[2]) < 1e-9;
+      const onL = Math.abs(sum[0]) < 1e-9 && Math.abs(sum[1]) < 1e-9;
+      const inUnion = inP || onL;
+      document.getElementById("union-status").innerHTML =
+        "<b>Closure check.</b> " +
+        "<code>p = (" + p.map(LA.round).join(",") + ")</code> ∈ P &nbsp;·&nbsp; " +
+        "<code>ℓ = (" + l.map(LA.round).join(",") + ")</code> ∈ L &nbsp;⇒&nbsp; " +
+        "<code>p + ℓ = (" + sum.map(LA.round).join(",") + ")</code> " +
+        (inUnion
+          ? "<span class='tag inf'>still in P ∪ L</span> (a special case — slide both to general values)"
+          : "<span class='tag none'>NOT in P ∪ L</span> — adding broke closure, so the union is not a subspace ✓");
+    }
+    document.getElementById("uni-p").addEventListener("input", draw);
+    document.getElementById("uni-l").addEventListener("input", draw);
+    document.getElementById("uni-add").addEventListener("change", draw);
+    draw();
+  })();
+
+  // ===== Strang's actual 4x3 matrix: column space in R^4, nullspace line =====
+  (function () {
+    const A4 = [[1,1,2],[2,1,3],[3,1,4],[4,1,5]];   // columns (1,2,3,4),(1,1,1,1),(2,3,4,5)
+    const colsOf = (M) => [0,1,2].map(j => M.map(row => row[j]));
+    const [k1, k2, k3] = colsOf(A4);
+    // solve A4 x = b in R^4 by trying x in the 2D span; report consistency.
+    // Because col3 = col1 + col2, the reduced system has pivots in cols 1,2.
+    // Project: solve [k1 k2] [a b]^T = b_target in least squares, then check residual.
+    function dot(u,v){ return u.reduce((s,x,i)=>s+x*v[i],0); }
+    function solveB(bt) {
+      // normal equations for [k1 k2]: 2x2 system
+      const g11=dot(k1,k1), g12=dot(k1,k2), g22=dot(k2,k2);
+      const r1=dot(k1,bt), r2=dot(k2,bt);
+      const det=g11*g22-g12*g12;
+      const a=(r1*g22-r2*g12)/det, b2=(g11*r2-g12*r1)/det;
+      const fit=[0,1,2,3].map(i=>a*k1[i]+b2*k2[i]);
+      const resid=Math.sqrt([0,1,2,3].reduce((s,i)=>s+(fit[i]-bt[i])**2,0));
+      return { a, b2, resid };
+    }
+    const cases = {
+      "b-col1": { b:[1,2,3,4], label:"col₁", x:"(1, 0, 0)" },
+      "b-col2": { b:[1,1,1,1], label:"col₂", x:"(0, 1, 0)" },
+      "b-bad":  { b:[1,0,0,0], label:"off-plane", x:null },
+    };
+    function show(id) {
+      ["b-col1","b-col2","b-bad"].forEach(k =>
+        document.getElementById(k).classList.toggle("primary", k===id));
+      const c = cases[id];
+      const r = solveB(c.b);
+      const solvable = r.resid < 1e-7;
+      let html = "<b>b = (" + c.b.join(",") + ").</b> ";
+      if (solvable) {
+        html += "<span class='tag one'>solvable</span> — b is in the column space C(A). ";
+        if (c.x) html += "Strang's solution: <code>x = " + c.x + "</code>, i.e. " +
+          "<code>" + c.x.replace(/[()]/g,"").split(", ").map((w,i)=>w+"·col"+(i+1)).join(" + ") + " = b</code> ✓";
+      } else {
+        html += "<span class='tag none'>NO solution</span> — b sits off the 2-D plane the columns span " +
+          "(residual ≈ " + LA.round(r.resid) + " ≠ 0). Four equations, three unknowns: this b is unreachable.";
+      }
+      document.getElementById("r4-status").innerHTML = html;
+    }
+    document.getElementById("b-col1").onclick = () => show("b-col1");
+    document.getElementById("b-col2").onclick = () => show("b-col2");
+    document.getElementById("b-bad").onclick  = () => show("b-bad");
+    show("b-col1");
+  })();
+</script>
+</body>
+</html>

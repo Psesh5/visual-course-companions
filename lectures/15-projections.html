@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 15 — Projections onto subspaces · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* page-local extras */
+  .mathbox { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:12px 16px;
+             font-size:14px; max-width:820px; margin:10px 0; }
+  .mathbox code { background:#eef2f7; padding:1px 5px; border-radius:4px; }
+  .eq { font-family: "Cambria Math", Georgia, serif; font-size:16px; margin:8px 0; }
+  .sliders { display:flex; flex-wrap:wrap; gap:18px; margin:10px 0; align-items:center; }
+  .sliders label { font-size:13px; color:#444; display:flex; flex-direction:column; gap:2px; }
+  .sliders input[type=range] { width:160px; }
+  .readout { background:#f4f7fb; border:1px solid #d6e2f0; border-radius:8px;
+             padding:10px 14px; margin:10px 0; font-size:14px; }
+  .readout code { background:#e8eef6; padding:1px 5px; border-radius:4px; }
+  .ok { color:#176d2c; font-weight:700; } .warn { color:#b00020; font-weight:700; }
+  .mat { display:inline-grid; grid-auto-flow:column; vertical-align:middle;
+         border-left:2px solid #333; border-right:2px solid #333; padding:2px 6px; margin:0 4px; }
+  .mat .col { display:grid; }
+  .mat .col span { padding:1px 8px; text-align:right; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 15 · Projections onto subspaces</h1>
+  <div class="sub">How do you find the closest point in a subspace to a vector <code>b</code>?
+    Drop a perpendicular. The foot of that perpendicular is the <b>projection</b> <code>p</code>,
+    and the leftover <code>e = b − p</code> is the <b>error</b>, always orthogonal to the subspace.
+    This is the geometry behind least squares.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>Two pictures.</b> First we project onto a <b>line</b> (a 1-D subspace, span of one vector
+    <code>a</code>). Then onto a <b>plane</b> (the column space of a 3×2 matrix <code>A</code>).
+    In both cases <code>p</code> is the shadow of <code>b</code> and <code>e</code> meets the
+    subspace at a right angle. Drag the sliders for <code>b</code> and watch <code>a·e</code> stay zero.
+  </div>
+
+  <!-- ============================== FIGURE 1: LINE ============================== -->
+  <h2>Figure 1 · Projection onto a line</h2>
+  <div class="mathbox">
+    Line direction <code>a = (2, 1, 1)</code>. Move the tip of <code>b</code>. The blue arrow is
+    <code>b</code>, the green arrow on the line is the projection
+    <code>p = (aᵀb / aᵀa) a</code>, and the orange arrow is the error <code>e = b − p</code>.
+    The error is perpendicular to the line: <code>a·e = 0</code>.
+  </div>
+
+  <div class="sliders" id="line-sliders">
+    <label>b₁ <input type="range" id="lb0" min="-4" max="4" step="0.1" value="1"><span class="rng" id="lb0v"></span></label>
+    <label>b₂ <input type="range" id="lb1" min="-4" max="4" step="0.1" value="3"><span class="rng" id="lb1v"></span></label>
+    <label>b₃ <input type="range" id="lb2" min="-4" max="4" step="0.1" value="2"><span class="rng" id="lb2v"></span></label>
+  </div>
+
+  <div class="plots"><div class="plot" id="plotLine"></div></div>
+  <div class="readout" id="lineOut"></div>
+  <div class="mathbox">
+    <b>Strang's two sanity checks.</b> Double <code>b</code> and the projection doubles too
+    (<code>x̂</code> is linear in <code>b</code>). But double the direction <code>a</code> — or flip
+    its sign — and <code>p</code> doesn't move at all: the extra factor of <code>a</code> upstairs is
+    cancelled by the extra <code>aᵀa</code> downstairs, because the <i>line</i> hasn't changed. The
+    matrix below confirms the line's projector is rank-1, symmetric, and idempotent, just like the
+    plane's.
+  </div>
+  <div class="readout" id="linePOut"></div>
+
+  <!-- ============================== FIGURE 2: PLANE ============================== -->
+  <h2>Figure 2 · Projection onto a plane (a column space)</h2>
+  <div class="mathbox">
+    The plane is the column space of
+    <span class="mat"><span class="col"><span>1</span><span>0</span><span>1</span></span><span class="col"><span>0</span><span>1</span><span>1</span></span></span>
+    — i.e. the span of <code>a₁=(1,0,1)</code> and <code>a₂=(0,1,1)</code>.
+    We project <code>b</code> with the full least-squares formula
+    <code>p = A(AᵀA)⁻¹Aᵀ b</code>. The green dot is the foot of the perpendicular inside
+    the plane; the orange arrow <code>e = b − p</code> rises perpendicular to the whole plane,
+    so <code>Aᵀe = 0</code>.
+  </div>
+
+  <div class="sliders" id="plane-sliders">
+    <label>b₁ <input type="range" id="pb0" min="-4" max="4" step="0.1" value="2"><span class="rng" id="pb0v"></span></label>
+    <label>b₂ <input type="range" id="pb1" min="-4" max="4" step="0.1" value="1"><span class="rng" id="pb1v"></span></label>
+    <label>b₃ <input type="range" id="pb2" min="-4" max="4" step="0.1" value="3"><span class="rng" id="pb2v"></span></label>
+  </div>
+
+  <div class="plots"><div class="plot" id="plotPlane"></div></div>
+  <div class="readout" id="planeOut"></div>
+
+  <!-- ============================== FIGURE 3: LEAST SQUARES LINE FIT ============================== -->
+  <h2>Figure 3 · Strang's example — the best straight line</h2>
+  <div class="mathbox">
+    Strang ends the lecture by motivating projection: <i>"fitting by a line."</i> He takes three data
+    points at times <code>t = 1, 2, 3</code> with values <code>b = 1, 2, 2</code> — i.e.
+    <b>(1, 1), (2, 2), (3, 2)</b> — and asks for the best line <code>b = C + Dt</code>.
+    No line hits all three, so the three equations
+    <code>C + D = 1</code>, <code>C + 2D = 2</code>, <code>C + 3D = 2</code> have <b>no</b> solution.
+    In matrix form <code>Ax = b</code> with
+    <span class="mat"><span class="col"><span>1</span><span>1</span><span>1</span></span><span class="col"><span>1</span><span>2</span><span>3</span></span></span>,
+    <code>x = (C, D)</code>, <code>b = (1, 2, 2)</code>. Projection picks the
+    <code>x̂ = (Ĉ, D̂)</code> that minimizes the total squared error — exactly the same
+    <code>p = A(AᵀA)⁻¹Aᵀ b</code> machinery as Figure 2, now in "data space."
+  </div>
+  <div class="plots"><div class="plot" id="plotFit" style="height:420px"></div></div>
+  <div class="readout" id="fitOut"></div>
+  <p style="font-size:14px;max-width:820px">
+    The dots are the data; the blue line is the best fit <code>b = Ĉ + D̂t</code>. The green dots on
+    the line are the fitted values <code>p = Ax̂</code> (the projection of <code>b</code> into the
+    column space of <code>A</code>), and the orange stems are the errors <code>e = b − p</code>.
+    Least squares minimizes <code>‖e‖²</code>, and the normal equations <code>AᵀAx̂ = Aᵀb</code>
+    force <code>Aᵀe = 0</code> — the errors sum to zero and are uncorrelated with <code>t</code>.
+    Strang finishes Lecture 15 here and solves the numbers in Lecture 16.
+  </p>
+
+  <!-- ============================== INTUITION ============================== -->
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:820px">
+    <b>A projection is a shadow.</b> Shine a light straight down onto the subspace; the shadow of
+    <code>b</code> is the projection <code>p</code>. Of all the points in the subspace,
+    <code>p</code> is the one <i>closest</i> to <code>b</code> — and the reason is the right angle.
+    The leftover vector <code>e = b − p</code> (the part of <code>b</code> that the subspace can't
+    reach) points straight out of the subspace. Any other point would be farther because you'd add
+    distance along the subspace to the same perpendicular gap (Pythagoras).
+  </p>
+  <p style="font-size:14px;max-width:820px">
+    <b>Why we care.</b> Real data rarely lands exactly in the column space of <code>A</code>, so
+    <code>Ax = b</code> has no solution. Projection gives the next best thing: the closest reachable
+    point <code>p = Ax̂</code>. That <code>x̂</code> is the <b>least-squares solution</b> — it
+    minimizes <code>‖b − Ax‖</code>. Lectures 16 (least squares) and 17 (orthogonal matrices) build
+    directly on this picture.
+  </p>
+  <p style="font-size:14px;max-width:820px">
+    <b>The projection matrix.</b> The map <code>b → p</code> is linear, so it is a matrix
+    <code>P</code> with <code>p = Pb</code>. Two facts make geometric sense and are shown live below
+    each figure: <code>P</code> is <b>symmetric</b> (<code>P = Pᵀ</code>) and <b>idempotent</b>
+    (<code>P² = P</code>). Idempotent because projecting a shadow again does nothing — it's already
+    in the subspace. The matrix <code>I − P</code> projects onto the orthogonal complement and sends
+    <code>b</code> to the error <code>e</code>.
+  </p>
+
+  <!-- ============================== WORKED MATH ============================== -->
+  <h2>The math, worked out</h2>
+
+  <p style="font-size:14px;max-width:820px"><b>1. Projection onto a line.</b>
+    The projection of <code>b</code> onto the line through <code>a</code> is some multiple
+    <code>p = x̂a</code>. The defining condition is that the error is perpendicular to the line:</p>
+  <div class="mathbox">
+    <div class="eq">a ᵀ(b − x̂a) = 0  ⇒  aᵀb − x̂(aᵀa) = 0  ⇒  <b>x̂ = aᵀb / aᵀa</b></div>
+    <div class="eq">p = x̂a = <b>(aᵀb / aᵀa) a</b></div>
+    <div class="eq">P = a aᵀ / aᵀa   (a rank-1 symmetric matrix, since p = Pb)</div>
+  </div>
+  <p style="font-size:14px;max-width:820px">
+    The factor <code>aᵀb/aᵀa</code> is how much of <code>a</code> you need. Note <code>aaᵀ</code>
+    is a 3×3 matrix while <code>aᵀa</code> is a scalar — order matters.</p>
+
+  <p style="font-size:14px;max-width:820px"><b>2. Projection onto a column space (the plane).</b>
+    Now <code>p</code> must be a combination of the columns of <code>A</code>, so
+    <code>p = Ax̂</code> for some vector <code>x̂</code>. The error <code>e = b − Ax̂</code> must be
+    perpendicular to <i>every</i> column, i.e. orthogonal to the whole column space. "Perpendicular
+    to all columns" is exactly <code>Aᵀe = 0</code> — the <b>normal equations</b>:</p>
+  <div class="mathbox">
+    <div class="eq">Aᵀ(b − Ax̂) = 0  ⇒  AᵀA x̂ = Aᵀb  ⇒  <b>x̂ = (AᵀA)⁻¹ Aᵀb</b></div>
+    <div class="eq">p = A x̂ = <b>A(AᵀA)⁻¹Aᵀ b</b>   ⇒   <b>P = A(AᵀA)⁻¹Aᵀ</b></div>
+  </div>
+  <p style="font-size:14px;max-width:820px">
+    This is the same formula as the line, generalized: the scalar <code>1/aᵀa</code> becomes the
+    matrix <code>(AᵀA)⁻¹</code>, and <code>aᵀb</code> becomes <code>Aᵀb</code>. (<code>AᵀA</code> is
+    invertible exactly when the columns of <code>A</code> are independent.)</p>
+
+  <p style="font-size:14px;max-width:820px"><b>3. Why <code>e ⟂</code> column space.</b>
+    The point is that <code>e</code> lands in the <b>left null space</b> of <code>A</code>. The
+    column space and left null space are orthogonal complements in <code>ℝⁿ</code> (Lecture 14), so
+    asking <code>Aᵀe = 0</code> is identical to asking that <code>e</code> be perpendicular to the
+    subspace. Choosing <code>x̂</code> to make this true is what minimizes the distance.</p>
+
+  <p style="font-size:14px;max-width:820px"><b>4. The two properties.</b> With
+    <code>P = A(AᵀA)⁻¹Aᵀ</code>:</p>
+  <div class="mathbox">
+    <div class="eq">Pᵀ = (A(AᵀA)⁻¹Aᵀ)ᵀ = A((AᵀA)⁻¹)ᵀAᵀ = A(AᵀA)⁻¹Aᵀ = P   (symmetric)</div>
+    <div class="eq">P² = A(AᵀA)⁻¹(AᵀA)(AᵀA)⁻¹Aᵀ = A(AᵀA)⁻¹Aᵀ = P   (idempotent)</div>
+  </div>
+  <p style="font-size:14px;max-width:820px">
+    <code>(AᵀA)⁻¹</code> is symmetric because <code>AᵀA</code> is. The interior
+    <code>(AᵀA)⁻¹(AᵀA) = I</code> collapses in <code>P²</code>. Both identities are checked
+    numerically in the readout boxes above.</p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* ---------- tiny page-local linear algebra (3-vectors, 3×3 / 3×2) ---------- */
+const dot = (u, v) => u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+const sub = (u, v) => [u[0]-v[0], u[1]-v[1], u[2]-v[2]];
+const r3  = LA.round;
+
+/* 2×2 inverse for AᵀA (A is 3×2) */
+function inv2(m) {
+  const [[a,b],[c,d]] = m;
+  const det = a*d - b*c;
+  return [[ d/det, -b/det], [-c/det, a/det]];
+}
+/* AᵀA  where A is 3×2 given by its two columns a1,a2 */
+function gram(a1, a2) {
+  return [[dot(a1,a1), dot(a1,a2)], [dot(a2,a1), dot(a2,a2)]];
+}
+/* full 3×3 projection matrix P = A(AᵀA)⁻¹Aᵀ from columns a1,a2 */
+function projMatrixPlane(a1, a2) {
+  const G  = inv2(gram(a1, a2));        // (AᵀA)⁻¹  (2×2)
+  const cols = [a1, a2];
+  const P = [[0,0,0],[0,0,0],[0,0,0]];
+  // P[i][j] = sum_{k,l} A[i][k] G[k][l] A[j][l]
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++) {
+    let s=0;
+    for (let k=0;k<2;k++) for (let l=0;l<2;l++) s += cols[k][i]*G[k][l]*cols[l][j];
+    P[i][j] = s;
+  }
+  return P;
+}
+const matVec = (M, v) => M.map(row => dot(row, v));
+/* symmetry & idempotency checks (max abs deviation) */
+function maxDev(A, B) {
+  let m=0; for (let i=0;i<3;i++) for (let j=0;j<3;j++) m=Math.max(m, Math.abs(A[i][j]-B[i][j])); return m;
+}
+const transpose3 = (M) => [[M[0][0],M[1][0],M[2][0]],[M[0][1],M[1][1],M[2][1]],[M[0][2],M[1][2],M[2][2]]];
+function mul3(A, B) {
+  const C=[[0,0,0],[0,0,0],[0,0,0]];
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++){let s=0;for(let k=0;k<3;k++)s+=A[i][k]*B[k][j];C[i][j]=s;}
+  return C;
+}
+function matHTML(M) {
+  const cols = [0,1,2].map(j =>
+    `<span class="col">${[0,1,2].map(i=>`<span>${r3(M[i][j])}</span>`).join("")}</span>`).join("");
+  return `<span class="mat">${cols}</span>`;
+}
+const fmtV = (v) => `(${r3(v[0])}, ${r3(v[1])}, ${r3(v[2])})`;
+const layout3d = () => ({
+  margin:{l:0,r:0,t:0,b:0}, showlegend:true,
+  legend:{x:0,y:1,bgcolor:"rgba(255,255,255,.6)",font:{size:11}},
+  scene: LA.SCENE(),
+});
+
+/* ============================ FIGURE 1 : LINE ============================ */
+const A_LINE = [2, 1, 1];                       // line direction
+const O = [0,0,0];
+
+function drawLine() {
+  const b = ["lb0","lb1","lb2"].map(id => +document.getElementById(id).value);
+  ["lb0","lb1","lb2"].forEach((id,i)=>document.getElementById(id+"v").textContent=r3(b[i]));
+
+  const xhat = dot(A_LINE, b) / dot(A_LINE, A_LINE);
+  const p = A_LINE.map(c => xhat * c);
+  const e = sub(b, p);
+
+  // draw the infinite-ish line through a
+  const t = 3;
+  const lineTrace = { type:"scatter3d", mode:"lines",
+    x:[-t*A_LINE[0], t*A_LINE[0]], y:[-t*A_LINE[1], t*A_LINE[1]], z:[-t*A_LINE[2], t*A_LINE[2]],
+    line:{color:"#999", width:3, dash:"dot"}, name:"line span(a)" };
+
+  const aArr  = LA.arrow(O, A_LINE, "#9467bd", 5);
+  const bArr  = LA.arrow(O, b, "#1f77b4", 7);
+  const pArr  = LA.arrow(O, p, "#2ca02c", 7);
+  const eArr  = LA.arrow(p, b, "#ff7f0e", 6);   // error from p up to b
+  aArr[0].name="a (direction)"; aArr[0].showlegend=true;
+  bArr[0].name="b"; bArr[0].showlegend=true;
+  pArr[0].name="p = proj"; pArr[0].showlegend=true;
+  eArr[0].name="e = b − p"; eArr[0].showlegend=true;
+
+  Plotly.react("plotLine",
+    [lineTrace, ...aArr, ...bArr, ...pArr, ...eArr], layout3d(), {displayModeBar:false});
+
+  const ae = dot(A_LINE, e);
+  const perp = Math.abs(ae) < 1e-9;
+  document.getElementById("lineOut").innerHTML =
+    `x̂ = aᵀb/aᵀa = <code>${r3(xhat)}</code> &nbsp; p = <code>${fmtV(p)}</code> &nbsp; e = <code>${fmtV(e)}</code><br>`+
+    `orthogonality check &nbsp; <code>a·e = ${r3(ae)}</code> → `+
+    `<span class="${perp?'ok':'warn'}">${perp?'⟂ confirmed (e ⟂ a)':'not ⟂'}</span>`;
+
+  // line projection matrix P = a aᵀ / aᵀa  (rank-1, symmetric, idempotent)
+  const aa = dot(A_LINE, A_LINE);
+  const PL = [[0,0,0],[0,0,0],[0,0,0]];
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++) PL[i][j] = A_LINE[i]*A_LINE[j]/aa;
+  document.getElementById("linePOut").innerHTML =
+    `projection matrix P = aaᵀ/aᵀa &nbsp; ${matHTML(PL)} <span style="color:#666">(rank 1)</span><br>`+
+    `properties &nbsp; <code>‖P − Pᵀ‖ = ${r3(maxDev(PL, transpose3(PL)))}</code> `+
+    `<span class="ok">(P = Pᵀ)</span> &nbsp; `+
+    `<code>‖P² − P‖ = ${r3(maxDev(mul3(PL,PL), PL))}</code> `+
+    `<span class="ok">(P² = P)</span>`;
+}
+
+/* ============================ FIGURE 2 : PLANE ============================ */
+const A1 = [1, 0, 1];   // column a1
+const A2 = [0, 1, 1];   // column a2
+const P_PLANE = projMatrixPlane(A1, A2);
+// plane through origin spanned by a1,a2: normal = a1 × a2
+const NORMAL = [
+  A1[1]*A2[2]-A1[2]*A2[1],
+  A1[2]*A2[0]-A1[0]*A2[2],
+  A1[0]*A2[1]-A1[1]*A2[0],
+];
+
+function drawPlane() {
+  const b = ["pb0","pb1","pb2"].map(id => +document.getElementById(id).value);
+  ["pb0","pb1","pb2"].forEach((id,i)=>document.getElementById(id+"v").textContent=r3(b[i]));
+
+  const p = matVec(P_PLANE, b);   // p = Pb = A(AᵀA)⁻¹Aᵀ b
+  const e = sub(b, p);
+
+  // shaded plane:  normal · (x) = 0  through origin
+  const surf = LA.planeTrace(NORMAL[0], NORMAL[1], NORMAL[2], 0, 3.2, "Blues");
+  surf.name = "column space";
+
+  const a1Arr = LA.arrow(O, A1, "#9467bd", 4);
+  const a2Arr = LA.arrow(O, A2, "#8c564b", 4);
+  const bArr  = LA.arrow(O, b, "#1f77b4", 7);
+  const eArr  = LA.arrow(p, b, "#ff7f0e", 6);   // perpendicular error
+  a1Arr[0].name="a₁"; a1Arr[0].showlegend=true;
+  a2Arr[0].name="a₂"; a2Arr[0].showlegend=true;
+  bArr[0].name="b"; bArr[0].showlegend=true;
+  eArr[0].name="e = b − p"; eArr[0].showlegend=true;
+
+  // foot of perpendicular p as a marker in the plane
+  const pDot = { type:"scatter3d", mode:"markers", x:[p[0]], y:[p[1]], z:[p[2]],
+    marker:{size:5, color:"#2ca02c"}, name:"p = foot" };
+  // dashed drop line origin→p (lies in plane)
+  const pSeg = { type:"scatter3d", mode:"lines", x:[O[0],p[0]], y:[O[1],p[1]], z:[O[2],p[2]],
+    line:{color:"#2ca02c", width:5}, name:"p (in plane)" };
+
+  Plotly.react("plotPlane",
+    [surf, ...a1Arr, ...a2Arr, ...bArr, pSeg, pDot, ...eArr],
+    layout3d(), {displayModeBar:false});
+
+  // verify Aᵀe = 0  (e ⟂ both columns)
+  const e1 = dot(A1, e), e2 = dot(A2, e);
+  const perp = Math.abs(e1) < 1e-9 && Math.abs(e2) < 1e-9;
+  document.getElementById("planeOut").innerHTML =
+    `p = Pb = <code>${fmtV(p)}</code> &nbsp; e = b − p = <code>${fmtV(e)}</code><br>`+
+    `normal-equation check &nbsp; <code>a₁·e = ${r3(e1)}</code>, <code>a₂·e = ${r3(e2)}</code> `+
+    `→ <span class="${perp?'ok':'warn'}">${perp?'Aᵀe = 0 (e ⟂ plane)':'not ⟂'}</span><br>`+
+    `projection matrix P = A(AᵀA)⁻¹Aᵀ &nbsp; ${matHTML(P_PLANE)}<br>`+
+    `properties &nbsp; <code>‖P − Pᵀ‖ = ${r3(maxDev(P_PLANE, transpose3(P_PLANE)))}</code> `+
+    `<span class="ok">(P = Pᵀ)</span> &nbsp; `+
+    `<code>‖P² − P‖ = ${r3(maxDev(mul3(P_PLANE,P_PLANE), P_PLANE))}</code> `+
+    `<span class="ok">(P² = P)</span>`;
+}
+
+/* ================= FIGURE 3 : LEAST-SQUARES LINE FIT (Strang's numbers) ================= */
+/* points (t,b): (1,1), (2,2), (3,2).  Model b = C + Dt.
+   A = [[1,1],[1,2],[1,3]] (columns a1 = ones, a2 = t),  b = (1,2,2).
+   x̂ = (AᵀA)⁻¹ Aᵀ b = (Ĉ, D̂);  p = A x̂;  e = b − p.
+   Reuses gram / inv2 / dot from the plane machinery (A is 3×2). */
+function drawFit() {
+  const T  = [1, 2, 3];          // a2 = t-column
+  const ONE = [1, 1, 1];         // a1 = constant column
+  const bFit = [1, 2, 2];        // data values
+
+  const G = inv2(gram(ONE, T));               // (AᵀA)⁻¹  (2×2)
+  const Atb = [dot(ONE, bFit), dot(T, bFit)]; // Aᵀb
+  const C = G[0][0]*Atb[0] + G[0][1]*Atb[1];  // Ĉ
+  const D = G[1][0]*Atb[0] + G[1][1]*Atb[1];  // D̂
+  const p = T.map(t => C + D*t);              // p = A x̂  (fitted values)
+  const e = sub(bFit, p);                     // errors
+
+  const tline = LA.linspace(0.5, 3.5, 2);
+  const fit = { type:"scatter", mode:"lines", x:tline, y:tline.map(t=>C+D*t),
+    line:{color:"#1f77b4", width:3}, name:`fit  b = ${r3(C)} + ${r3(D)}·t` };
+  const pts = { type:"scatter", mode:"markers", x:T, y:bFit,
+    marker:{size:11, color:"#d62728"}, name:"data (t, b)" };
+  const proj = { type:"scatter", mode:"markers", x:T, y:p,
+    marker:{size:9, color:"#2ca02c", symbol:"diamond"}, name:"p = Ax̂ (on line)" };
+  // error stems b → p
+  const stemsX = [], stemsY = [];
+  for (let i=0;i<3;i++){ stemsX.push(T[i],T[i],null); stemsY.push(bFit[i],p[i],null); }
+  const stems = { type:"scatter", mode:"lines", x:stemsX, y:stemsY,
+    line:{color:"#ff7f0e", width:3}, name:"e = b − p" };
+
+  Plotly.react("plotFit", [fit, stems, pts, proj], {
+    margin:{l:40,r:10,t:10,b:40}, showlegend:true,
+    legend:{x:0,y:1,bgcolor:"rgba(255,255,255,.6)",font:{size:11}},
+    xaxis:{title:"t", range:[0,4], zeroline:false},
+    yaxis:{title:"b", range:[0,3], zeroline:false},
+  }, {displayModeBar:false});
+
+  const e1 = dot(ONE, e), e2 = dot(T, e);
+  const perp = Math.abs(e1) < 1e-9 && Math.abs(e2) < 1e-9;
+  const sse = e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
+  document.getElementById("fitOut").innerHTML =
+    `normal equations AᵀAx̂ = Aᵀb &nbsp; ⇒ &nbsp; <code>Ĉ = ${r3(C)}</code>, <code>D̂ = ${r3(D)}</code> `+
+    `→ best line <code>b = ${r3(C)} + ${r3(D)}·t</code><br>`+
+    `fitted p = Ax̂ = <code>${fmtV(p)}</code> &nbsp; errors e = b − p = <code>${fmtV(e)}</code> &nbsp; `+
+    `<code>‖e‖² = ${r3(sse)}</code><br>`+
+    `orthogonality check &nbsp; <code>Σe = ${r3(e1)}</code>, <code>Σt·e = ${r3(e2)}</code> → `+
+    `<span class="${perp?'ok':'warn'}">${perp?'Aᵀe = 0 (errors ⟂ columns)':'not ⟂'}</span>`;
+}
+
+/* ---------- wire up ---------- */
+["lb0","lb1","lb2"].forEach(id => document.getElementById(id).addEventListener("input", drawLine));
+["pb0","pb1","pb2"].forEach(id => document.getElementById(id).addEventListener("input", drawPlane));
+drawLine();
+drawPlane();
+drawFit();
+</script>
+</body>
+</html>

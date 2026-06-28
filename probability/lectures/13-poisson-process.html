@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>The Poisson process — arrivals in continuous time · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>The Poisson process · arrivals in continuous time</h1>
+  <div class="sub">Points arrive at random along a timeline at an average <b>rate</b> <code>λ</code> per unit time.
+    Three facts run the whole story: the <b>count</b> of arrivals in a window of length <code>T</code> is
+    <code>Poisson(λT)</code>; the <b>gaps</b> between consecutive arrivals are <code>Exponential(λ)</code> with
+    mean <code>1/λ</code>; and the exponential is <b>memoryless</b> — the wait for the next arrival forgets how
+    long you have already waited. This is the continuous-time limit of the
+    <a href="12-bernoulli-process.html">Bernoulli process (Lecture 12)</a>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> the <b>top</b> plot is a single realized run — we draw exponential gaps and drop a
+    tick at every arrival across <code>[0, T]</code>. Notice the marks are <i>not</i> evenly spaced: you see
+    <span style="color:#b00020">clumps</span> and <span style="color:#176d2c">gaps</span>, the unmistakable
+    fingerprint of true randomness. Press <b>↻ new realization</b> to roll a fresh pattern. The <b>bottom</b>
+    plot is the law behind it, aggregated over many runs: switch between the histogram of the arrival
+    <b>count</b> (matched to the <code>Poisson(λT)</code> PMF) and the histogram of the inter-arrival
+    <b>gaps</b> (matched to the <code>Exponential(λ)</code> density). Both overlays land right on top.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Bottom plot shows:</span>
+    <button class="preset" id="viewCount" style="background:#176d2c;color:#fff;border-color:#176d2c">count in [0,T] · Poisson(λT)</button>
+    <button class="preset" id="viewGap">inter-arrival gaps · Exponential(λ)</button>
+    <button class="preset" id="reroll" style="margin-left:14px">↻ new realization</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">rate&nbsp; <b>λ = <span id="lamval">1.5</span></b> /unit&nbsp;
+      <input type="range" id="lam" min="0.2" max="6" step="0.1" value="1.5" style="vertical-align:middle;width:230px">
+    </label>
+    <span class="rng">(arrivals per unit time)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <label style="font-size:14px">window&nbsp; <b>T = <span id="Tval">10</span></b> units&nbsp;
+      <input type="range" id="T" min="2" max="30" step="1" value="10" style="vertical-align:middle;width:230px">
+    </label>
+    <span class="rng">(expected arrivals in the window: λT)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Presets:</span>
+    <button class="preset" data-lam="0.5" data-t="10">low rate · λ=0.5</button>
+    <button class="preset" data-lam="1.5" data-t="10">moderate · λ=1.5</button>
+    <button class="preset" data-lam="5" data-t="10">high rate · λ=5</button>
+  </div>
+
+  <div class="plots">
+    <div id="timePlot" class="plot"></div>
+    <div id="lawPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>From the Bernoulli process to the Poisson process</h2>
+  <p style="font-size:14px;max-width:780px">
+    In the <a href="12-bernoulli-process.html">Bernoulli process</a> time comes in discrete slots, and each slot
+    independently contains an arrival with probability <code>p</code>. The number of arrivals in <code>n</code>
+    slots is <code>Binomial(n, p)</code>, and the wait between arrivals is <code>Geometric(p)</code>. Now slice
+    continuous time into more and more tiny slots: let the slot width go to zero and the per-slot probability
+    <code>p</code> shrink with it, holding the <i>rate</i> fixed at <code>n·p = λT</code> arrivals per window.
+    In that limit two classic convergences fire at once:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>Binomial → Poisson.</b> <code>Binomial(n, λT/n) → Poisson(λT)</code>. The count of arrivals in a window
+      of length <code>T</code> is <code>P(N = k) = e<sup>−λT</sup>(λT)<sup>k</sup>/k!</code>.</li>
+    <li><b>Geometric → Exponential.</b> The discrete waiting time <code>Geometric(p)</code> rescales to the
+      continuous <code>Exponential(λ)</code>, with density <code>λe<sup>−λt</sup></code> and mean <code>1/λ</code>.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    So the Poisson process is nothing more exotic than the Bernoulli process with the clock turned continuous.
+    Everything you knew about coin-flips-per-slot carries over to arrivals-per-second.
+  </p>
+
+  <h2>Fact 1 — the count is Poisson(λT)</h2>
+  <p style="font-size:14px;max-width:780px">
+    Fix a window of length <code>T</code>. The number of arrivals <code>N</code> inside it is
+    <code>Poisson(λT)</code>, so its mean and its variance are the <i>same number</i>:
+    <code>E[N] = λT</code> and <code>Var(N) = λT</code>. That equality is the Poisson signature — if someone hands
+    you count data whose variance badly exceeds its mean, the arrivals are <i>not</i> a clean Poisson process
+    (they are clustered, or "over-dispersed"). With the moderate preset, <code>λ = 1.5</code>, <code>T = 10</code>,
+    you expect <code>λT = 15</code> arrivals, give or take <code>√15 ≈ 3.9</code>. Switch the bottom plot to the
+    count view and watch the histogram of counts over thousands of runs settle onto the black
+    <code>Poisson(15)</code> stems.
+  </p>
+
+  <h2>Fact 2 — the gaps are Exponential(λ)</h2>
+  <p style="font-size:14px;max-width:780px">
+    Equivalently, you can build the process gap-by-gap: the time until the first arrival, and every inter-arrival
+    time after it, is an independent <code>Exponential(λ)</code> draw with density <code>λe<sup>−λt</sup></code>
+    and mean <code>1/λ</code>. That is exactly how the top plot is generated — we accumulate
+    <code>PR.exponential(λ)</code> gaps until we run off the end of the window. At <code>λ = 1.5</code> the typical
+    gap is <code>1/λ ≈ 0.67</code> units, but the exponential is heavily right-skewed: many short gaps, occasional
+    long ones. Those long gaps next to short ones are precisely why the timeline looks clumpy rather than tidy.
+    Flip the bottom plot to the gap view: the histogram of gaps from one very long run lies right under the
+    smooth <code>λe<sup>−λt</sup></code> curve.
+  </p>
+
+  <h2>Fact 3 — the exponential is memoryless</h2>
+  <p style="font-size:14px;max-width:780px">
+    The defining property of the exponential gap is that it <b>forgets the past</b>:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(T &gt; s + t | T &gt; s) = P(T &gt; t)        for all s, t ≥ 0
+
+  proof:  P(T &gt; s+t | T &gt; s) = P(T &gt; s+t) / P(T &gt; s)
+                              = e^(−λ(s+t)) / e^(−λs)
+                              = e^(−λt) = P(T &gt; t)</pre>
+  <p style="font-size:14px;max-width:780px">
+    In words: if a bus arrives as a Poisson process and you have already waited <code>s</code> minutes with no
+    bus, your remaining wait has the <i>same</i> distribution as if you had just walked up — fresh
+    <code>Exponential(λ)</code>, mean <code>1/λ</code>. The process has no memory and no momentum; "it's overdue,
+    so it must come soon" is a fallacy here. This is also why you can split any window anywhere and the pieces stay
+    independent Poisson processes: the past tells you nothing about the future.
+  </p>
+
+  <h2>Where this shows up</h2>
+  <p style="font-size:14px;max-width:780px">
+    The Poisson process is the default model for <i>events that happen one at a time, independently, at a steady
+    average rate</i>: phone calls reaching a call center, photons hitting a detector, clicks on a Geiger counter
+    from radioactive decay, requests landing on a web server, and trade ticks printing on an exchange. Whenever you
+    can argue "rare, independent, constant-rate," reach for Poisson counts and exponential gaps — and remember the
+    one-line sanity check that the variance of the count should equal its mean.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  const RUNS = 6000;     // independent windows for the count histogram
+  const NGAPS = 40000;   // gaps collected from one long run for the gap histogram
+
+  let view = "count";    // "count" | "gap"
+  let seed = 0;          // bumped on each ↻ to force a fresh top-plot realization
+
+  function lamT() {
+    return { lam: parseFloat($("lam").value), T: parseFloat($("T").value) };
+  }
+
+  // One realization: accumulate exponential gaps across [0,T]; return arrival instants.
+  function realize(lam, T) {
+    const arr = [];
+    let t = PR.exponential(lam);
+    while (t <= T) { arr.push(t); t += PR.exponential(lam); }
+    return arr;
+  }
+
+  // ---- TOP: a single realized timeline -------------------------------------
+  function drawTimeline(lam, T) {
+    const arr = realize(lam, T);
+    // vertical stems at each arrival
+    const stemX = [], stemY = [];
+    for (const a of arr) { stemX.push(a, a, null); stemY.push(0, 1, null); }
+
+    const data = [
+      { type: "scatter", mode: "lines", x: [0, T], y: [0, 0],
+        line: { color: "#bbb", width: 2 }, hoverinfo: "skip", showlegend: false },
+      { type: "scatter", mode: "lines", x: stemX, y: stemY,
+        line: { color: "#1f77b4", width: 1.5 }, hoverinfo: "skip", showlegend: false },
+      { type: "scatter", mode: "markers", x: arr, y: arr.map(() => 1),
+        marker: { color: "#b00020", size: 8, symbol: "circle" },
+        name: "arrival", hoverinfo: "x" },
+    ];
+    Plotly.react("timePlot", data, {
+      title: { text: "One realized run — " + arr.length + " arrivals in [0, " + T + "]  (λ = " + lam + ")",
+               font: { size: 13 } },
+      margin: { l: 24, r: 12, t: 34, b: 36 },
+      xaxis: { range: [0, T], title: { text: "time", font: { size: 11 } }, zeroline: false },
+      yaxis: { range: [-0.2, 1.4], showticklabels: false, zeroline: false, fixedrange: true },
+      showlegend: false,
+    }, { responsive: true });
+  }
+
+  // ---- BOTTOM (count view): histogram of N over RUNS windows vs Poisson(λT) -
+  function drawCount(lam, T) {
+    const mu = lam * T;
+    const counts = new Array(RUNS);
+    let obsSum = 0, obsSq = 0, kmax = 0;
+    for (let r = 0; r < RUNS; r++) {
+      const n = realize(lam, T).length;
+      counts[r] = n; obsSum += n; obsSq += n * n;
+      if (n > kmax) kmax = n;
+    }
+    const obsMean = obsSum / RUNS;
+    const obsVar = obsSq / RUNS - obsMean * obsMean;
+
+    // empirical PMF over k = 0..kmax  (fraction of runs equal to k)
+    const tally = new Array(kmax + 1).fill(0);
+    for (const n of counts) tally[n]++;
+    const ks = PR.linspace(0, kmax, kmax + 1).map((x) => Math.round(x));
+    const emp = ks.map((k) => tally[k] / RUNS);
+    const pois = ks.map((k) => PR.poissonPmf(k, mu));
+
+    const data = [
+      { type: "bar", x: ks, y: emp, width: 0.9,
+        marker: { color: "#9ed3a8", line: { width: 0 } }, opacity: 0.85,
+        name: "simulated counts", hoverinfo: "x+y" },
+      { type: "scatter", mode: "markers+lines", x: ks, y: pois,
+        marker: { color: "#111", size: 5 }, line: { color: "#111", width: 1, dash: "dot" },
+        name: "Poisson(λT) PMF", hoverinfo: "skip" },
+    ];
+    Plotly.react("lawPlot", data, {
+      title: { text: "Arrival count N in [0,T] over " + RUNS.toLocaleString() + " runs", font: { size: 13 } },
+      margin: { l: 46, r: 12, t: 34, b: 38 },
+      xaxis: { title: { text: "number of arrivals k", font: { size: 11 } } },
+      yaxis: { title: { text: "P(N = k)", font: { size: 11 } }, rangemode: "tozero" },
+      bargap: 0.08, showlegend: true,
+      legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    return { obsMean, obsVar };
+  }
+
+  // ---- BOTTOM (gap view): histogram of gaps vs Exponential(λ) density -------
+  function drawGap(lam) {
+    const hi = 6 / lam;                  // show ~6 mean-lengths of tail
+    const gaps = new Array(NGAPS);
+    let sum = 0;
+    for (let i = 0; i < NGAPS; i++) { const g = PR.exponential(lam); gaps[i] = g; sum += g; }
+    const obsMeanGap = sum / NGAPS;
+
+    const h = PR.histogram(gaps, 0, hi, 50);
+    const xs = PR.linspace(0, hi, 200);
+    const data = [
+      { type: "bar", x: h.centers, y: h.density, width: h.width * 0.98,
+        marker: { color: "#9fc6e8", line: { width: 0 } }, opacity: 0.85,
+        name: "simulated gaps", hoverinfo: "x+y" },
+      { type: "scatter", mode: "lines", x: xs, y: xs.map((t) => lam * Math.exp(-lam * t)),
+        line: { color: "#111", width: 2 }, name: "λe^(−λt)", hoverinfo: "skip" },
+    ];
+    Plotly.react("lawPlot", data, {
+      title: { text: "Inter-arrival gaps from one long run (" + NGAPS.toLocaleString() + " gaps)", font: { size: 13 } },
+      margin: { l: 46, r: 12, t: 34, b: 38 },
+      xaxis: { range: [0, hi], title: { text: "gap length t", font: { size: 11 } } },
+      yaxis: { title: { text: "density", font: { size: 11 } }, rangemode: "tozero" },
+      bargap: 0.02, showlegend: true,
+      legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    return { obsMeanGap };
+  }
+
+  function draw() {
+    const { lam, T } = lamT();
+    $("lamval").textContent = lam;
+    $("Tval").textContent = T;
+    void seed;                           // referenced so ↻ re-runs random timeline
+
+    drawTimeline(lam, T);
+
+    const fmt = (x) => PR.round(x, 3);
+    const mu = lam * T;
+    let html;
+    if (view === "count") {
+      const { obsMean, obsVar } = drawCount(lam, T);
+      html =
+        '<span class="tag one">Count view — N ~ Poisson(λT), so mean = variance.</span><br>' +
+        'window mean &nbsp;<code>E[N] = λT = ' + fmt(lam) + '·' + fmt(T) + ' = ' + fmt(mu) + '</code> ' +
+        '&nbsp;→ simulated &nbsp;<code>' + fmt(obsMean) + '</code> ✓<br>' +
+        'window variance &nbsp;<code>Var(N) = λT = ' + fmt(mu) + '</code> ' +
+        '&nbsp;→ simulated &nbsp;<code>' + fmt(obsVar) + '</code> ✓ &nbsp;' +
+        '<span style="color:#666">(mean ≈ variance is the Poisson signature)</span><br>' +
+        'mean gap &nbsp;<code>1/λ = ' + fmt(1 / lam) + '</code> units &nbsp;·&nbsp; ' +
+        'memoryless: &nbsp;<code>P(T &gt; s+t | T &gt; s) = P(T &gt; t)</code>';
+    } else {
+      const { obsMeanGap } = drawGap(lam);
+      html =
+        '<span class="tag one">Gap view — gaps ~ Exponential(λ), density λe^(−λt).</span><br>' +
+        'mean gap &nbsp;<code>1/λ = 1/' + fmt(lam) + ' = ' + fmt(1 / lam) + '</code> units ' +
+        '&nbsp;→ simulated &nbsp;<code>' + fmt(obsMeanGap) + '</code> ✓<br>' +
+        'count mean &amp; variance &nbsp;<code>E[N] = Var(N) = λT = ' + fmt(mu) + '</code> ' +
+        '<span style="color:#666">(the same λ, read as a count)</span><br>' +
+        'memoryless: &nbsp;<code>P(T &gt; s+t | T &gt; s) = e^(−λ(s+t))/e^(−λs) = e^(−λt) = P(T &gt; t)</code>';
+    }
+    $("status").innerHTML = html;
+  }
+
+  // wiring
+  $("lam").addEventListener("input", draw);
+  $("T").addEventListener("input", draw);
+  $("reroll").onclick = () => { seed++; draw(); };
+
+  function setView(v) {
+    view = v;
+    const on = "background:#176d2c;color:#fff;border-color:#176d2c";
+    $("viewCount").style.cssText = v === "count" ? on : "";
+    $("viewGap").style.cssText = v === "gap" ? on : "";
+    draw();
+  }
+  $("viewCount").onclick = () => setView("count");
+  $("viewGap").onclick = () => setView("gap");
+
+  document.querySelectorAll(".preset[data-lam]").forEach((b) => {
+    b.onclick = () => {
+      $("lam").value = b.dataset.lam;
+      $("T").value = b.dataset.t;
+      draw();
+    };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

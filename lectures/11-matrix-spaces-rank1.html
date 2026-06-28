@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 11 — Matrix spaces; rank 1 · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* page-local styling for the matrix grids */
+  .mat { display: inline-grid; gap: 4px; margin: 6px 0; }
+  .mat .cell { width: 54px; height: 34px; line-height: 34px; text-align: center;
+               border: 1px solid #ddd; border-radius: 6px; background: #fafafa;
+               font-variant-numeric: tabular-nums; font-size: 14px; }
+  .mat .cell.free { background: #f7fbff; border-color: #bcd6ef; font-weight: 600; color: var(--blue); }
+  .mat .cell.zero { background: #fbfbfb; color: #bbb; }
+  .twocol { display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start; }
+  .panel { flex: 1 1 360px; min-width: 320px; }
+  .lbl { font-size: 13px; color: #444; margin-right: 6px; }
+  .dimpill { font-weight: 700; color: #176d2c; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 11 · Matrix spaces; rank 1</h1>
+  <div class="sub">A rank-1 matrix is an outer product <code>A = u·vᵀ</code> — every column is a multiple of
+    <code>u</code>, so the column space is a single <b>line</b>. And the matrices themselves form vector
+    spaces: 3×3 matrices live in a 9-dimensional space.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <!-- ============================= PART 1 : RANK-1 ============================= -->
+  <h2>Part 1 — Rank-1 matrices: <code>A = u vᵀ</code></h2>
+
+  <div class="note">
+    <b>The idea.</b> Pick a column vector <code>u</code> and a row vector <code>vᵀ</code>. Their outer product
+    <code>A = u vᵀ</code> is a full matrix, but its rank is <b>1</b>: <i>every column of A is a scalar multiple
+    of u</i>. So no matter how you stretch the columns, they all lie on the one line through <code>u</code> —
+    that line is the entire column space. Choose 2-D or 3-D below and drag the sliders.
+  </div>
+
+  <div class="controls">
+    <span class="lbl">Dimension:</span>
+    <button class="preset" id="d2" data-dim="2">2-D</button>
+    <button class="preset" id="d3" data-dim="3">3-D</button>
+  </div>
+
+  <div class="twocol">
+    <div class="panel">
+      <div class="controls" id="sliders"></div>
+      <div style="font-size:14px;margin-top:8px">
+        <b>A = u vᵀ =</b>
+        <div id="matA" class="mat"></div>
+      </div>
+      <div class="status" id="rank1status"></div>
+    </div>
+    <div class="panel">
+      <div id="rank1plot" class="plot" style="height:460px"></div>
+    </div>
+  </div>
+
+  <!-- ============================= PART 2 : MATRIX SPACES ============================= -->
+  <h2>Part 2 — The space of all 3×3 matrices</h2>
+
+  <div class="note">
+    <b>The idea.</b> All 3×3 matrices can be <b>added</b> and <b>scaled</b> and stay 3×3, so they form a vector
+    space — just like vectors do. Its dimension is <b>9</b> (the nine entries are nine free numbers). Several
+    important sets of matrices are <b>subspaces</b>: symmetric (6), upper-triangular (6), and diagonal (3).
+    Toggle one below to light up its free entries and see the dimension count.
+  </div>
+
+  <div class="controls">
+    <span class="lbl">Subspace:</span>
+    <button class="preset sub" data-s="all">All 3×3</button>
+    <button class="preset sub" data-s="sym">Symmetric</button>
+    <button class="preset sub" data-s="upper">Upper-triangular</button>
+    <button class="preset sub" data-s="diag">Diagonal</button>
+  </div>
+
+  <div class="twocol">
+    <div class="panel">
+      <div id="subGrid" class="mat"></div>
+      <div class="status" id="substatus"></div>
+    </div>
+    <div class="panel">
+      <div class="note" style="margin-top:0">
+        <b>Free entries</b> (blue) are the ones you may set independently — their count is the dimension.
+        Grey cells are forced to <code>0</code>; in the symmetric case, below-diagonal cells are forced to
+        equal their mirror above the diagonal.
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================= WHAT YOU'RE SEEING ============================= -->
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Rank-1 picture.</b> The colored arrows are the columns of <code>A</code>. Drag the sliders and watch:
+    however the columns grow or shrink, they always stay pinned to the single dashed line through <code>u</code>.
+    That line <i>is</i> the column space C(A). One line = one dimension = <b>rank 1</b>. The columns are
+    <code>v₁·u</code>, <code>v₂·u</code>, (and <code>v₃·u</code>) — literally the same vector <code>u</code>
+    scaled by the entries of <code>v</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Matrix-space grid.</b> A matrix is just a list of numbers, so a set of matrices is a vector space exactly
+    when it is closed under addition and scaling. The blue cells count how many numbers you are free to choose —
+    that count is the dimension of the subspace. Notice that the <b>symmetric</b> and <b>upper-triangular</b>
+    subspaces overlap precisely in the <b>diagonal</b> matrices.
+  </p>
+
+  <!-- ============================= WORKED MATH ============================= -->
+  <h2>Worked math — why <code>A = u vᵀ</code> has rank 1</h2>
+  <p style="font-size:14px;max-width:780px">
+    Write <code>u = (u₁,…,uₘ)ᵀ</code> and <code>v = (v₁,…,vₙ)ᵀ</code>. The outer product is the m×n matrix
+  </p>
+  <pre style="font-size:13px;background:#f6f8fa;border:1px solid #eee;border-radius:8px;padding:10px 14px;max-width:560px;overflow:auto">
+A = u vᵀ =  ⎡ u₁v₁  u₁v₂  …  u₁vₙ ⎤
+            ⎢ u₂v₁  u₂v₂  …  u₂vₙ ⎥
+            ⎣ uₘv₁  uₘv₂  …  uₘvₙ ⎦</pre>
+  <p style="font-size:14px;max-width:780px">
+    <b>Column j</b> is <code>(u₁vⱼ, u₂vⱼ, …, uₘvⱼ)ᵀ = vⱼ · u</code>. So <i>every</i> column is the same vector
+    <code>u</code> multiplied by a scalar <code>vⱼ</code>. The set of all such columns is exactly
+    <code>{ t·u : t ∈ ℝ }</code> — the line through the origin in the direction of <code>u</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Therefore the column space is <b>1-dimensional</b> (assuming <code>u ≠ 0</code> and <code>v ≠ 0</code>), and
+    <code>rank A = dim C(A) = 1</code>. By the same argument applied to rows, every row is a multiple of
+    <code>vᵀ</code>, so the row space is also the single line through <code>v</code> — rank from rows equals
+    rank from columns, both 1. (Strang's fact: <b>row rank = column rank</b>.) Conversely, every rank-1 matrix
+    can be written as some <code>u vᵀ</code>: pick any nonzero column for <code>u</code>, and the multipliers
+    that produce the other columns become the entries of <code>vᵀ</code>.
+  </p>
+
+  <h2>Worked math — dimensions of the matrix subspaces</h2>
+  <p style="font-size:14px;max-width:780px">
+    A standard basis for the space M of all 3×3 matrices is the nine matrices <code>E₍ᵢⱼ₎</code> with a single
+    <code>1</code> in position <code>(i,j)</code> and zeros elsewhere. They are independent and span M, so
+    <code>dim M = 9</code>. The subspaces count their own free entries:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li><b>Symmetric</b> (<code>Aᵀ = A</code>): 3 diagonal entries + 3 strictly-upper entries that determine
+      their mirrors ⇒ <code>dim = 3 + 3 = 6</code>.</li>
+    <li><b>Upper-triangular</b> (zeros below the diagonal): the 6 entries on and above the diagonal are free ⇒
+      <code>dim = 6</code>.</li>
+    <li><b>Diagonal</b>: only the 3 diagonal entries are free ⇒ <code>dim = 3</code>.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    <b>Intersection.</b> A matrix that is both symmetric and upper-triangular must have all below-diagonal entries
+    <code>0</code> (upper-triangular) and equal to the mirror above-diagonal entries (symmetric) — forcing the
+    above-diagonal entries to <code>0</code> too. What's left is diagonal:
+    <code>Symmetric ∩ Upper = Diagonal</code>, of dimension <b>3</b>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>The dimension formula.</b> For subspaces S and U of the same space,
+    <code>dim(S+U) = dim S + dim U − dim(S∩U)</code>. Here
+    <code>dim(Sym + Upper) = 6 + 6 − 3 = 9</code>, which equals <code>dim M</code> — so the symmetric and
+    upper-triangular matrices together <b>span every 3×3 matrix</b>. (Indeed any A splits as a symmetric part
+    <code>½(A+Aᵀ)</code> plus an "upper-correction," covering all of M.)
+  </p>
+
+  <h2>Worked math — Strang's rank-1 example <code>[1 4 5; 2 8 10]</code></h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang builds a concrete rank-1 matrix on the board. Start with the first row <code>(1&nbsp;4&nbsp;5)</code>
+    and ask: <i>what second row keeps the rank at 1?</i> The answer is any multiple of the first — he picks
+    <code>(2&nbsp;8&nbsp;10) = 2·(1&nbsp;4&nbsp;5)</code>:
+  </p>
+  <pre style="font-size:13px;background:#f6f8fa;border:1px solid #eee;border-radius:8px;padding:10px 14px;max-width:420px;overflow:auto">
+A = ⎡ 1  4   5 ⎤   =  ⎡ 1 ⎤
+    ⎣ 2  8  10 ⎦      ⎣ 2 ⎦ · ( 1  4  5 )</pre>
+  <p style="font-size:14px;max-width:780px">
+    The second row is a multiple of the first, so the rows are <b>not independent</b>: a basis for the row space
+    is just <code>(1&nbsp;4&nbsp;5)</code> — <code>dim(row space) = 1</code>. The columns are all multiples of
+    <code>(1, 2)ᵀ</code>, so <code>dim(column space) = 1</code> too. Both equal the rank, <code>r = 1</code>
+    (Strang: column rank = row rank). The clean way to see it: <code>A = u·vᵀ</code> with the
+    <b>pivot column</b> <code>u = (1, 2)ᵀ</code> times the row <code>vᵀ = (1&nbsp;4&nbsp;5)</code> — a 2×1 times a
+    1×3 giving a 2×3 matrix. Every rank-1 matrix factors this way; rank-1 matrices are the
+    <b>building blocks</b> for all matrices (a rank-<code>r</code> matrix is a sum of <code>r</code> of them).
+  </p>
+
+  <!-- ============================= PART 3 : SMALL-WORLD GRAPHS ============================= -->
+  <h2>Part 3 — Small-world graphs: six degrees of separation</h2>
+
+  <div class="note">
+    <b>The idea.</b> A <b>graph</b> here is not a curve — it's a set of <b>nodes</b> (people) joined by
+    <b>edges</b> (friendships). Strang asks: in the friendship graph of an entire country (≈ 260 million nodes),
+    <i>how many steps does it take to get from anybody to anybody?</i> Surprisingly few. His own distance to
+    President Clinton is just <b>2</b> ("I went to college with somebody who knows Clinton"). The folklore answer
+    for the whole world is <b>six degrees of separation</b> — and a handful of long-range <i>shortcuts</i> collapse
+    the typical distance dramatically. Add a shortcut below and watch the longest path shrink.
+  </div>
+
+  <div class="controls">
+    <span class="lbl">Shortcut edges:</span>
+    <button class="preset" id="sc0" data-sc="0">0 (ring only)</button>
+    <button class="preset" id="sc1" data-sc="1">+1 shortcut</button>
+    <button class="preset" id="sc2" data-sc="2">+2 shortcuts</button>
+  </div>
+
+  <div class="twocol">
+    <div class="panel">
+      <div id="swplot" class="plot" style="height:460px"></div>
+    </div>
+    <div class="panel">
+      <div class="status" id="swstatus"></div>
+      <div class="note" style="margin-top:10px">
+        Twelve people sit in a ring; each is friends only with immediate neighbors, so reaching the far side takes
+        many hops. A few <b>long-range shortcuts</b> (the dashed chords) act like Strang's "I know a Senator who
+        knows Clinton" — they slash the <b>diameter</b> (the largest shortest-path distance between any two nodes).
+        This is exactly why the World Wide Web — nodes = sites, edges = links — is also a small world.
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:14px;max-width:780px">
+    <b>Why linear algebra?</b> A graph with <code>n</code> nodes and <code>m</code> edges is captured by an
+    <code>m×n</code> <b>incidence matrix</b> (Strang's 5-node, 6-edge example gives a 5×6 matrix that "tells us
+    everything about that graph"). Powers of the adjacency matrix count walks of a given length, so the smallest
+    power whose entry is nonzero is the distance — turning "six degrees of separation" into a matrix question.
+    Strang carries this into Lecture 12.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* ===================== PART 1 : rank-1 outer product ===================== */
+(function () {
+  let dim = 3;
+  // state: u and v entries (we keep 3 each; in 2-D the 3rd is unused)
+  let u = [1, 2, 1];
+  let v = [2, 1, 1];
+
+  const slidersEl = document.getElementById("sliders");
+  const matEl     = document.getElementById("matA");
+  const statusEl  = document.getElementById("rank1status");
+
+  function makeSlider(name, idx, kind) {
+    const wrap = document.createElement("div");
+    wrap.style.margin = "4px 0";
+    const arr = kind === "u" ? u : v;
+    wrap.innerHTML =
+      `<span class="lbl">${name}<sub>${idx+1}</sub></span>` +
+      `<input type="range" min="-3" max="3" step="1" value="${arr[idx]}" ` +
+      `style="vertical-align:middle;width:200px"> ` +
+      `<span class="rng">${arr[idx]}</span>`;
+    const slider = wrap.querySelector("input");
+    const out    = wrap.querySelector(".rng");
+    slider.addEventListener("input", () => {
+      arr[idx] = parseFloat(slider.value);
+      out.textContent = arr[idx];
+      draw();
+    });
+    return wrap;
+  }
+
+  function buildSliders() {
+    slidersEl.innerHTML = "<div style='font-size:13px;color:#444;margin-bottom:4px'><b>u</b> (the column direction):</div>";
+    for (let i = 0; i < dim; i++) slidersEl.appendChild(makeSlider("u", i, "u"));
+    const sep = document.createElement("div");
+    sep.style.cssText = "font-size:13px;color:#444;margin:8px 0 4px";
+    sep.innerHTML = "<b>vᵀ</b> (the row multipliers):";
+    slidersEl.appendChild(sep);
+    for (let j = 0; j < dim; j++) slidersEl.appendChild(makeSlider("v", j, "v"));
+  }
+
+  function outer() {
+    // A[i][j] = u[i] * v[j]   (dim x dim)
+    const A = [];
+    for (let i = 0; i < dim; i++) {
+      A.push([]);
+      for (let j = 0; j < dim; j++) A[i].push(LA.round(u[i] * v[j]));
+    }
+    return A;
+  }
+
+  function showMatrix(A) {
+    matEl.style.gridTemplateColumns = `repeat(${dim}, 54px)`;
+    matEl.innerHTML = "";
+    for (let i = 0; i < dim; i++)
+      for (let j = 0; j < dim; j++) {
+        const c = document.createElement("div");
+        c.className = "cell" + (A[i][j] === 0 ? " zero" : "");
+        c.textContent = A[i][j];
+        matEl.appendChild(c);
+      }
+  }
+
+  function columnOf(A, j) { return A.map((row) => row[j]); }
+
+  function draw() {
+    const A = outer();
+    showMatrix(A);
+
+    // is u (or v) zero?  then A = 0, rank 0
+    const uNorm = u.slice(0, dim).reduce((s, x) => s + Math.abs(x), 0);
+    const vNorm = v.slice(0, dim).reduce((s, x) => s + Math.abs(x), 0);
+    const rank = (uNorm < 1e-9 || vNorm < 1e-9) ? 0 : 1;
+
+    statusEl.innerHTML =
+      `rank(A) = <span class="tag one">${rank}</span> &nbsp;·&nbsp; ` +
+      `column space = the line through <code>u = (${u.slice(0,dim).join(", ")})</code><br>` +
+      `each column = <code>vⱼ · u</code>: ` +
+      [0,1,2].slice(0,dim).map((j)=>`col${j+1}=${v[j]}·u`).join(", ");
+
+    // ----- plot -----
+    const data = [];
+    const O = [0, 0, 0];
+    const to3 = (p) => dim === 2 ? [p[0], p[1], 0] : [p[0], p[1], p[2]];
+
+    // dashed line through u (the column space), extended both ways
+    const uu = to3(u);
+    const big = Math.max(Math.abs(uu[0]), Math.abs(uu[1]), Math.abs(uu[2]), 1);
+    const k = 9 / big;
+    if (uNorm > 1e-9) {
+      data.push({
+        type: "scatter3d", mode: "lines",
+        x: [-k*uu[0], k*uu[0]], y: [-k*uu[1], k*uu[1]], z: [-k*uu[2], k*uu[2]],
+        line: { color: "#999", width: 3, dash: "dot" }, showlegend: false,
+        name: "C(A): line through u"
+      });
+    }
+
+    // the columns of A as arrows
+    if (rank === 1) {
+      for (let j = 0; j < dim; j++) {
+        const col = to3(columnOf(A, j));
+        if (Math.abs(col[0]) + Math.abs(col[1]) + Math.abs(col[2]) < 1e-9) continue;
+        LA.arrow(O, col, LA.VEC[j], 6).forEach((t) => data.push(t));
+      }
+    }
+    // u itself as a black reference arrow
+    if (uNorm > 1e-9) LA.arrow(O, uu, "#1a1a1a", 4).forEach((t) => data.push(t));
+
+    const R = 9;
+    const scene = LA.SCENE();
+    scene.xaxis.range = [-R, R]; scene.yaxis.range = [-R, R]; scene.zaxis.range = [-R, R];
+    Plotly.react("rank1plot", data,
+      { scene, margin: { l: 0, r: 0, t: 6, b: 0 }, showlegend: false },
+      { responsive: true });
+  }
+
+  function setDim(d) {
+    dim = d;
+    document.getElementById("d2").classList.toggle("primary", d === 2);
+    document.getElementById("d3").classList.toggle("primary", d === 3);
+    buildSliders();
+    draw();
+  }
+
+  document.getElementById("d2").onclick = () => setDim(2);
+  document.getElementById("d3").onclick = () => setDim(3);
+  setDim(3);
+})();
+
+/* ===================== PART 2 : matrix subspaces ===================== */
+(function () {
+  const gridEl   = document.getElementById("subGrid");
+  const statusEl = document.getElementById("substatus");
+
+  // returns 'free' | 'mirror' | 'zero' for entry (i,j) in subspace s
+  function role(s, i, j) {
+    switch (s) {
+      case "all":   return "free";
+      case "sym":   return i <= j ? "free" : "mirror";       // upper incl diag free, lower mirrors
+      case "upper": return i <= j ? "free" : "zero";         // on/above diag free, below zero
+      case "diag":  return i === j ? "free" : "zero";
+    }
+  }
+
+  const INFO = {
+    all:   { name: "All 3×3 matrices",      dim: 9, note: "every entry is free: 9 independent numbers." },
+    sym:   { name: "Symmetric (Aᵀ = A)",    dim: 6, note: "3 diagonal + 3 above-diagonal free; the 3 below mirror them ⇒ 6." },
+    upper: { name: "Upper-triangular",      dim: 6, note: "the 6 entries on/above the diagonal are free ⇒ 6." },
+    diag:  { name: "Diagonal",              dim: 3, note: "only the 3 diagonal entries are free ⇒ 3." },
+  };
+
+  function show(s) {
+    gridEl.style.gridTemplateColumns = "repeat(3, 54px)";
+    gridEl.innerHTML = "";
+    let count = 0;
+    for (let i = 0; i < 3; i++)
+      for (let j = 0; j < 3; j++) {
+        const r = role(s, i, j);
+        const c = document.createElement("div");
+        if (r === "free")        { c.className = "cell free"; c.textContent = "✱"; count++; }
+        else if (r === "mirror") { c.className = "cell";      c.textContent = "= aⱼᵢ"; c.style.fontSize = "11px"; }
+        else                     { c.className = "cell zero"; c.textContent = "0"; }
+        gridEl.appendChild(c);
+      }
+    const info = INFO[s];
+    statusEl.innerHTML =
+      `<b>${info.name}</b> &nbsp;·&nbsp; dimension = <span class="dimpill">${count}</span><br>` +
+      `<span style="font-size:13px;color:#444">${info.note}</span><br>` +
+      `<span style="font-size:13px;color:#444">Symmetric ∩ Upper-triangular = Diagonal (dim 3); ` +
+      `dim(Sym+Upper) = 6 + 6 − 3 = 9.</span>`;
+  }
+
+  document.querySelectorAll(".preset.sub").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll(".preset.sub").forEach((b) => b.classList.remove("primary"));
+      btn.classList.add("primary");
+      show(btn.dataset.s);
+    };
+  });
+  // default
+  const def = document.querySelector('.preset.sub[data-s="sym"]');
+  def.classList.add("primary");
+  show("sym");
+})();
+
+/* ===================== PART 3 : small-world graph ===================== */
+(function () {
+  const N = 12;                       // people in the ring
+  // ring positions on a circle (drawn in the z = 0 plane)
+  const pos = [];
+  for (let i = 0; i < N; i++) {
+    const t = (2 * Math.PI * i) / N;
+    pos.push([Math.cos(t) * 6, Math.sin(t) * 6, 0]);
+  }
+  // shortcut chords across the ring, added one at a time
+  const SHORTCUTS = [[0, 6], [3, 9]];
+
+  function buildEdges(numSc) {
+    const edges = [];
+    for (let i = 0; i < N; i++) edges.push([i, (i + 1) % N]); // ring neighbors
+    for (let k = 0; k < numSc; k++) edges.push(SHORTCUTS[k]);
+    return edges;
+  }
+
+  // all-pairs shortest path (BFS from each node) -> diameter
+  function diameter(edges) {
+    const adj = Array.from({ length: N }, () => []);
+    edges.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
+    let diam = 0;
+    for (let s = 0; s < N; s++) {
+      const dist = new Array(N).fill(-1);
+      dist[s] = 0;
+      const q = [s];
+      while (q.length) {
+        const u = q.shift();
+        for (const w of adj[u]) if (dist[w] < 0) { dist[w] = dist[u] + 1; q.push(w); }
+      }
+      diam = Math.max(diam, ...dist);
+    }
+    return diam;
+  }
+
+  function draw(numSc) {
+    document.getElementById("sc0").classList.toggle("primary", numSc === 0);
+    document.getElementById("sc1").classList.toggle("primary", numSc === 1);
+    document.getElementById("sc2").classList.toggle("primary", numSc === 2);
+
+    const edges = buildEdges(numSc);
+    const data = [];
+
+    // ring edges (solid grey) and shortcut edges (dashed orange)
+    edges.forEach((e, idx) => {
+      const isSc = idx >= N;
+      const p = pos[e[0]], q = pos[e[1]];
+      data.push({
+        type: "scatter3d", mode: "lines",
+        x: [p[0], q[0]], y: [p[1], q[1]], z: [p[2], q[2]],
+        line: { color: isSc ? "#ff7f0e" : "#bbb", width: isSc ? 6 : 3,
+                dash: isSc ? "dot" : "solid" },
+        showlegend: false,
+      });
+    });
+
+    // nodes (people)
+    data.push({
+      type: "scatter3d", mode: "markers+text",
+      x: pos.map((p) => p[0]), y: pos.map((p) => p[1]), z: pos.map((p) => p[2]),
+      text: pos.map((_, i) => i + 1),
+      textposition: "top center", textfont: { size: 11 },
+      marker: { size: 6, color: LA.VEC[0] }, showlegend: false,
+    });
+
+    const diam = diameter(edges);
+    document.getElementById("swstatus").innerHTML =
+      `${N} nodes &nbsp;·&nbsp; ${edges.length} edges &nbsp;·&nbsp; ` +
+      `shortcuts = <span class="tag one">${numSc}</span><br>` +
+      `<b>diameter</b> (farthest two people) = <span class="dimpill">${diam}</span> steps`;
+
+    const scene = LA.SCENE();
+    scene.xaxis.range = [-8, 8]; scene.yaxis.range = [-8, 8]; scene.zaxis.range = [-8, 8];
+    scene.xaxis.title = ""; scene.yaxis.title = ""; scene.zaxis.title = "";
+    Plotly.react("swplot", data,
+      { scene, margin: { l: 0, r: 0, t: 6, b: 0 }, showlegend: false },
+      { responsive: true });
+  }
+
+  document.getElementById("sc0").onclick = () => draw(0);
+  document.getElementById("sc1").onclick = () => draw(1);
+  document.getElementById("sc2").onclick = () => draw(2);
+  draw(1);
+})();
+</script>
+</body>
+</html>

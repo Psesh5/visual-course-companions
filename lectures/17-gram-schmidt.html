@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 17 — Orthogonal matrices and Gram-Schmidt · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 17 · Orthogonal matrices and Gram-Schmidt</h1>
+  <div class="sub">Take any independent vectors and manufacture an <b>orthonormal</b> set:
+    perpendicular and unit length. Subtract off the parts that overlap, then normalize.
+    The bookkeeping is exactly <code>A = QR</code>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The demo:</b> we start with the independent vectors
+    <code>a = (1,1,1)</code>, <code>b = (1,0,2)</code>, <code>c = (0,1,2)</code> and walk Gram-Schmidt one
+    step at a time. Each <b>Step</b> button adds arrows to the <i>same</i> 3D scene: the original vector, the
+    projection that gets removed, the orthogonal leftover, and finally the unit vector <code>q</code>. Rotate
+    the plot to confirm every new <code>q</code> meets the previous ones at a right angle.
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="bStep1">Step 1 · q₁ from a</button>
+    <button id="bStep2">Step 2 · q₂ from b</button>
+    <button id="bStep3">Step 3 · q₃ from c</button>
+    <button id="bReset">Reset</button>
+  </div>
+
+  <div class="plots">
+    <div id="scene" class="plot" style="flex:1 1 560px"></div>
+  </div>
+
+  <div class="status" id="story">Press <b>Step 1</b> to begin: we normalize <code>a</code> into the first
+    orthonormal vector <code>q₁</code>.</div>
+
+  <h2>The orthonormal result &amp; the orthogonality check</h2>
+  <div class="note">
+    <b>Q is built. Verify it.</b> Press all three steps, then this table fills in. An orthonormal set must
+    satisfy <code>qᵢ·qⱼ = δᵢⱼ</code> — ones on the diagonal (unit length), zeros off it (mutually
+    perpendicular). That table of dot products is exactly <code>Q&#8868;Q = I</code>.
+  </div>
+  <div id="checks"></div>
+
+  <h2>Examples of orthogonal matrices — Strang's gallery</h2>
+  <div class="note">
+    Before Gram-Schmidt manufactures a <code>Q</code>, Strang shows several matrices that are <i>already</i>
+    orthonormal. A square matrix with orthonormal columns is called an <b>orthogonal matrix</b>, and for it
+    <code>Q&#8868; = Q&#8315;&#185;</code>. Pick one below: the columns are drawn (the 2×2 cases) and the
+    <code>Q&#8868;Q</code> table is computed live — it should always come out as the identity.
+  </div>
+  <div class="controls">
+    <button class="primary" id="exPerm">Permutation</button>
+    <button id="exRot">Rotation (θ)</button>
+    <button id="exHad2">Hadamard 2×2</button>
+    <button id="exHad4">Hadamard 4×4</button>
+  </div>
+  <div id="exTheta" style="margin:6px 0;display:none">
+    θ = <input type="range" id="thetaRng" min="0" max="360" value="30" step="1" style="vertical-align:middle">
+    <span id="thetaVal" style="font-family:monospace"></span>
+  </div>
+  <div class="plots">
+    <div id="exPlot" class="plot" style="flex:1 1 420px;min-height:340px"></div>
+    <div id="exInfo" class="status" style="flex:1 1 360px;align-self:flex-start">Pick an example above.</div>
+  </div>
+
+  <h2>Intuition — what Gram-Schmidt is really doing</h2>
+  <p style="font-size:14px;max-width:760px">
+    You already trust one vector, <code>a</code>. Make it length one and call it <code>q₁</code> — that fixes a
+    direction. Now <code>b</code> points off somewhere, but part of it just repeats <code>q₁</code>. That
+    repeated part is the <b>projection</b> <code>(q₁·b)q₁</code>: how much of <code>b</code> already lives along
+    <code>q₁</code>. Subtract it. What survives, <code>B = b − (q₁·b)q₁</code>, has <i>zero</i> overlap with
+    <code>q₁</code> — it is perpendicular by construction. Normalize it to get <code>q₂</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    The third vector <code>c</code> overlaps with <i>both</i> directions we have so far, so we subtract both
+    projections: <code>C = c − (q₁·c)q₁ − (q₂·c)q₂</code>. Whatever is left is perpendicular to the plane of
+    <code>q₁, q₂</code>; normalize to get <code>q₃</code>. At every step the rule is the same — <b>strip out
+    the parts you already have, then rescale to unit length.</b>
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    Why bother? Orthonormal vectors make life easy. The matrix <code>Q</code> with these columns satisfies
+    <code>Q&#8868;Q = I</code>, so projections, least squares, and "find the coordinates of any vector" all
+    collapse into simple dot products — no matrix to invert.
+  </p>
+
+  <h2>Worked math — Gram-Schmidt on a, b, c</h2>
+  <div class="status" id="math" style="line-height:1.7"></div>
+
+  <h2>A = QR — the factorization hiding in the steps</h2>
+  <p style="font-size:14px;max-width:760px">
+    Every subtraction we did expresses the original vectors back in terms of the <code>q</code>'s. Collecting
+    that bookkeeping gives <code>A = QR</code>, where <code>A = [a b c]</code> has the originals as columns,
+    <code>Q = [q₁ q₂ q₃]</code> is orthonormal, and <code>R</code> is <b>upper triangular</b> — triangular
+    precisely because <code>qᵢ</code> is perpendicular to every later original, so <code>qᵢ·(earlier
+    vectors)</code> never contributes. Since <code>Q&#8868;Q = I</code>, the recipe for <code>R</code> is just
+    <code>R = Q&#8868;A</code>, and entry <code>R<sub>ij</sub> = qᵢ·(column j of A)</code>.
+  </p>
+  <div class="status" id="qr" style="line-height:1.7"></div>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+const { round, arrow, SCENE } = LA;
+
+/* ---- vector helpers (kept local; linalg.js has no generic vec ops) ---- */
+const dot   = (u, v) => u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+const norm  = (u)    => Math.sqrt(dot(u, u));
+const scale = (u, s) => u.map((x) => x * s);
+const sub   = (u, v) => u.map((x, i) => x - v[i]);
+const fmt   = (u)    => "(" + u.map(round).join(", ") + ")";
+const O = [0, 0, 0];
+
+/* ---- the example: independent vectors in R^3 ---- */
+const a = [1, 1, 1], b = [1, 0, 2], c = [0, 1, 2];
+
+/* ---- carry out Gram-Schmidt once, store every intermediate ---- */
+const q1 = scale(a, 1 / norm(a));
+
+const pb = scale(q1, dot(q1, b));   // projection of b onto q1
+const B  = sub(b, pb);              // orthogonal leftover
+const q2 = scale(B, 1 / norm(B));
+
+const pc1 = scale(q1, dot(q1, c));  // projections of c
+const pc2 = scale(q2, dot(q2, c));
+const C   = sub(sub(c, pc1), pc2);
+const q3  = scale(C, 1 / norm(C));
+
+/* ---- one persistent Plotly scene; each step pushes traces ---- */
+const traces = [];
+const layout = {
+  margin: { l: 0, r: 0, t: 0, b: 0 }, showlegend: true,
+  legend: { x: 0, y: 1 }, scene: SCENE(),
+};
+Plotly.newPlot("scene", traces, layout, { responsive: true });
+
+let shown = 0; // highest step currently drawn
+
+function named(arr, name, color) {            // tag the line trace so the legend reads cleanly
+  arr[0].showlegend = true; arr[0].name = name; arr[0].line.color = color;
+  return arr;
+}
+function dot0(p, color, name) {                // small marker (e.g. right-angle witness point)
+  return { type: "scatter3d", mode: "markers", x:[p[0]], y:[p[1]], z:[p[2]],
+           marker: { size: 4, color }, name, showlegend: !!name };
+}
+
+function draw(step) {
+  if (step !== shown + 1) return;             // steps must run in order
+  if (step === 1) {
+    traces.push(...named(arrow(O, a, "#888", 5), "a", "#888"));
+    traces.push(...named(arrow(O, q1, LA.VEC[0], 9), "q₁ = a/‖a‖", LA.VEC[0]));
+    story.innerHTML = `<b>Step 1.</b> Normalize <code>a = ${fmt(a)}</code>. ` +
+      `‖a‖ = √3 ≈ ${round(norm(a))}, so <code>q₁ = a/‖a‖ = ${fmt(q1)}</code>. One direction is locked in.`;
+  } else if (step === 2) {
+    traces.push(...named(arrow(O, b, "#bbb", 5), "b", "#bbb"));
+    traces.push(...named(arrow(O, pb, "#d62728", 5), "proj of b on q₁", "#d62728"));
+    traces.push(...named(arrow(pb, b, "#9467bd", 4), "B = b − proj (⊥ q₁)", "#9467bd"));
+    traces.push(...named(arrow(O, q2, LA.VEC[1], 9), "q₂ = B/‖B‖", LA.VEC[1]));
+    traces.push(dot0(pb, "#d62728", "right-angle foot"));
+    story.innerHTML = `<b>Step 2.</b> <code>q₁·b = ${round(dot(q1,b))}</code>, so the projection is ` +
+      `<code>${fmt(pb)}</code>. Remove it: <code>B = b − (q₁·b)q₁ = ${fmt(B)}</code>. ` +
+      `Check ⟂: <code>q₁·B = ${round(dot(q1,B))}</code> (zero — a right angle). ` +
+      `Normalize: <code>q₂ = ${fmt(q2)}</code>.`;
+  } else if (step === 3) {
+    traces.push(...named(arrow(O, c, "#ccc", 5), "c", "#ccc"));
+    traces.push(...named(arrow(O, C, "#9467bd", 4), "C = c − proj₁ − proj₂", "#9467bd"));
+    traces.push(...named(arrow(O, q3, LA.VEC[2], 9), "q₃ = C/‖C‖", LA.VEC[2]));
+    story.innerHTML = `<b>Step 3.</b> Subtract <i>both</i> projections of <code>c</code>: ` +
+      `<code>C = c − (q₁·c)q₁ − (q₂·c)q₂ = ${fmt(C)}</code>. ` +
+      `Checks: <code>q₁·C = ${round(dot(q1,C))}</code>, <code>q₂·C = ${round(dot(q2,C))}</code>. ` +
+      `Normalize: <code>q₃ = ${fmt(q3)}</code>. Now q₁, q₂, q₃ are a full orthonormal basis of R³.`;
+  }
+  shown = step;
+  Plotly.react("scene", traces, layout);
+  if (shown === 3) fillChecks();
+}
+
+function reset() {
+  traces.length = 0; shown = 0;
+  Plotly.react("scene", traces, layout);
+  story.innerHTML = "Press <b>Step 1</b> to begin: we normalize <code>a</code> into <code>q₁</code>.";
+  checks.innerHTML = "";
+}
+
+bStep1.onclick = () => draw(1);
+bStep2.onclick = () => draw(2);
+bStep3.onclick = () => draw(3);
+bReset.onclick = reset;
+
+/* ---- orthonormality table: Q^T Q should be the identity ---- */
+function fillChecks() {
+  const Q = [q1, q2, q3];
+  let rows = "";
+  for (let i = 0; i < 3; i++) {
+    let cells = `<td class="var">q${i+1}</td>`;
+    for (let j = 0; j < 3; j++) {
+      const v = round(dot(Q[i], Q[j]));
+      const hit = Math.abs(v - (i === j ? 1 : 0)) < 1e-9;
+      cells += `<td style="text-align:center;color:${hit ? "#176d2c" : "#b00020"}">${v}</td>`;
+    }
+    rows += `<tr>${cells}</tr>`;
+  }
+  checks.innerHTML =
+    `<p style="font-size:14px;margin:0 0 6px">Orthonormal set: ` +
+      `<code>q₁ = ${fmt(q1)}</code>, <code>q₂ = ${fmt(q2)}</code>, <code>q₃ = ${fmt(q3)}</code></p>` +
+    `<table class="sys"><tr><td></td>` +
+      `<td class="var" style="text-align:center">q₁</td>` +
+      `<td class="var" style="text-align:center">q₂</td>` +
+      `<td class="var" style="text-align:center">q₃</td></tr>${rows}</table>` +
+    `<p style="font-size:13px;color:#444;margin:6px 0 0">Diagonal ones = unit length; off-diagonal zeros = ` +
+      `mutually perpendicular. This table is <code>Q&#8868;Q = I</code>.</p>`;
+}
+
+/* ---- Strang's gallery of orthogonal matrices (already orthonormal) ---- */
+(function () {
+  // matrices stored as arrays of COLUMNS so col j = M[j]
+  const QTQtable = (cols) => {                       // build Q^T Q = table of column dot products
+    const n = cols.length;
+    let rows = "";
+    for (let i = 0; i < n; i++) {
+      let cells = `<td class="var">q${i+1}</td>`;
+      for (let j = 0; j < n; j++) {
+        let s = 0; for (let k = 0; k < cols[i].length; k++) s += cols[i][k]*cols[j][k];
+        const v = round(s);
+        const hit = Math.abs(v - (i === j ? 1 : 0)) < 1e-9;
+        cells += `<td style="text-align:center;color:${hit?"#176d2c":"#b00020"};min-width:46px">${v}</td>`;
+      }
+      rows += `<tr>${cells}</tr>`;
+    }
+    let head = `<tr><td></td>`;
+    for (let j = 0; j < n; j++) head += `<td class="var" style="text-align:center">q${j+1}</td>`;
+    head += `</tr>`;
+    return `<table class="sys">${head}${rows}</table>`;
+  };
+  const matHTML = (cols) => {                         // print a matrix from its columns
+    const n = cols.length, m = cols[0].length;
+    let body = "";
+    for (let r = 0; r < m; r++) {
+      let row = "";
+      for (let c = 0; c < n; c++) row += `<td style="text-align:right;min-width:54px">${round(cols[c][r])}</td>`;
+      body += `<tr>${row}</tr>`;
+    }
+    return `<table class="sys" style="display:inline-table">${body}</table>`;
+  };
+
+  function draw2D(cols, note) {                       // show 2 orthonormal columns as arrows
+    const O2 = [0,0];
+    const seg = (q, color, name) => ([
+      { type:"scatter", mode:"lines", x:[0,q[0]], y:[0,q[1]], line:{color,width:4}, name, showlegend:true },
+      { type:"scatter", mode:"markers", x:[q[0]], y:[q[1]], marker:{color,size:7}, showlegend:false },
+    ]);
+    const data = [...seg(cols[0], LA.VEC[0], "q₁"), ...seg(cols[1], LA.VEC[1], "q₂")];
+    Plotly.react("exPlot", data, {
+      margin:{l:30,r:10,t:10,b:30}, showlegend:true, legend:{x:0,y:1},
+      xaxis:{range:[-1.3,1.3], zeroline:true, scaleanchor:"y"}, yaxis:{range:[-1.3,1.3], zeroline:true},
+    }, {responsive:true});
+  }
+  function drawEmpty(msg) {
+    Plotly.react("exPlot", [], {margin:{l:0,r:0,t:0,b:0},
+      annotations:[{text:msg,showarrow:false,xref:"paper",yref:"paper",x:0.5,y:0.5,font:{size:13,color:"#888"}}]});
+  }
+
+  function showPerm() {
+    exTheta.style.display = "none";
+    const cols = [[0,1,0],[0,0,1],[1,0,0]];          // Strang: rows (0,0,1)(1,0,0)(0,1,0)
+    drawEmpty("3×3 permutation — see the table →");
+    exInfo.innerHTML =
+      `<b>Permutation matrix.</b> Strang's example<br>${matHTML(cols)}<br>` +
+      `Each column is a unit vector with a single 1, and any two columns sit in different slots, so their ` +
+      `dot product is 0. Columns are automatically orthonormal — a permutation matrix is orthogonal.<br><br>` +
+      `<b>Q&#8868;Q =</b><br>${QTQtable(cols)}`;
+  }
+  function showRot() {
+    exTheta.style.display = "";
+    updateRot();
+  }
+  function updateRot() {
+    const deg = +thetaRng.value, t = deg*Math.PI/180;
+    thetaVal.textContent = deg + "°";
+    const c = Math.cos(t), s = Math.sin(t);
+    const cols = [[c,s],[-s,c]];                      // [[cosθ,-sinθ],[sinθ,cosθ]]
+    draw2D(cols);
+    exInfo.innerHTML =
+      `<b>Rotation matrix</b> (Strang's <code>cosθ, sinθ</code> example), θ = ${deg}°:<br>${matHTML(cols)}<br>` +
+      `Column 1 is <code>(cosθ, sinθ)</code> and column 2 is <code>(−sinθ, cosθ)</code> — both unit length, ` +
+      `and their dot product <code>−sinθcosθ + cosθsinθ = 0</code> for <i>every</i> θ. Rotating the plane ` +
+      `keeps lengths and angles, so it must be orthogonal.<br><br>` +
+      `<b>Q&#8868;Q =</b><br>${QTQtable(cols)}`;
+  }
+  function showHad2() {
+    exTheta.style.display = "none";
+    const r = 1/Math.SQRT2;
+    const cols = [[r,r],[r,-r]];                      // (1/√2)[[1,1],[1,-1]]
+    draw2D(cols);
+    exInfo.innerHTML =
+      `<b>Hadamard 2×2.</b> Strang starts from <code>[[1,1],[1,−1]]</code> with orthogonal columns, then ` +
+      `divides by ‖col‖ = √2:<br><code>Q = (1/√2)[[1,1],[1,−1]]</code><br>${matHTML(cols)}<br>` +
+      `Columns dot to <code>1−1 = 0</code>; dividing by √2 makes each unit length.<br><br>` +
+      `<b>Q&#8868;Q =</b><br>${QTQtable(cols)}`;
+  }
+  function showHad4() {
+    exTheta.style.display = "none";
+    const h = 0.5;                                    // (1/2)·(±1 entries), ‖col‖ = √4 = 2
+    const cols = [
+      [h,h,h,h], [h,-h,h,-h], [h,h,-h,-h], [h,-h,-h,h],
+    ];
+    drawEmpty("4×4 Hadamard — see the table →");
+    exInfo.innerHTML =
+      `<b>Hadamard 4×4</b> — "one of the world's favorite orthogonal matrices" (Strang). Build it from the ` +
+      `2×2 block pattern, all entries ±1, then divide by ‖col‖ = √4 = 2:<br>` +
+      `<code>Q = (1/2)·[±1 entries]</code><br>${matHTML(cols)}<br>` +
+      `Any two distinct columns have two agreements and two disagreements, so they dot to 0. These exist for ` +
+      `sizes 2, 4, 16, 64, … (Hadamard / "Adhemar" matrices).<br><br>` +
+      `<b>Q&#8868;Q =</b><br>${QTQtable(cols)}`;
+  }
+
+  exPerm.onclick  = showPerm;
+  exRot.onclick   = showRot;
+  exHad2.onclick  = showHad2;
+  exHad4.onclick  = showHad4;
+  thetaRng.oninput = updateRot;
+  showPerm();                                          // start on the simplest example
+})();
+
+/* ---- static worked-math write-up (exact + numeric) ---- */
+math.innerHTML = `
+  <b>Given independent</b> <code>a = ${fmt(a)}</code>, <code>b = ${fmt(b)}</code>, <code>c = ${fmt(c)}</code>.<br><br>
+  <b>1 — normalize a.</b> ‖a‖ = √(1+1+1) = √3 ≈ ${round(norm(a))}.
+    &nbsp; <code>q₁ = a/√3 = ${fmt(q1)}</code>.<br><br>
+  <b>2 — orthogonalize b.</b> Projection coefficient <code>q₁·b = (1+0+2)/√3 = 3/√3 = √3 ≈ ${round(dot(q1,b))}</code>.<br>
+    &nbsp;&nbsp;<code>proj = (q₁·b)q₁ = ${fmt(pb)}</code> &nbsp;(this is <code>(a·b/a·a)·a = (3/3)·a = a</code>).<br>
+    &nbsp;&nbsp;<code>B = b − proj = ${fmt(b)} − ${fmt(pb)} = ${fmt(B)}</code>.<br>
+    &nbsp;&nbsp;Perpendicular? <code>q₁·B = ${round(dot(q1,B))}</code>. ‖B‖ = √${round(dot(B,B))} ≈ ${round(norm(B))}.
+    &nbsp;<code>q₂ = B/‖B‖ = ${fmt(q2)}</code>.<br><br>
+  <b>3 — orthogonalize c.</b> <code>q₁·c = ${round(dot(q1,c))}</code>, <code>q₂·c = ${round(dot(q2,c))}</code>.<br>
+    &nbsp;&nbsp;<code>C = c − (q₁·c)q₁ − (q₂·c)q₂ = ${fmt(C)}</code>.<br>
+    &nbsp;&nbsp;Checks <code>q₁·C = ${round(dot(q1,C))}</code>, <code>q₂·C = ${round(dot(q2,C))}</code>.
+    &nbsp;<code>q₃ = C/‖C‖ = ${fmt(q3)}</code>.<br><br>
+  <b>Orthonormality:</b> <code>qᵢ·qⱼ = δᵢⱼ</code> — diagonal dot products are 1, all cross dot products are 0
+    (see the table above).`;
+
+/* ---- R = Q^T A for the example ---- */
+(function () {
+  const A = [a, b, c];                 // columns of A (as rows here for readability)
+  const Q = [q1, q2, q3];
+  const R = Q.map((qi) => A.map((aj) => round(dot(qi, aj)))); // R[i][j] = qi · (col j of A)
+  const matHTML = (M, label) =>
+    `<table class="sys" style="display:inline-table;vertical-align:middle">` +
+    M.map((row) => `<tr>${row.map((v) => `<td style="text-align:right;min-width:42px">${round(v)}</td>`).join("")}</tr>`).join("") +
+    `</table>`;
+  // display A and Q with their actual COLUMNS (transpose our row storage for printing)
+  const T = (M) => [0,1,2].map((j) => [0,1,2].map((i) => M[i][j]));
+  qr.innerHTML =
+    `<b>A = [a b c]</b> (originals as columns): ${matHTML(T(A))}<br><br>` +
+    `<b>Q = [q₁ q₂ q₃]</b> (orthonormal columns): ${matHTML(T(Q))}<br><br>` +
+    `<b>R = Q&#8868;A</b> (upper triangular): ${matHTML(R)}<br><br>` +
+    `Notice the zeros below the diagonal: <code>R₂₁ = q₂·a = ${R[1][0]}</code> and ` +
+    `<code>R₃₁ = q₃·a = ${R[2][0]}</code>, <code>R₃₂ = q₃·b = ${R[2][1]}</code> all vanish because each ` +
+    `<code>qᵢ</code> was built perpendicular to the earlier originals. Multiplying back, ` +
+    `<code>Q·R = A</code> reproduces the starting vectors.`;
+})();
+</script>
+</body>
+</html>

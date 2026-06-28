@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 1 — Geometry of linear equations · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 1 · The geometry of linear equations</h1>
+  <div class="sub">Strang's central idea: a system <code>Ax = b</code> has two pictures —
+    the <b>row picture</b> (planes meeting) and the <b>column picture</b>
+    (a combination of columns reaching <code>b</code>).
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The explorer:</b> type any 3×3 system below and press <b>Plot</b>. The left panel draws one plane per
+    equation (the row picture); the right panel chains the columns tip-to-tail (the column picture). The status
+    box tells you whether you have <b>one</b>, <b>no</b>, or <b>infinitely many</b> solutions — and why.
+  </div>
+
+  <h2>Start in 2D — two lines, two columns</h2>
+  <p style="font-size:14px;max-width:760px">
+    Strang opens with the 2×2 case as "the right place to start": <code>2x − y = 0</code> and
+    <code>−x + 2y = 3</code>, meeting at <code>(1, 2)</code>. Edit the numbers below. <b>Left</b> = row picture
+    (two lines crossing); <b>right</b> = column picture (combine the two columns <code>x·col₁ + y·col₂</code>
+    tip-to-tail to reach <code>b</code>). Tick <i>show all combinations</i> to watch those two columns' combinations
+    tile the whole plane — Strang's "what are all the combinations?" question. (Make the columns dependent and the
+    grid collapses to a single line — that's the singular case.)
+  </p>
+  <div id="m2_grid" class="controls"></div>
+  <div class="plots">
+    <div id="m2_row" class="plot" style="flex:1 1 360px;min-width:300px;height:420px"></div>
+    <div id="m2_col" class="plot" style="flex:1 1 360px;min-width:300px;height:420px"></div>
+  </div>
+
+  <h2>Matrix × vector = a combination of columns</h2>
+  <p style="font-size:14px;max-width:760px">
+    The matrix form is <code>Ax = b</code>, and the key idea Strang ends on: <b><code>Ax</code> is a combination of
+    the columns of A.</b> His example <code>A = [[2,5],[1,3]]</code>, <code>x = (1,2)</code> gives
+    <code>1·(2,1) + 2·(5,3) = (12,7)</code>. Slide <code>x₁, x₂</code> and watch the tip-to-tail combination move.
+  </p>
+  <div id="mv" class="controls"></div>
+  <div id="mv_plot" class="plot" style="max-width:520px;height:420px"></div>
+
+  <h2>Now in 3D — the system explorer</h2>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Load a preset:</span>
+    <button class="preset" data-p="lecture">Lecture system → (0,0,1)</button>
+    <button class="preset" data-p="lecture2">Second b = col₁+col₂ → (1,1,0)</button>
+    <button class="preset" data-p="none">Singular · no solution</button>
+    <button class="preset" data-p="inf">Singular · infinitely many</button>
+  </div>
+
+  <div id="mount"></div>
+
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Row picture (left).</b> Each equation <code>a·x + b·y + c·z = d</code> is a flat plane. An equation with a
+    missing variable (like <code>2x − y = 0</code>, no <code>z</code>) is a <i>vertical</i> plane — a wall that
+    runs straight up the z-axis. Rotate until you see where all three planes cross. For a normal (invertible)
+    system that's a single point — the solution.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Column picture (right).</b> Rewrite the system as
+    <code>x·col₁ + y·col₂ + z·col₃ = b</code>. Solving asks: <i>what amount of each column vector, added
+    tip-to-tail, lands exactly on b?</i> The colored arrows show that chain; the red arrow is <code>b</code>.
+  </p>
+
+  <h2>The singular cases</h2>
+  <p style="font-size:14px;max-width:760px">
+    Load the two singular presets. When the columns are <b>dependent</b> (one is a combination of the others)
+    they no longer fill 3D space — they span only a plane. Then either <code>b</code> is off that plane
+    (<b>no solution</b>: the planes enclose a tunnel with no common point) or <code>b</code> lies on it
+    (<b>infinitely many</b>: the planes share a whole line). This is what "det = 0" looks like.
+  </p>
+
+  <h2>Tilt the bottom plane — watch the solution slide</h2>
+  <p style="font-size:14px;max-width:760px">
+    The lecture system is fixed at the top two equations <code>2x − y = 0</code> and <code>−x + 2y − z = −1</code>;
+    the slider changes only the <b>z-coefficient</b> of the third equation
+    <code>−3y + <b><span id="tcoef">4</span></b>z = 4</code>. At the lecture value <code>4</code> the planes meet at
+    <code>(0, 0, 1)</code>. Slide it and watch the red point <i>slide off the z-axis</i> — proof that changing the
+    coefficient of a <b>nonzero</b> variable (here <code>z = 1</code>) genuinely moves the solution in all three
+    coordinates, while the earlier <code>x</code>/<code>y</code> changes did not.
+  </p>
+  <div class="controls">
+    z-coefficient: <input id="tilt" type="range" min="1" max="8" step="0.25" value="4" style="width:280px;vertical-align:middle">
+    <span id="tilt_status" style="font-size:14px;margin-left:8px"></span>
+  </div>
+  <div id="tiltPlot" class="plot" style="max-width:640px"></div>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script src="../lib/explorer.js"></script>
+<script>
+  const PRESETS = {
+    // Strang's 3 eqns / 3 unknowns example: 2x-y=0, -x+2y-z=-1, -3y+4z=4  ->  (0,0,1)
+    lecture: { A: [[2,-1,0],[-1,2,-1],[0,-3,4]], b: [0,-1,4] },
+    // Strang's second right-hand side b = col1 + col2 -> solution (1,1,0)
+    lecture2: { A: [[2,-1,0],[-1,2,-1],[0,-3,4]], b: [1,1,-3] },
+    // singular, b outside column space -> no solution
+    none:    { A: [[1,1,2],[1,2,3],[1,3,4]],     b: [1,0,0] },
+    // singular, b inside column space -> infinitely many
+    inf:     { A: [[1,1,2],[1,2,3],[1,3,4]],     b: [1,1,1] },
+  };
+  let widget = LA.mountExplorer({ root: "#mount", example: PRESETS.lecture });
+  document.querySelectorAll(".preset").forEach((btn) => {
+    btn.onclick = () => { widget = LA.mountExplorer({ root: "#mount", example: PRESETS[btn.dataset.p] }); };
+  });
+
+  // --- Tilt-the-bottom-plane demo ---
+  (function () {
+    const R = 4, slider = document.getElementById("tilt");
+    function drawTilt(c) {
+      // top two equations fixed; only the z-coefficient of eqn 3 changes
+      const A = [[2,-1,0], [-1,2,-1], [0,-3,c]], b = [0,-1,4];
+      const res = LA.analyze(A, b);
+      const data = [];
+      for (let i = 0; i < 3; i++) {
+        const t = LA.planeTrace(A[i][0], A[i][1], A[i][2], b[i], R, LA.COLORS[i]);
+        if (t) data.push(t);
+      }
+      // the z-axis, to show the solution leaving it
+      data.push({ type:"scatter3d", mode:"lines", x:[0,0], y:[0,0], z:[-R,R],
+                  line:{color:"#999", width:3, dash:"dot"}, showlegend:false });
+      let txt = "";
+      if (res.type === "one") {
+        const s = res.sol.map(LA.round);
+        data.push({ type:"scatter3d", mode:"markers+text", x:[s[0]], y:[s[1]], z:[s[2]],
+                    text:["  ("+s.join(", ")+")"], textposition:"top center",
+                    marker:{size:7,color:"red"}, showlegend:false });
+        txt = `solution = (${s.join(", ")})` + (Math.abs(s[0])<1e-9 && Math.abs(s[1])<1e-9 ? "  — still on the z-axis" : "  — moved off the z-axis");
+      } else { txt = "singular (no unique point)"; }
+      document.getElementById("tcoef").textContent = LA.round(c);
+      document.getElementById("tilt_status").textContent = txt;
+      Plotly.react("tiltPlot", data,
+        { scene: LA.SCENE(), margin:{l:0,r:0,t:6,b:0}, showlegend:false }, { responsive:true });
+    }
+    slider.addEventListener("input", () => drawTilt(parseFloat(slider.value)));
+    drawTilt(4);
+  })();
+
+  // --- 2D: two lines, two columns (Strang's opening 2x2 example) ---
+  (function () {
+    const root = document.getElementById("m2_grid");
+    root.innerHTML =
+      `<table class="sys"><tr>
+        <td><input class="coef" id="m2a" value="2"></td><td class="var">x +</td>
+        <td><input class="coef" id="m2b" value="-1"></td><td class="var">y =</td>
+        <td><input class="coef" id="m2e" value="0"></td></tr>
+       <tr>
+        <td><input class="coef" id="m2c" value="-1"></td><td class="var">x +</td>
+        <td><input class="coef" id="m2d" value="2"></td><td class="var">y =</td>
+        <td><input class="coef" id="m2f" value="3"></td></tr></table>
+       <label style="font-size:13px"><input type="checkbox" id="m2span"> show all combinations (the span grid)</label>
+       <span id="m2status" style="font-size:14px;margin-left:10px"></span>`;
+    const G = (id) => parseFloat(document.getElementById(id).value) || 0;
+    const ar2 = (p, q, color, w) => ({ x:[p[0],q[0]], y:[p[1],q[1]], mode:"lines",
+      line:{color, width:w||4}, hoverinfo:"skip" });
+    function lineSeg(a, b, c, R) {            // a x + b y = c across [-R,R]
+      if (Math.abs(b) >= Math.abs(a) && Math.abs(b) > 1e-9) { return { x:[-R,R], y:[(c-a*-R)/b,(c-a*R)/b] }; }
+      if (Math.abs(a) > 1e-9) { return { x:[(c-b*-R)/a,(c-b*R)/a], y:[-R,R] }; }
+      return { x:[], y:[] };
+    }
+    function draw() {
+      const a=G("m2a"), b=G("m2b"), c=G("m2c"), d=G("m2d"), e=G("m2e"), f=G("m2f");
+      const det=a*d-b*c, R=6;
+      const sol = Math.abs(det)>1e-9 ? [(e*d-b*f)/det, (a*f-e*c)/det] : null;
+      // ROW picture: two lines
+      const L1=lineSeg(a,b,e,R), L2=lineSeg(c,d,f,R);
+      const rowData=[
+        {x:L1.x,y:L1.y,mode:"lines",line:{color:"#1f77b4",width:3},hoverinfo:"skip"},
+        {x:L2.x,y:L2.y,mode:"lines",line:{color:"#2ca02c",width:3},hoverinfo:"skip"},
+      ];
+      if (sol) rowData.push({x:[sol[0]],y:[sol[1]],mode:"markers+text",
+        text:["  ("+LA.round(sol[0])+", "+LA.round(sol[1])+")"],textposition:"top right",
+        marker:{size:9,color:"red"}});
+      Plotly.react("m2_row", rowData,
+        {title:"ROW picture — two lines", xaxis:{range:[-R,R],zeroline:true},
+         yaxis:{range:[-R,R],scaleanchor:"x"}, margin:{l:24,r:6,t:30,b:24}, showlegend:false},
+        {responsive:true});
+      // COLUMN picture: columns of A = (a,c) and (b,d)
+      const col1=[a,c], col2=[b,d], bb=[e,f], colData=[];
+      if (document.getElementById("m2span").checked) {
+        for (let t=-3; t<=3; t++) colData.push(ar2(
+          [-3*col1[0]+t*col2[0], -3*col1[1]+t*col2[1]], [3*col1[0]+t*col2[0], 3*col1[1]+t*col2[1]], "#dddddd", 1));
+        for (let s=-3; s<=3; s++) colData.push(ar2(
+          [s*col1[0]-3*col2[0], s*col1[1]-3*col2[1]], [s*col1[0]+3*col2[0], s*col1[1]+3*col2[1]], "#dddddd", 1));
+      }
+      colData.push(ar2([0,0],col1,"#9ec5e8",2), ar2([0,0],col2,"#a9dcb4",2));
+      if (sol) {
+        const step1=[sol[0]*col1[0], sol[0]*col1[1]];
+        colData.push(ar2([0,0],step1,"#1f77b4",6), ar2(step1,bb,"#2ca02c",6), ar2([0,0],bb,"red",3));
+        colData.push({x:[bb[0]],y:[bb[1]],mode:"markers+text",text:["  b"],textposition:"top right",marker:{size:8,color:"red"}});
+      }
+      const R2=8;
+      Plotly.react("m2_col", colData,
+        {title:"COLUMN picture — x·col₁ + y·col₂ = b", xaxis:{range:[-R2,R2],zeroline:true},
+         yaxis:{range:[-R2,R2],scaleanchor:"x"}, margin:{l:24,r:6,t:30,b:24}, showlegend:false},
+        {responsive:true});
+      document.getElementById("m2status").innerHTML = sol
+        ? `solution <code>(x, y) = (${LA.round(sol[0])}, ${LA.round(sol[1])})</code>`
+        : `<b>det = 0</b> — columns dependent, lines parallel: no unique solution`;
+    }
+    root.querySelectorAll("input").forEach((i) => i.addEventListener("input", draw));
+    draw();
+  })();
+
+  // --- Ax as a combination of columns (Strang's A=[[2,5],[1,3]], x=(1,2) -> (12,7)) ---
+  (function () {
+    const A=[[2,5],[1,3]], col1=[A[0][0],A[1][0]], col2=[A[0][1],A[1][1]];
+    document.getElementById("mv").innerHTML =
+      `x₁ <input id="mvx1" type="range" min="-2" max="3" step="1" value="1" style="vertical-align:middle">
+       <b id="mvx1v">1</b> &nbsp;&nbsp; x₂ <input id="mvx2" type="range" min="-2" max="3" step="1" value="2" style="vertical-align:middle">
+       <b id="mvx2v">2</b>`;
+    const ar = (p,q,color,w) => ({x:[p[0],q[0]],y:[p[1],q[1]],mode:"lines",line:{color,width:w},hoverinfo:"skip"});
+    function draw() {
+      const x1=parseInt(document.getElementById("mvx1").value), x2=parseInt(document.getElementById("mvx2").value);
+      document.getElementById("mvx1v").textContent=x1; document.getElementById("mvx2v").textContent=x2;
+      const r=[x1*col1[0]+x2*col2[0], x1*col1[1]+x2*col2[1]], s1=[x1*col1[0], x1*col1[1]], R=15;
+      const data=[ar([0,0],s1,"#1f77b4",6), ar(s1,r,"#2ca02c",6), ar([0,0],r,"red",3),
+        {x:[r[0]],y:[r[1]],mode:"markers+text",text:[`  Ax = (${r[0]}, ${r[1]})`],textposition:"top right",marker:{size:8,color:"red"}}];
+      Plotly.react("mv_plot", data,
+        {title:"Ax = x₁·col₁ + x₂·col₂", xaxis:{range:[-R,R],zeroline:true},
+         yaxis:{range:[-R,R],scaleanchor:"x"}, margin:{l:24,r:6,t:30,b:24}, showlegend:false},
+        {responsive:true});
+    }
+    document.getElementById("mvx1").addEventListener("input", draw);
+    document.getElementById("mvx2").addEventListener("input", draw);
+    draw();
+  })();
+</script>
+</body>
+</html>

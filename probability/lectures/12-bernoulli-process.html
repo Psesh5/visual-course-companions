@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>The Bernoulli process · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Lecture 12 · The Bernoulli process</h1>
+  <div class="sub">Flip a biased coin once per time slot, forever. Each slot is an independent
+    success with probability <code>p</code> and a failure with probability <code>1−p</code>. That whole
+    stream of i.i.d. coin flips — nothing more — is the <b>Bernoulli process</b>. From it fall three
+    of the most useful distributions in all of probability.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> the <span style="color:#176d2c">top</span> plot is a single <b>realized sample
+    path</b> — discrete time slots <code>1, 2, …, n</code> marching left to right, a tall green spike
+    wherever the coin came up a success (an <i>arrival</i>) and a faint dot where it failed. Press
+    <b>↻ new realization</b> and watch a brand-new random history appear. The <span style="color:#1f77b4">bottom</span>
+    plot zooms out from one path to the <i>laws</i> that govern many: histogram a feature over thousands of
+    runs and it lands exactly on the predicted PMF (black). Toggle between counting <i>successes</i>
+    (Binomial) and measuring <i>gaps between arrivals</i> (Geometric).
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Rate presets:</span>
+    <button class="preset" data-p="0.08">small p = 0.08 · rare arrivals</button>
+    <button class="preset" data-p="0.5">fair coin p = 0.5</button>
+    <button class="preset" data-p="0.8">large p = 0.8 · dense arrivals</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">success prob&nbsp; <b>p = <span id="pval">0.30</span></b>&nbsp;
+      <input type="range" id="p" min="0.01" max="0.99" step="0.01" value="0.30" style="vertical-align:middle;width:220px">
+    </label>
+    <label style="font-size:14px;margin-left:18px">time slots&nbsp; <b>n = <span id="nval">60</span></b>&nbsp;
+      <input type="range" id="n" min="5" max="200" step="1" value="60" style="vertical-align:middle;width:220px">
+    </label>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <button class="preset" id="newPath" style="background:#176d2c;color:#fff;border-color:#176d2c">↻ new realization</button>
+    <span style="font-size:13px;color:#444;margin:0 6px 0 18px">Bottom plot shows:</span>
+    <button class="preset" id="viewCount">counts → Binomial(n, p)</button>
+    <button class="preset" id="viewGap">gaps → Geometric(p)</button>
+  </div>
+
+  <div class="plots">
+    <div id="pathPlot" class="plot"></div>
+    <div id="lawPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>What the process <i>is</i></h2>
+  <p style="font-size:14px;max-width:780px">
+    Time is chopped into slots. In each slot we run one independent Bernoulli trial:
+    <code>Xᵢ = 1</code> (success / arrival) with probability <code>p</code>, and <code>Xᵢ = 0</code>
+    with probability <code>1−p</code>. The trials share the same <code>p</code> and never look at one
+    another — <b>independent and identically distributed</b>. That is the entire definition. There is no
+    hidden state, no momentum, no clock that "remembers." Everything interesting below is just a different
+    question asked of this one stream of coin flips.
+  </p>
+
+  <h2>Fact 1 — counting arrivals: the Binomial</h2>
+  <p style="font-size:14px;max-width:780px">
+    Ask: <i>how many successes in the first <code>n</code> slots?</i> Call it <code>S = X₁ + ⋯ + Xₙ</code>.
+    Each way to get exactly <code>k</code> successes has probability <code>pᵏ(1−p)ⁿ⁻ᵏ</code>, and there are
+    <code>C(n,k)</code> arrangements of which slots succeeded, so
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(S = k) = C(n, k) · pᵏ · (1−p)ⁿ⁻ᵏ          k = 0, 1, …, n      (Binomial)
+
+E[S] = n·p           Var(S) = n·p·(1−p)</pre>
+  <p style="font-size:14px;max-width:780px">
+    The mean <code>E[S] = np</code> is the cleanest fact in the subject: linearity of expectation adds up
+    <code>n</code> coins each worth <code>p</code> on average, and it never even needs independence. Switch the
+    bottom plot to <b>counts</b>, run thousands of length-<code>n</code> histories, and the histogram of
+    <code>S</code> settles right onto that black Binomial curve, centered at <code>np</code>.
+  </p>
+
+  <h2>Fact 2 — waiting between arrivals: the Geometric</h2>
+  <p style="font-size:14px;max-width:780px">
+    Now ask: <i>how many slots until the next success?</i> Call the inter-arrival gap <code>T</code>.
+    To wait exactly <code>k</code> slots you need <code>k−1</code> failures in a row and then a success:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(T = k) = (1−p)ᵏ⁻¹ · p              k = 1, 2, 3, …            (Geometric)
+
+E[T] = 1 / p          Var(T) = (1−p) / p²</pre>
+  <p style="font-size:14px;max-width:780px">
+    The mean gap <code>1/p</code> is the natural reciprocal of the rate: if a success lands one slot in ten
+    (<code>p = 0.1</code>) you wait about ten slots on average. Switch the bottom plot to <b>gaps</b>: we run one
+    very long path, measure every spacing between consecutive arrivals, and histogram them — a clean decaying
+    staircase sitting exactly on the Geometric PMF. Notice the gap is always <code>≥ 1</code>; the very first
+    arrival time is itself Geometric(p) too.
+  </p>
+
+  <h2>Fact 3 — memorylessness: the coin has no past</h2>
+  <p style="font-size:14px;max-width:780px">
+    Suppose you have already waited <code>s</code> slots with no success. How much longer must you wait? The
+    surprising answer: exactly as long as if you had <i>just started</i>. Formally,
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(T > s + t | T > s) = P(T > t)          for all s, t ≥ 0
+
+because  P(T > m) = (1−p)ᵐ ,  so  (1−p)^(s+t) / (1−p)^s = (1−p)^t.</pre>
+  <p style="font-size:14px;max-width:780px">
+    The past <code>s</code> failures cancel out completely. The coin has no memory — waiting longer does
+    <b>not</b> make a success "more due." The Geometric is the <i>only</i> discrete distribution with this
+    property, and it is a direct consequence of the trials being independent: the slots you already spent
+    tell you nothing about the slots to come. This is the same reason gamblers' "it's been red eight times,
+    black is overdue" reasoning is wrong. Each spin, like each slot, starts fresh.
+  </p>
+
+  <h2>The bridge — squeeze the slots and you get the Poisson process</h2>
+  <p style="font-size:14px;max-width:780px">
+    The Bernoulli process lives in <i>discrete</i> time. But real arrivals — photons, phone calls, radioactive
+    decays — happen in <i>continuous</i> time. Take the limit: chop each second into more and more tiny slots,
+    let the slot width shrink, and let <code>p → 0</code> while holding the expected rate
+    <code>n·p → λ</code> fixed. Two things converge:
+  </p>
+  <ul style="font-size:14px;max-width:780px">
+    <li>the <b>count</b> in a fixed window, Binomial(<code>n</code>, <code>p</code>) with
+      <code>np = λ</code>, converges to <b>Poisson(λ)</b> — the famous rare-events limit; and</li>
+    <li>the <b>gap</b>, Geometric(<code>p</code>), rescaled by the slot width, converges to the
+      <b>Exponential</b> distribution — which is memoryless in continuous time, inheriting Fact 3 directly.</li>
+  </ul>
+  <p style="font-size:14px;max-width:780px">
+    That continuous-time limit is the <a href="../../lectures/13-poisson-process.html">Poisson process (Lecture 13)</a>.
+    Everything you are seeing here has an exact analog there: Binomial → Poisson, Geometric → Exponential,
+    discrete memorylessness → continuous memorylessness. Drag <code>p</code> small and <code>n</code> large in the
+    counts view and you can watch the Binomial bars already starting to look Poisson — the bridge is visible
+    before you ever cross it.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const RUNS = 20000;        // length-n histories for the counts histogram
+  const LONG = 60000;        // slots in the single long path for the gaps histogram
+
+  let p = 0.30;
+  let n = 60;
+  let view = "count";        // "count" → Binomial ; "gap" → Geometric
+  let path = [];             // current realized sample path of 0/1
+
+  // ---- a fresh realized sample path of length n ----
+  function newRealization() {
+    path = new Array(n);
+    for (let i = 0; i < n; i++) path[i] = PR.bernoulli(p);
+  }
+
+  // ---- top plot: the realized sample path on a discrete time axis ----
+  function drawPath() {
+    const xs = [], ys = [];          // stems for successes (0→1 verticals, NaN breaks)
+    const sx = [], sy = [];          // markers at the top of each success
+    const fx = [], fy = [];          // faint dots for failures
+    let successes = 0;
+    for (let i = 0; i < n; i++) {
+      const t = i + 1;
+      if (path[i] === 1) {
+        successes++;
+        xs.push(t, t, NaN); ys.push(0, 1, NaN);
+        sx.push(t); sy.push(1);
+      } else {
+        fx.push(t); fy.push(0);
+      }
+    }
+    const data = [
+      { type: "scatter", mode: "lines", x: xs, y: ys,
+        line: { color: "#176d2c", width: 2 }, hoverinfo: "skip", showlegend: false },
+      { type: "scatter", mode: "markers", x: sx, y: sy,
+        marker: { color: "#176d2c", size: 7 }, name: "arrival (Xᵢ=1)", hoverinfo: "x" },
+      { type: "scatter", mode: "markers", x: fx, y: fy,
+        marker: { color: "#c9d4df", size: 4 }, name: "failure (Xᵢ=0)", hoverinfo: "x" },
+    ];
+    Plotly.react("pathPlot", data, {
+      title: { text: "One realized sample path — " + successes + " arrivals in " + n + " slots", font: { size: 13 } },
+      margin: { l: 30, r: 12, t: 34, b: 34 },
+      xaxis: { range: [0, n + 1], title: { text: "time slot i", font: { size: 11 } }, zeroline: false },
+      yaxis: { range: [-0.15, 1.3], showticklabels: false, zeroline: true, zerolinecolor: "#ddd" },
+      showlegend: true,
+      legend: { orientation: "h", x: 0, y: 1.18, font: { size: 11 } },
+    }, { responsive: true });
+    return successes;
+  }
+
+  function barTrace(centers, density, color, name) {
+    return { type: "bar", x: centers, y: density, width: 0.9,
+      marker: { color, line: { width: 0 } }, opacity: 0.85, name, hoverinfo: "x+y" };
+  }
+
+  // ---- bottom plot: empirical law overlaid with the exact PMF ----
+  function drawLaw() {
+    if (view === "count") {
+      // histogram of S = #successes over RUNS independent length-n runs
+      const samples = new Array(RUNS);
+      for (let r = 0; r < RUNS; r++) {
+        let s = 0;
+        for (let i = 0; i < n; i++) if (Math.random() < p) s++;
+        samples[r] = s;
+      }
+      // integer bins 0..n, width 1 → histogram density equals probability mass
+      const h = PR.histogram(samples, -0.5, n + 0.5, n + 1);
+      const ks = [], pmf = [];
+      for (let k = 0; k <= n; k++) { ks.push(k); pmf.push(PR.binomPmf(k, n, p)); }
+      const data = [
+        barTrace(h.centers, h.density, "#9ed3a8", "simulated counts"),
+        { type: "scatter", mode: "lines+markers", x: ks, y: pmf,
+          line: { color: "#111", width: 2 }, marker: { size: 3, color: "#111" },
+          name: "Binomial(n,p) PMF", hoverinfo: "skip" },
+      ];
+      // keep the x-window tight around the mass
+      const np = n * p, sd = Math.sqrt(n * p * (1 - p));
+      const lo = Math.max(-0.5, np - 4 * sd - 1), hi = Math.min(n + 0.5, np + 4 * sd + 1);
+      Plotly.react("lawPlot", data, {
+        title: { text: "Counts view — successes S in n slots  ~  Binomial(n, p)", font: { size: 13 } },
+        margin: { l: 44, r: 12, t: 34, b: 36 },
+        xaxis: { range: [lo, hi], title: { text: "number of successes k", font: { size: 11 } } },
+        yaxis: { title: { text: "probability", font: { size: 11 } }, rangemode: "tozero" },
+        bargap: 0.05, showlegend: true,
+        legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+      }, { responsive: true });
+    } else {
+      // one long path; collect every inter-arrival gap (slots between consecutive successes)
+      const gaps = [];
+      let since = 0, started = false;
+      for (let i = 0; i < LONG; i++) {
+        since++;
+        if (Math.random() < p) {
+          if (started) gaps.push(since); else started = true; // first arrival starts the clock
+          since = 0;
+        }
+      }
+      const maxK = Math.max(5, Math.ceil(Math.log(0.001) / Math.log(1 - p))); // ~99.9% mass
+      const h = PR.histogram(gaps, 0.5, maxK + 0.5, maxK);
+      const ks = [], pmf = [];
+      for (let k = 1; k <= maxK; k++) { ks.push(k); pmf.push(PR.geomPmf(k, p)); }
+      const data = [
+        barTrace(h.centers, h.density, "#9fc6e8", "simulated gaps"),
+        { type: "scatter", mode: "lines+markers", x: ks, y: pmf,
+          line: { color: "#111", width: 2 }, marker: { size: 3, color: "#111" },
+          name: "Geometric(p) PMF", hoverinfo: "skip" },
+      ];
+      Plotly.react("lawPlot", data, {
+        title: { text: "Gaps view — slots between arrivals T  ~  Geometric(p)", font: { size: 13 } },
+        margin: { l: 44, r: 12, t: 34, b: 36 },
+        xaxis: { range: [0.5, maxK + 0.5], title: { text: "gap length k (slots)", font: { size: 11 } } },
+        yaxis: { title: { text: "probability", font: { size: 11 } }, rangemode: "tozero" },
+        bargap: 0.05, showlegend: true,
+        legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+      }, { responsive: true });
+    }
+  }
+
+  function drawStatus(successes) {
+    const f = (x) => PR.round(x, 3);
+    const np = n * p, varS = n * p * (1 - p);
+    const meanT = 1 / p, varT = (1 - p) / (p * p);
+    $("status").innerHTML =
+      '<span class="tag one">i.i.d. coin flips, success prob p = ' + f(p) + ', n = ' + n + ' slots.</span><br>' +
+      '<b>Counts (Binomial):</b> &nbsp;E[S] = n·p = ' + n + '·' + f(p) + ' = <code>' + f(np) + '</code>' +
+      ' &nbsp;(this path had ' + successes + ') &nbsp;·&nbsp; Var(S) = n·p·(1−p) = <code>' + f(varS) + '</code><br>' +
+      '<b>Gaps (Geometric):</b> &nbsp;mean wait E[T] = 1/p = <code>' + f(meanT) + '</code> slots' +
+      ' &nbsp;·&nbsp; Var(T) = (1−p)/p² = <code>' + f(varT) + '</code><br>' +
+      '<b>Memorylessness:</b> &nbsp;<code>P(T > s+t | T > s) = P(T > t) = (1−p)ᵗ</code>' +
+      ' &nbsp;— with p = ' + f(p) + ', any extra wait of t = 1 slot still has survival ' +
+      '<code>(1−p) = ' + f(1 - p) + '</code>, no matter how long you have already waited.';
+  }
+
+  function redraw() {
+    const successes = drawPath();
+    drawLaw();
+    drawStatus(successes);
+  }
+
+  function setView(v) {
+    view = v;
+    const on = "background:#1f77b4;color:#fff;border-color:#1f77b4";
+    $("viewCount").style.cssText = v === "count" ? on : "";
+    $("viewGap").style.cssText = v === "gap" ? on : "";
+    drawLaw();
+  }
+
+  // wiring
+  $("p").addEventListener("input", () => {
+    p = parseFloat($("p").value); $("pval").textContent = p.toFixed(2);
+    newRealization(); redraw();
+  });
+  $("n").addEventListener("input", () => {
+    n = parseInt($("n").value, 10); $("nval").textContent = n;
+    newRealization(); redraw();
+  });
+  $("newPath").onclick = () => { newRealization(); const s = drawPath(); drawStatus(s); };
+  $("viewCount").onclick = () => setView("count");
+  $("viewGap").onclick = () => setView("gap");
+  document.querySelectorAll(".preset[data-p]").forEach((b) => {
+    b.onclick = () => {
+      p = parseFloat(b.dataset.p);
+      $("p").value = p; $("pval").textContent = p.toFixed(2);
+      newRealization(); redraw();
+    };
+  });
+
+  // init
+  newRealization();
+  setView("count");
+  redraw();
+})();
+</script>
+</body>
+</html>

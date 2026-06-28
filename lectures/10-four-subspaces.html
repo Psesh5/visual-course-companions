@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 10 — The four fundamental subspaces · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 10 · The four fundamental subspaces</h1>
+  <div class="sub">Every <code>m×n</code> matrix <code>A</code> creates four subspaces. Two live in the
+    domain <code>R<sup>n</sup></code> (row space &amp; nullspace), two live in the codomain
+    <code>R<sup>m</sup></code> (column space &amp; left nullspace). In each space the pair is
+    <b>orthogonal</b> and their dimensions add to the whole.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The matrix.</b> We use
+    <code>A = [[1,2,3],[1,1,1],[2,3,4]]</code>, a 3×3 matrix of <b>rank&nbsp;2</b>.
+    Because <code>m = n = 3</code>, all four subspaces sit inside the same <code>R<sup>3</sup></code>,
+    so you can actually <i>see</i> the right angles. Row 3 = Row 1 + Row 2, and the columns satisfy
+    <code>c<sub>1</sub> − 2c<sub>2</sub> + c<sub>3</sub> = 0</code>, so both rows and columns are dependent.
+  </div>
+
+  <div class="plots">
+    <div id="domain" class="plot"></div>
+    <div id="codomain" class="plot"></div>
+  </div>
+
+  <div class="status" id="ortho"></div>
+
+  <h2>The big picture</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>Left figure — the domain <code>R<sup>n</sup></code> (here <code>R<sup>3</sup></code>).</b> The blue
+    plane is the <b>row space</b> <code>C(A<sup>T</sup></code>): all combinations of the rows of
+    <code>A</code>. The green line is the <b>nullspace</b> <code>N(A)</code>: every vector <code>x</code>
+    with <code>Ax = 0</code>. The line is <b>perpendicular</b> to the plane — that is the whole point.
+    A vector solves <code>Ax = 0</code> exactly when it is orthogonal to every row, i.e. orthogonal to the
+    row space. Dimensions: <code>r = 2</code> for the row space, <code>n − r = 1</code> for the
+    nullspace, and <code>2 + 1 = 3 = n</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Right figure — the codomain <code>R<sup>m</sup></code> (here <code>R<sup>3</sup></code>).</b> The
+    orange plane is the <b>column space</b> <code>C(A)</code>: all vectors <code>b</code> you can reach as
+    <code>Ax</code>. The red line is the <b>left nullspace</b> <code>N(A<sup>T</sup></code>): every
+    <code>y</code> with <code>A<sup>T</sup>y = 0</code>, equivalently <code>y<sup>T</sup>A = 0</code>.
+    Again the line is perpendicular to the plane: <code>y</code> kills <code>A</code> from the left exactly
+    when it is orthogonal to every column. Dimensions: <code>r = 2</code> column space,
+    <code>m − r = 1</code> left nullspace, summing to <code>m = 3</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Why orthogonality is forced.</b> If <code>Ax = 0</code> then each entry of <code>Ax</code> is a
+    row of <code>A</code> dotted with <code>x</code>, and all those dots are zero — so <code>x ⟂</code>
+    every row. The nullspace is the orthogonal complement of the row space <i>inside</i> <code>R<sup>n</sup></code>.
+    The same argument on <code>A<sup>T</sup></code> gives column space <code>⟂</code> left nullspace inside
+    <code>R<sup>m</sup></code>. Rotate the figures: each green/red line pierces its plane at a right angle
+    through the origin.
+  </p>
+
+  <h2>Worked math — finding all four subspaces by elimination</h2>
+  <p style="font-size:14px;max-width:780px">
+    Start from
+    <code>A = [[1,2,3],[1,1,1],[2,3,4]]</code> and run Gauss–Jordan. Subtract row 1 from row 2, and
+    twice row 1 from row 3:
+  </p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:780px;overflow:auto">
+A = | 1  2  3 |      R2−R1, R3−2R1     | 1  2  3 |      R3+R2          | 1  2  3 |
+    | 1  1  1 |   ───────────────►     | 0 −1 −2 |   ──────────►       | 0 −1 −2 |
+    | 2  3  4 |                        | 0 −1 −2 |                     | 0  0  0 |
+
+reduced row echelon form  R =  | 1  0 −1 |     pivots in columns 1 and 2  ⇒  rank r = 2
+                               | 0  1  2 |     free column: 3
+                               | 0  0  0 |</pre>
+
+  <p style="font-size:14px;max-width:780px">
+    <b>1 · Row space</b> <code>C(A<sup>T</sup>)</code> ⊂ <code>R<sup>3</sup></code>, dim <code>= r = 2</code>.
+    The nonzero rows span it. A clean basis is the two pivot rows of <code>R</code> — or, equivalently,
+    the two independent original rows:
+    <code>{(1,&nbsp;2,&nbsp;3), (1,&nbsp;1,&nbsp;1)}</code>. (Row 3 = Row 1 + Row 2 contributes nothing.)
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>2 · Nullspace</b> <code>N(A)</code> ⊂ <code>R<sup>3</sup></code>, dim <code>= n − r = 1</code>.
+    Solve <code>Rx = 0</code>. With free variable <code>x₃ = 1</code>: from row 2, <code>x₂ = −2x₃ = −2</code>;
+    from row 1, <code>x₁ = x₃ = 1</code>. Special solution
+    <code>{(1,&nbsp;−2,&nbsp;1)}</code> — exactly the column relation
+    <code>c<sub>1</sub> − 2c<sub>2</sub> + c<sub>3</sub> = 0</code>. Check
+    <code>A·(1,−2,1) = 0</code>. ✓
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>3 · Column space</b> <code>C(A)</code> ⊂ <code>R<sup>3</sup></code>, dim <code>= r = 2</code>.
+    Pivots landed in columns 1 and 2, so the <i>original</i> columns 1 and 2 form a basis:
+    <code>{(1,&nbsp;1,&nbsp;2), (2,&nbsp;1,&nbsp;3)}</code>. Column 3 = 2·col 2 − col 1 lies in their span.
+    (Use original, not reduced, columns — elimination changes the column space.)
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>4 · Left nullspace</b> <code>N(A<sup>T</sup>)</code> ⊂ <code>R<sup>3</sup></code>,
+    dim <code>= m − r = 1</code>. We need <code>y<sup>T</sup>A = 0</code>. The same elimination that zeroed
+    row 3 records the recipe: row 3 − row 2 − row 1 = 0, i.e.
+    <code>−R1 − R2 + R3 = 0</code>, giving
+    <code>{(1,&nbsp;1,&nbsp;−1)}</code>. Check <code>(1,1,−1)·A = 0</code> i.e.
+    <code>A<sup>T</sup>·(1,1,−1) = 0</code>. ✓
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Counting (the fundamental theorem).</b>
+    domain <code>R³</code>: <code>r + (n−r) = 2 + 1 = 3</code>;
+    codomain <code>R³</code>: <code>r + (m−r) = 2 + 1 = 3</code>. Row space <code>⟂</code> nullspace and
+    column space <code>⟂</code> left nullspace, so each space splits cleanly into two perpendicular pieces.
+  </p>
+
+  <h2>Strang's actual lecture example — when <code>m ≠ n</code></h2>
+  <p style="font-size:14px;max-width:820px">
+    The 3×3 matrix above lets all four subspaces share one <code>R³</code> so you can <i>see</i> the right
+    angles. But in the lecture Strang works a <b>rectangular</b> matrix, and that is where the four spaces
+    genuinely live in <b>two different ambient spaces</b>. His matrix is <code>3×4</code> (<code>m = 3</code>,
+    <code>n = 4</code>), <b>rank 2</b>, with two identical rows:
+  </p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+A = | 1  2  3  1 |        Gauss–Jordan on  [ A | I ]        R = | 1  0  1  1 |    rank r = 2
+    | 1  1  2  1 |   ─────────────────────────────────►        | 0  1  1  0 |    pivots in cols 1, 2
+    | 1  2  3  1 |        (rows 1 and 3 are equal)              | 0  0  0  0 |    free cols 3, 4</pre>
+  <p style="font-size:14px;max-width:820px">
+    Now the two pairs sit in <b>different</b> <code>R</code>'s, and the dimensions are no longer symmetric:
+  </p>
+  <ul style="font-size:14px;max-width:820px;line-height:1.6">
+    <li><b>Row space</b> <code>C(Aᵀ)</code> ⊂ <code>R⁴</code>, dim <code>r = 2</code>.
+      Basis = the nonzero rows of <code>R</code>: <code>{(1,0,1,1), (0,1,1,0)}</code>.</li>
+    <li><b>Nullspace</b> <code>N(A)</code> ⊂ <code>R⁴</code>, dim <code>n − r = 2</code>.
+      One special solution per free column: <code>{(−1,−1,1,0), (−1,0,0,1)}</code>.
+      (Check <code>2 + 2 = 4 = n</code>.)</li>
+    <li><b>Column space</b> <code>C(A)</code> ⊂ <code>R³</code>, dim <code>r = 2</code>.
+      Basis = original pivot columns 1, 2: <code>{(1,1,1), (2,1,2)}</code>.
+      (col 3 = col 1 + col 2, col 4 = col 1.)</li>
+    <li><b>Left nullspace</b> <code>N(Aᵀ)</code> ⊂ <code>R³</code>, dim <code>m − r = 1</code>.
+      Basis = <code>{(−1,0,1)}</code>: it says <code>row 3 − row 1 = 0</code>.
+      (Check <code>2 + 1 = 3 = m</code>.)</li>
+  </ul>
+  <p style="font-size:14px;max-width:820px">
+    Slide the rank below to watch the four dimensions <code>(r, n−r, r, m−r)</code> rebalance while always
+    summing to <code>n = 4</code> on the left and <code>m = 3</code> on the right — the fundamental theorem,
+    live.
+  </p>
+  <div class="controls">
+    rank r: <input id="rankSlider" type="range" min="0" max="3" step="1" value="2" style="width:240px;vertical-align:middle">
+    <b id="rankVal">2</b>
+  </div>
+  <div id="dimBars" class="plot" style="max-width:760px;height:300px"></div>
+
+  <h2>How the left nullspace falls out of elimination — the matrix <code>E</code></h2>
+  <p style="font-size:14px;max-width:820px">
+    The row space, nullspace and column space all "jump out" of <code>R</code>. The left nullspace does not —
+    you have to <b>keep a record of the elimination steps</b>. Strang's trick: run Gauss–Jordan on the
+    augmented <code>[ A | I ]</code>. Whatever row operations turn <code>A</code> into <code>R</code> also turn
+    <code>I</code> into a matrix <code>E</code> with <code>E·A = R</code>. For this example:
+  </p>
+  <pre style="font-size:13px;background:#f7f7f7;border:1px solid #eee;border-radius:6px;padding:10px 14px;max-width:820px;overflow:auto">
+E = | -1   2   0 |      E · A = R      Every ZERO row of R came from a row of E
+    |  1  -1   0 |   ───────────────►  killing a combination of A's rows.
+    | -1   0   1 |                     R's row 3 is zero  ⇒  E's row 3 = (-1, 0, 1)  ∈  N(Aᵀ).</pre>
+  <p style="font-size:14px;max-width:820px">
+    The rows of <code>E</code> that produce zero rows of <code>R</code> are exactly a basis for the left
+    nullspace. Here only the last row of <code>R</code> is zero, so the left nullspace is one-dimensional,
+    spanned by <code>(−1, 0, 1)</code> — and indeed <code>(−1,0,1)·A = 0</code>, i.e.
+    <code>row 3 − row 1 = 0</code>. (In the square invertible case <code>R = I</code> has no zero rows, so
+    <code>E = A⁻¹</code> and the left nullspace is just <code>{0}</code>.)
+  </p>
+
+  <h2>Elimination keeps the row space but changes the column space</h2>
+  <p style="font-size:14px;max-width:820px">
+    A point Strang stresses: row operations are combinations <i>of the rows</i>, so they leave the
+    <b>row space unchanged</b> — that is why a basis is read straight off the rows of <code>R</code>. But they
+    scramble the columns, so the <b>column space changes</b>. Concretely <code>(1,1,1)</code> is column 1 of
+    <code>A</code>, so it is in <code>C(A)</code> — yet <code>R</code> has a zero in its bottom row, so
+    <code>(1,1,1)</code> is <b>not</b> in <code>C(R)</code>. Verified numerically below.
+  </p>
+  <div class="status" id="rowcolStatus"></div>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  const { planeTrace, arrow, SCENE } = LA;
+
+  // ----- the matrix and its four subspaces (verified by elimination above) -----
+  const A = [[1,2,3],[1,1,1],[2,3,4]];
+
+  const rowBasis  = [[1,2,3],[1,1,1]];      // row space  C(A^T), dim r=2
+  const nullVec   = [1,-2,1];               // nullspace  N(A),    dim n-r=1
+  const colBasis  = [[1,1,2],[2,1,3]];      // column space C(A),  dim r=2  (columns as vectors)
+  const lnullVec  = [1,1,-1];               // left nullspace N(A^T), dim m-r=1
+
+  const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+
+  const R = 3.2;            // half-width of each shaded plane
+  const LINELEN = 2.4;      // half-length drawn for each orthogonal line
+
+  // Plane through origin spanned by two vectors -> normal n gives n·X = 0.
+  function spanPlane(u, v, scale) {
+    const n = cross(u, v);                          // normal to the plane = the orthogonal direction
+    return planeTrace(n[0], n[1], n[2], 0, R, scale);
+  }
+
+  // A line through the origin in direction d (drawn both ways), as an arrow + back arrow.
+  function lineThroughOrigin(d, color) {
+    const L = Math.hypot(d[0],d[1],d[2]);
+    const e = [d[0]/L*LINELEN, d[1]/L*LINELEN, d[2]/L*LINELEN];
+    const neg = [-e[0],-e[1],-e[2]];
+    return [...arrow([0,0,0], e, color, 8), ...arrow([0,0,0], neg, color, 8)];
+  }
+
+  // Thin reference arrows for the two spanning (basis) vectors of a plane.
+  function basisArrows(vs, color) {
+    return vs.flatMap(v => arrow([0,0,0], v, color, 4));
+  }
+
+  function buildScene(div, planeUV, planeScale, planeLabel, lineDir, lineColor, lineLabel) {
+    const data = [];
+    data.push(spanPlane(planeUV[0], planeUV[1], planeScale));
+    data.push(...basisArrows(planeUV, lineColor === "#2ca02c" ? "#1f77b4" : "#ff7f0e"));
+    data.push(...lineThroughOrigin(lineDir, lineColor));
+
+    // text labels floating near the plane and the line
+    const pn = cross(planeUV[0], planeUV[1]);
+    data.push({
+      type:"scatter3d", mode:"text",
+      x:[1.6], y:[1.6], z:[ -(pn[0]*1.6 + pn[1]*1.6)/ (Math.abs(pn[2])<1e-9?1:pn[2]) ],
+      text:[planeLabel], textfont:{size:13}, showlegend:false
+    });
+    const L = Math.hypot(lineDir[0],lineDir[1],lineDir[2]);
+    data.push({
+      type:"scatter3d", mode:"text",
+      x:[lineDir[0]/L*LINELEN*1.15], y:[lineDir[1]/L*LINELEN*1.15], z:[lineDir[2]/L*LINELEN*1.15],
+      text:[lineLabel], textfont:{size:13}, showlegend:false
+    });
+
+    Plotly.newPlot(div, data, {
+      margin:{l:0,r:0,t:34,b:0},
+      title:{ text: div==="domain" ? "Domain R³ : row space ⟂ nullspace"
+                                   : "Codomain R³ : column space ⟂ left nullspace",
+              font:{size:14} },
+      scene: Object.assign(SCENE(), {
+        xaxis:{title:"x", range:[-R,R]},
+        yaxis:{title:"y", range:[-R,R]},
+        zaxis:{title:"z", range:[-R,R]},
+      }),
+    }, {displayModeBar:false, responsive:true});
+  }
+
+  // (a) DOMAIN: blue row-space plane + green nullspace line
+  buildScene("domain",
+    rowBasis, "Blues", "row space  C(Aᵀ),  dim r = 2",
+    nullVec, "#2ca02c", "nullspace  N(A),  dim n−r = 1");
+
+  // (b) CODOMAIN: orange column-space plane + red left-nullspace line
+  buildScene("codomain",
+    colBasis, "Oranges", "column space  C(A),  dim r = 2",
+    lnullVec, "#d62728", "left nullspace  N(Aᵀ),  dim m−r = 1");
+
+  // ----- numeric orthogonality verification, shown in the status box -----
+  const dn1 = dot(nullVec, rowBasis[0]),  dn2 = dot(nullVec, rowBasis[1]);
+  const dl1 = dot(lnullVec, colBasis[0]), dl2 = dot(lnullVec, colBasis[1]);
+  document.getElementById("ortho").innerHTML =
+    "<b>Orthogonality check (all dot products = 0):</b><br>" +
+    "Domain — nullspace ⟂ rows: " +
+    "<code>(1,−2,1)·(1,2,3) = " + dn1 + "</code>, " +
+    "<code>(1,−2,1)·(1,1,1) = " + dn2 + "</code><br>" +
+    "Codomain — left nullspace ⟂ columns: " +
+    "<code>(1,1,−1)·(1,1,2) = " + dl1 + "</code>, " +
+    "<code>(1,1,−1)·(2,1,3) = " + dl2 + "</code><br>" +
+    "Dimensions: domain <code>r + (n−r) = 2 + 1 = 3</code>, " +
+    "codomain <code>r + (m−r) = 2 + 1 = 3</code>.";
+
+  // ===== Strang's ACTUAL lecture example: 3x4, rank 2 =====
+  // A = [[1,2,3,1],[1,1,2,1],[1,2,3,1]]  (rows 1 and 3 equal),  E·A = R
+  const Astr = [[1,2,3,1],[1,1,2,1],[1,2,3,1]];   // m=3, n=4
+  const Estr = [[-1,2,0],[1,-1,0],[-1,0,1]];      // record of elimination, E·A = R
+  const M_STR = 3, N_STR = 4;
+
+  // matrix * vector helpers (general sizes)
+  const matVec = (Mx, v) => Mx.map(row => row.reduce((s, a, j) => s + a * v[j], 0));
+  const col    = (Mx, k)  => Mx.map(row => row[k]);
+  const dotN   = (a, b)   => a.reduce((s, x, i) => s + x * b[i], 0);
+
+  // (a) dimension-balance bars vs. rank slider -----------------------------
+  (function () {
+    const slider = document.getElementById("rankSlider"), label = document.getElementById("rankVal");
+    function draw(r) {
+      label.textContent = r;
+      const domainDims = [r, N_STR - r];           // row space, nullspace  (sum = n = 4)
+      const codDims    = [r, M_STR - r];           // column space, left nullspace (sum = m = 3)
+      const data = [
+        { type:"bar", name:"row space  C(Aᵀ)",      x:["domain Rⁿ (n=4)"], y:[domainDims[0]], marker:{color:"#1f77b4"}, text:[domainDims[0]], textposition:"inside" },
+        { type:"bar", name:"nullspace  N(A)",        x:["domain Rⁿ (n=4)"], y:[domainDims[1]], marker:{color:"#2ca02c"}, text:[domainDims[1]], textposition:"inside" },
+        { type:"bar", name:"column space  C(A)",     x:["codomain Rᵐ (m=3)"], y:[codDims[0]], marker:{color:"#ff7f0e"}, text:[codDims[0]], textposition:"inside" },
+        { type:"bar", name:"left nullspace  N(Aᵀ)",  x:["codomain Rᵐ (m=3)"], y:[codDims[1]], marker:{color:"#d62728"}, text:[codDims[1]], textposition:"inside" },
+      ];
+      Plotly.react("dimBars", data, {
+        barmode:"stack",
+        title:{ text:`r = ${r}:  domain ${r}+${N_STR-r}=${N_STR},  codomain ${r}+${M_STR-r}=${M_STR}`, font:{size:14} },
+        yaxis:{ title:"dimension", range:[0, 4.4], dtick:1 },
+        margin:{ l:50, r:10, t:36, b:30 },
+        legend:{ orientation:"h", y:-0.18, font:{size:11} },
+      }, { displayModeBar:false, responsive:true });
+    }
+    slider.addEventListener("input", () => draw(parseInt(slider.value)));
+    draw(2);
+  })();
+
+  // (b) numeric checks: special solutions, left nullspace from E, row-vs-column space
+  (function () {
+    const nullStr  = [[-1,-1,1,0], [-1,0,0,1]];         // basis of N(A) ⊂ R⁴
+    const lnullStr = Estr[2];                            // (-1,0,1): zero-row recipe = basis of N(Aᵀ)
+    const an1 = matVec(Astr, nullStr[0]).map(LA.round);
+    const an2 = matVec(Astr, nullStr[1]).map(LA.round);
+    const yA  = [0,1,2,3].map(k => LA.round(dotN(lnullStr, col(Astr, k)))); // y·each column
+
+    // is (1,1,1) in C(A)?  yes (it is column 1).   is it in C(R)?  no (R's bottom row forces z-component patterns)
+    const colSpaceMember = col(Astr, 0);                 // (1,1,1) = column 1 of A
+    document.getElementById("rowcolStatus").innerHTML =
+      "<b>Strang's 3×4 example — numeric verification:</b><br>" +
+      "Nullspace special solutions kill A: " +
+      "<code>A·(−1,−1,1,0) = (" + an1.join(",") + ")</code>, " +
+      "<code>A·(−1,0,0,1) = (" + an2.join(",") + ")</code><br>" +
+      "Left nullspace (last row of E) ⟂ every column: " +
+      "<code>(−1,0,1)·colⱼ = (" + yA.join(", ") + ")</code> for j = 1..4<br>" +
+      "Row space ≠ column space mobility: <code>(1,1,1)</code> is column 1 of A, so it lies in " +
+      "<code>C(A)</code>; but <code>R</code>'s bottom row is zero, so it is <b>not</b> in <code>C(R)</code> " +
+      "— elimination preserved the row space but moved the column space.";
+  })();
+</script>
+</body>
+</html>

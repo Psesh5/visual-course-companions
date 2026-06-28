@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Covariance and correlation · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Covariance and correlation</h1>
+  <div class="sub">Two random variables <code>X</code> and <code>Y</code> can move <i>together</i>. <b>Covariance</b>
+    measures that co-movement, <code>Cov(X,Y) = E[(X−μ_X)(Y−μ_Y)]</code>; dividing by the two standard deviations
+    rescales it into the <b>correlation</b> <code>ρ ∈ [−1, 1]</code>, a unit-free score for the strength of the
+    <i>linear</i> relationship.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> drag the slider for the true correlation <code>ρ</code> and we draw <code>n = 600</code>
+    points from the standard bivariate normal with that <code>ρ</code>. The faint cross marks the two means; it
+    splits the plane into four <b>quadrants</b>. A point counts <span style="color:#176d2c">green</span> when it
+    sits in a <i>same-sign</i> quadrant (both above the means, or both below) — there the product
+    <code>(x−μ_X)(y−μ_Y)</code> is <b>positive</b>. It counts <span style="color:#b00020">red</span> in an
+    <i>opposite-sign</i> quadrant, where that product is <b>negative</b>. Covariance is just the <i>average</i> of
+    those signed products: positive <code>ρ</code> floods the green diagonal, negative <code>ρ</code> the red one.
+    The black line is the least-squares best fit.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Presets:</span>
+    <button class="preset" data-rho="0">ρ = 0 · no linear link</button>
+    <button class="preset" data-rho="0.5">ρ = 0.5 · moderate +</button>
+    <button class="preset" data-rho="0.9">ρ = 0.9 · strong +</button>
+    <button class="preset" data-rho="-0.8">ρ = −0.8 · strong −</button>
+    <button class="preset" data-mode="nonlinear" style="background:#7a3b8f;color:#fff;border-color:#7a3b8f">⚠ nonlinear U-shape · ρ ≈ 0 yet dependent</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">true correlation&nbsp; <b>ρ = <span id="rhoval">0.50</span></b>&nbsp;
+      <input type="range" id="rho" min="-1" max="1" step="0.01" value="0.5" style="vertical-align:middle;width:300px">
+    </label>
+    <span class="rng">(−1 = perfect anti-line, 0 = none, +1 = perfect line)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Quadrant shading:</span>
+    <button class="preset" id="shadeOn" style="background:#176d2c;color:#fff;border-color:#176d2c">on</button>
+    <button class="preset" id="shadeOff">off</button>
+    <button class="preset" id="reroll">↻ new sample</button>
+  </div>
+
+  <div class="plots">
+    <div id="scatterPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>What covariance measures</h2>
+  <p style="font-size:14px;max-width:780px">
+    Center each variable on its own mean and look at the product of the two deviations,
+    <code>(X−μ_X)(Y−μ_Y)</code>. When <code>X</code> is above its mean <i>and</i> <code>Y</code> is above its mean,
+    that product is positive; when both are below, the two negatives multiply to positive again. The product turns
+    negative only when one variable is above its mean while the other is below. <b>Covariance is the expected value
+    of that product</b>, <code>Cov(X,Y) = E[(X−μ_X)(Y−μ_Y)]</code>, so its <b>sign</b> answers a single question:
+    do the two variables tend to land in the same-sign quadrants (positive covariance, they rise and fall
+    together) or in opposite-sign quadrants (negative covariance, one rises as the other falls)? Watch the green
+    and red point counts in the status box as you sweep the slider — the average signed product is exactly what the
+    cross-hair picture is showing you.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    A useful identity, the analog of <code>Var(X) = E[X²] − μ²</code>, is
+    <code>Cov(X,Y) = E[XY] − μ_X·μ_Y</code>. And covariance generalizes variance: take <code>Y = X</code> and you
+    get <code>Cov(X,X) = E[(X−μ_X)²] = Var(X)</code>. That is why the diagonal of a covariance matrix holds the
+    variances.
+  </p>
+
+  <h2>Standardizing: from covariance to correlation</h2>
+  <p style="font-size:14px;max-width:780px">
+    Covariance has a flaw: it carries units. Measure heights in centimeters instead of meters and the covariance
+    jumps by a factor of 100, even though the relationship is unchanged. The cure is to divide out both scales.
+    Define the <b>correlation coefficient</b>
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+        Cov(X,Y)          E[(X−μ_X)(Y−μ_Y)]
+ρ  =  ───────────────  =  ─────────────────────
+        σ_X · σ_Y            σ_X · σ_Y</pre>
+  <p style="font-size:14px;max-width:780px">
+    Equivalently, <code>ρ = E[X̃ Ỹ]</code> where <code>X̃ = (X−μ_X)/σ_X</code> and <code>Ỹ = (Y−μ_Y)/σ_Y</code> are
+    the <i>standardized</i> versions — each rescaled to mean 0 and variance 1. Standardizing strips away the units
+    and the spread, leaving a pure, dimensionless number. That is why the slider above runs the <b>same</b> −1…1
+    range no matter what the variables actually represent.
+  </p>
+
+  <h2>Why ρ lives in [−1, 1] — Cauchy–Schwarz</h2>
+  <p style="font-size:14px;max-width:780px">
+    The bound is not an accident; it is the <b>Cauchy–Schwarz inequality</b> in disguise. For any two
+    zero-mean variables, <code>E[X̃ Ỹ]² ≤ E[X̃²]·E[Ỹ²] = 1·1 = 1</code>, so <code>|ρ| ≤ 1</code>. Think of
+    random variables as vectors and the expectation <code>E[X̃ Ỹ]</code> as their inner product:
+    correlation is literally the <b>cosine of the angle</b> between the centered variables. Cosines live in
+    <code>[−1, 1]</code>, and the extremes are reached only when the two vectors are parallel.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    That gives the sharp geometric meaning of the endpoints: <b><code>ρ = ±1</code> if and only if
+    <code>Y</code> is an exact linear function of <code>X</code></b>, <code>Y = aX + b</code> with the sign of
+    the slope <code>a</code> matching the sign of <code>ρ</code>. Drag the slider toward <code>+1</code> and the
+    cloud tightens onto a single rising line; toward <code>−1</code> and it collapses onto a falling line. Anything
+    in between is a fuzzier version of the same straight-line story — and "straight line" is the crucial fine
+    print, as the next section shows.
+  </p>
+
+  <h2>The blind spot: uncorrelated is <i>not</i> independent</h2>
+  <p style="font-size:14px;max-width:780px">
+    If <code>X</code> and <code>Y</code> are <b>independent</b> then <code>Cov(X,Y) = 0</code>, so independence
+    forces <code>ρ = 0</code>. The converse is <b>false</b>, and the gap matters. Press the
+    <span style="color:#7a3b8f"><b>nonlinear U-shape</b></span> preset: there we set <code>Y = X² + </code>tiny
+    noise with <code>X</code> symmetric around 0. Now <code>Y</code> is almost <i>completely determined</i> by
+    <code>X</code> — knowing <code>X</code> tells you nearly everything about <code>Y</code> — yet the sample
+    correlation comes out near <b>zero</b>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The reason is built into the definition. Because <code>X</code> is symmetric, every positive deviation
+    <code>(x−μ_X)</code> has a mirror-image negative deviation that produces the <i>same</i> <code>Y</code>. The
+    positive products on the right arm of the parabola are cancelled, term for term, by the negative products on
+    the left arm, and the average signed product — the covariance — washes out to 0. Correlation only ever sees
+    the <i>linear</i> trend; a symmetric bowl has no net linear trend even though it is a perfect, deterministic
+    relationship. <b><code>ρ = 0</code> means "no linear association," never "no association."</b> That is the
+    single most important caveat about correlation, and the U-shape is the picture to remember it by.
+  </p>
+
+  <h2>The tie to regression (ISLR) and multicollinearity</h2>
+  <p style="font-size:14px;max-width:780px">
+    Correlation is the engine under <b>simple linear regression</b>. The least-squares line you see drawn in
+    black has slope
+    <code>b = Cov(X,Y) / Var(X) = ρ · (σ_Y / σ_X)</code>: the regression slope is the correlation, rescaled by
+    the ratio of spreads. When <code>X</code> and <code>Y</code> are standardized the slope <i>is</i>
+    <code>ρ</code>, and the fraction of variance the line explains is <code>R² = ρ²</code>. So a correlation of
+    <code>0.9</code> already tells you the best line will capture about <code>0.81</code> of <code>Y</code>'s
+    variability — the slope you watch tilt above is correlation made visible.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    In multiple regression the same quantity becomes a hazard. When two <i>predictors</i> are highly correlated —
+    <b>multicollinearity</b> — the data cannot tell their separate effects apart, the coefficient estimates become
+    wildly unstable, and their standard errors blow up. This is exactly the <code>ρ → ±1</code> corner above: as
+    the cloud degenerates onto a line, the two variables stop carrying independent information. <i>An Introduction
+    to Statistical Learning</i> spends a whole section on detecting it, because a feature matrix whose columns are
+    nearly collinear is the regression analog of a matrix that is nearly singular — and correlation is the number
+    that tells you how close to that edge you stand.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const N = 600;                 // number of sample points
+
+  let mode  = "linear";          // "linear" → bivariate normal(ρ);  "nonlinear" → U-shape
+  let rho   = 0.5;               // true correlation when mode = "linear"
+  let shade = true;              // quadrant shading on/off
+  let pts   = [];                // current sample, array of [x,y]
+
+  // ---- sample covariance / correlation from a point cloud (population form, ÷N) ----
+  function stats(P) {
+    const n = P.length;
+    let sx = 0, sy = 0;
+    for (const [x, y] of P) { sx += x; sy += y; }
+    const mx = sx / n, my = sy / n;
+    let sxx = 0, syy = 0, sxy = 0;
+    for (const [x, y] of P) {
+      const dx = x - mx, dy = y - my;
+      sxx += dx * dx; syy += dy * dy; sxy += dx * dy;
+    }
+    const varx = sxx / n, vary = syy / n, cov = sxy / n;
+    const sdx = Math.sqrt(varx), sdy = Math.sqrt(vary);
+    const corr = (sdx > 0 && sdy > 0) ? cov / (sdx * sdy) : 0;
+    return { mx, my, varx, vary, cov, sdx, sdy, corr };
+  }
+
+  // ---- draw a fresh sample for the current mode ----
+  function sample() {
+    const P = new Array(N);
+    if (mode === "nonlinear") {
+      for (let i = 0; i < N; i++) {
+        const x = PR.randn();                 // symmetric around 0
+        const y = x * x + 0.18 * PR.randn();  // Y = X² + tiny noise  → fully determined, ρ ≈ 0
+        P[i] = [x, y];
+      }
+    } else {
+      for (let i = 0; i < N; i++) P[i] = PR.bivariateNormal(rho);  // standard bivariate normal
+    }
+    pts = P;
+  }
+
+  function fmt(x) { return PR.round(x, 3); }
+
+  function draw() {
+    const s = stats(pts);
+
+    // ---- adaptive, padded plotting window ----
+    let xlo = Infinity, xhi = -Infinity, ylo = Infinity, yhi = -Infinity;
+    for (const [x, y] of pts) {
+      if (x < xlo) xlo = x; if (x > xhi) xhi = x;
+      if (y < ylo) ylo = y; if (y > yhi) yhi = y;
+    }
+    const px = 0.08 * (xhi - xlo || 1), py = 0.08 * (yhi - ylo || 1);
+    xlo -= px; xhi += px; ylo -= py; yhi += py;
+
+    // ---- split points by sign of (x−μ_X)(y−μ_Y): green = same-sign, red = opposite ----
+    const gX = [], gY = [], rX = [], rY = [];
+    for (const [x, y] of pts) {
+      if ((x - s.mx) * (y - s.my) >= 0) { gX.push(x); gY.push(y); }
+      else { rX.push(x); rY.push(y); }
+    }
+
+    const data = [
+      { type: "scatter", mode: "markers", x: gX, y: gY, name: "same-sign  (+ product)",
+        marker: { color: "#176d2c", size: 5, opacity: 0.6 }, hoverinfo: "x+y" },
+      { type: "scatter", mode: "markers", x: rX, y: rY, name: "opposite-sign  (− product)",
+        marker: { color: "#b00020", size: 5, opacity: 0.6 }, hoverinfo: "x+y" },
+    ];
+
+    // ---- least-squares best-fit line: slope b = Cov/Var(X), through the means ----
+    const b = s.varx > 0 ? s.cov / s.varx : 0;
+    const a = s.my - b * s.mx;
+    data.push({ type: "scatter", mode: "lines", x: [xlo, xhi],
+      y: [a + b * xlo, a + b * xhi], name: "least-squares fit",
+      line: { color: "#111", width: 2.5 }, hoverinfo: "skip" });
+
+    // ---- the mean cross-hair ----
+    data.push({ type: "scatter", mode: "lines", x: [xlo, xhi], y: [s.my, s.my],
+      line: { color: "#888", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false });
+    data.push({ type: "scatter", mode: "lines", x: [s.mx, s.mx], y: [ylo, yhi],
+      line: { color: "#888", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false });
+
+    // ---- faint quadrant shading relative to the means ----
+    const shapes = [];
+    if (shade) {
+      const G = "rgba(23,109,44,0.07)", R = "rgba(176,0,32,0.07)";
+      const rect = (x0, x1, y0, y1, c) => ({ type: "rect", xref: "x", yref: "y",
+        x0, x1, y0, y1, fillcolor: c, line: { width: 0 }, layer: "below" });
+      shapes.push(rect(s.mx, xhi, s.my, yhi, G));   // ++  same-sign
+      shapes.push(rect(xlo, s.mx, ylo, s.my, G));   // −−  same-sign
+      shapes.push(rect(xlo, s.mx, s.my, yhi, R));   // −+  opposite
+      shapes.push(rect(s.mx, xhi, ylo, s.my, R));   // +−  opposite
+    }
+
+    Plotly.react("scatterPlot", data, {
+      title: { text: (mode === "nonlinear"
+                  ? "Y = X² + noise   (deterministic, yet ρ ≈ 0)"
+                  : "Standard bivariate normal,  true ρ = " + fmt(rho)),
+               font: { size: 13 } },
+      margin: { l: 44, r: 14, t: 36, b: 40 },
+      xaxis: { range: [xlo, xhi], title: { text: "X", font: { size: 12 } }, zeroline: false },
+      yaxis: { range: [ylo, yhi], title: { text: "Y", font: { size: 12 } }, zeroline: false },
+      shapes,
+      showlegend: true,
+      legend: { x: 0.02, y: 0.98, font: { size: 11 }, bgcolor: "rgba(255,255,255,0.7)" },
+    }, { responsive: true });
+
+    // ---- status box ----
+    const sign = s.corr > 0.05 ? "positive — X and Y tend to rise and fall together"
+               : s.corr < -0.05 ? "negative — when one is above its mean the other tends to be below"
+               : "≈ 0 — no net linear co-movement";
+    let html;
+    if (mode === "nonlinear") {
+      html =
+        '<span class="tag none">⚠ Correlation\'s blind spot: a deterministic relationship with ρ ≈ 0.</span><br>' +
+        'Here <code>Y = X² + noise</code>, so <code>Y</code> is essentially <i>determined</i> by <code>X</code> — ' +
+        'maximal dependence. Yet the<br>' +
+        'sample correlation &nbsp;<code>ρ̂ = ' + fmt(s.corr) + '</code> &nbsp;(≈ 0), &nbsp;' +
+        'sample covariance &nbsp;<code>Cov = ' + fmt(s.cov) + '</code>.<br>' +
+        'The symmetric left and right arms produce equal-and-opposite signed products that cancel, so the ' +
+        '<b>linear</b> trend is flat. <i>Uncorrelated does not mean independent.</i>';
+    } else {
+      const R2 = s.corr * s.corr;
+      html =
+        '<span class="tag one">True ρ (the slider) vs. the sample correlation from the 600 points.</span><br>' +
+        'true &nbsp;<code>ρ = ' + fmt(rho) + '</code> &nbsp;→ &nbsp;sample &nbsp;<code>ρ̂ = ' + fmt(s.corr) + '</code> ✓ ' +
+        '&nbsp;(they match up to sampling noise)<br>' +
+        'sample covariance &nbsp;<code>Cov = ' + fmt(s.cov) + '</code>, &nbsp;' +
+        '<code>σ̂_X = ' + fmt(s.sdx) + '</code>, &nbsp;<code>σ̂_Y = ' + fmt(s.sdy) + '</code> &nbsp;→ ' +
+        '<code>Cov/(σ̂_X σ̂_Y) = ' + fmt(s.corr) + '</code><br>' +
+        'best-fit slope &nbsp;<code>b = Cov/Var(X) = ' + fmt(b) + '</code> &nbsp;·&nbsp; variance explained &nbsp;<code>R² = ρ̂² = ' + fmt(R2) + '</code><br>' +
+        'sign of the relationship: &nbsp;<b>' + sign + '</b><br>' +
+        '<span style="color:#666">green points (same-sign quadrants): ' + gX.length + ' &nbsp;·&nbsp; ' +
+        'red points (opposite-sign): ' + rX.length + ' &nbsp;— their signed average is the covariance.</span>';
+    }
+    $("status").innerHTML = html;
+  }
+
+  // ---- wiring ----
+  function setShade(on) {
+    shade = on;
+    const css = "background:#176d2c;color:#fff;border-color:#176d2c";
+    $("shadeOn").style.cssText  = on ? css : "";
+    $("shadeOff").style.cssText = on ? "" : css;
+    draw();
+  }
+
+  $("rho").addEventListener("input", () => {
+    mode = "linear";
+    rho = parseFloat($("rho").value);
+    $("rhoval").textContent = rho.toFixed(2);
+    sample(); draw();
+  });
+
+  document.querySelectorAll(".preset[data-rho]").forEach((b) => {
+    b.onclick = () => {
+      mode = "linear";
+      rho = parseFloat(b.dataset.rho);
+      $("rho").value = rho;
+      $("rhoval").textContent = rho.toFixed(2);
+      sample(); draw();
+    };
+  });
+
+  document.querySelectorAll(".preset[data-mode]").forEach((b) => {
+    b.onclick = () => { mode = b.dataset.mode; sample(); draw(); };
+  });
+
+  $("shadeOn").onclick  = () => setShade(true);
+  $("shadeOff").onclick = () => setShade(false);
+  $("reroll").onclick   = () => { sample(); draw(); };
+
+  // first render
+  sample();
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PDFs, CDFs, and the normal · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Lecture 5 · PDFs, CDFs, and the normal</h1>
+  <div class="sub">A <b>continuous</b> random variable has no probability mass sitting on any single point —
+    <code>P(X = x) = 0</code> for every <code>x</code>. Probability lives in <i>area</i>. The density
+    <code>f(x)</code> is a curve whose area over an interval is the chance of landing there:
+    <code>P(a ≤ X ≤ b) = ∫<sub>a</sub><sup>b</sup> f(x) dx</code>. The running area is the CDF
+    <code>F(x) = P(X ≤ x)</code>, and the two are tied by <code>F′ = f</code>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> on <span style="color:#1f77b4">top</span> is the density <code>f(x)</code>. The
+    <span style="color:#1f77b4">shaded</span> patch between the two bounds <code>a</code> and <code>b</code> is the
+    probability <code>P(a ≤ X ≤ b)</code> — an <i>area</i>, not a height. On the
+    <span style="color:#176d2c">bottom</span> is the same distribution's CDF <code>F(x)</code>, the area swept
+    from the far left up to <code>x</code>. Drag <code>a</code> and <code>b</code>: the shaded area on top is
+    <i>exactly</i> the vertical rise <code>F(b) − F(a)</code> marked by the <span style="color:#d62728">red
+    bracket</span> on the bottom. Same number, read two ways.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Distribution:</span>
+    <button class="preset" data-dist="normal">Normal(μ, σ)</button>
+    <button class="preset" data-dist="exponential">Exponential(λ)</button>
+    <button class="preset" data-dist="uniform">Uniform(ℓ, r)</button>
+  </div>
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Quick setups:</span>
+    <button class="preset" data-preset="stdnormal">standard normal</button>
+    <button class="preset" data-preset="widenormal">wide normal</button>
+    <button class="preset" data-preset="exp">exponential</button>
+    <button class="preset" data-preset="unif">uniform</button>
+    <button class="preset" data-preset="pm1">bounds: μ ± 1σ</button>
+    <button class="preset" data-preset="pm2">bounds: μ ± 2σ</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px"><span id="p1name">μ</span> = <b><span id="p1val">0</span></b>&nbsp;
+      <input type="range" id="p1" style="width:170px;vertical-align:middle">
+    </label>
+    <span id="p2wrap">&nbsp;&nbsp;<label style="font-size:14px"><span id="p2name">σ</span> = <b><span id="p2val">1</span></b>&nbsp;
+      <input type="range" id="p2" style="width:170px;vertical-align:middle">
+    </label></span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <label style="font-size:14px">lower bound&nbsp; <b>a = <span id="aval">−1</span></b>&nbsp;
+      <input type="range" id="a" style="width:200px;vertical-align:middle">
+    </label>
+    &nbsp;&nbsp;
+    <label style="font-size:14px">upper bound&nbsp; <b>b = <span id="bval">1</span></b>&nbsp;
+      <input type="range" id="b" style="width:200px;vertical-align:middle">
+    </label>
+    <span class="rng">(the shaded interval is P(a ≤ X ≤ b))</span>
+  </div>
+
+  <div class="plots">
+    <div id="pdfPlot" class="plot" style="flex:1 1 100%;height:330px"></div>
+    <div id="cdfPlot" class="plot" style="flex:1 1 100%;height:330px"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>Density is not probability — area is</h2>
+  <p style="font-size:14px;max-width:780px">
+    The single most common mistake with continuous variables is reading <code>f(x)</code> as "the probability
+    of <code>x</code>." It isn't. For a continuous variable the probability of hitting any <i>exact</i> value is
+    <b>zero</b>: <code>P(X = x) = 0</code>. There are uncountably many possible values, and you cannot give each
+    a positive probability and still have them sum to 1. So what does the height of the curve mean? It is a
+    <i>density</i> — probability per unit length. The density at a point can even exceed 1 (push the normal's
+    <code>σ</code> below <code>0.4</code> and watch the peak climb past 1); only the <i>area</i> is a
+    probability, and area is always between 0 and 1. The honest statement is the strip:
+    <code>P(x ≤ X ≤ x + dx) ≈ f(x) dx</code>. Multiply the height by a width and you get a probability.
+  </p>
+
+  <h2>The probability of an interval is an integral</h2>
+  <p style="font-size:14px;max-width:780px">
+    To get the chance of landing in a real interval, add up all those thin strips — that is exactly what the
+    integral does: <code>P(a ≤ X ≤ b) = ∫<sub>a</sub><sup>b</sup> f(x) dx</code>, the shaded region on the top
+    plot. Two consequences fall straight out. First, the <b>total area is 1</b>:
+    <code>∫<sub>−∞</sub><sup>∞</sup> f(x) dx = 1</code>, because the variable has to land <i>somewhere</i>.
+    Second, because a single point has zero width it has zero area, so the endpoints don't matter —
+    <code>P(a ≤ X ≤ b) = P(a &lt; X &lt; b)</code>. With a continuous variable you never have to fuss over
+    <code>≤</code> versus <code>&lt;</code>; that bookkeeping only mattered back when probability sat on isolated
+    points.
+  </p>
+
+  <h2>The CDF: the running area, and it only goes up</h2>
+  <p style="font-size:14px;max-width:780px">
+    Instead of carrying around an interval, fix the left end at <code>−∞</code> and let the right end slide.
+    That gives the <b>cumulative distribution function</b> <code>F(x) = P(X ≤ x)</code> — the total area under
+    <code>f</code> from the far left up to <code>x</code>, drawn on the bottom plot. It always starts at
+    <code>F(−∞) = 0</code> (no area yet) and climbs to <code>F(+∞) = 1</code> (all the area), and it can
+    <i>never decrease</i>: sweeping rightward only ever <i>adds</i> non-negative density, so <code>F</code> is
+    monotone. Its steepness is the density itself, <code>F′(x) = f(x)</code> — the CDF rises fastest exactly
+    where the bell is tallest, and flattens out in the tails where there is almost nothing left to accumulate.
+    The PDF and the CDF are not two distributions; they are one distribution differentiated and integrated.
+  </p>
+
+  <h2>Why the bracket equals the shaded area</h2>
+  <p style="font-size:14px;max-width:780px">
+    The area from <code>−∞</code> to <code>b</code> is <code>F(b)</code>; the area from <code>−∞</code> to
+    <code>a</code> is <code>F(a)</code>. Subtract the part you didn't want and the leftover is the strip in the
+    middle: <code>P(a ≤ X ≤ b) = F(b) − F(a)</code>. That is the fundamental theorem of calculus wearing a
+    probability hat — the integral of <code>f</code> over <code>[a, b]</code> is the difference of the
+    antiderivative <code>F</code> at the two ends. On the bottom plot the <span style="color:#d62728">red
+    bracket</span> measures precisely that vertical gap <code>F(b) − F(a)</code>, and the status box confirms it
+    matches the shaded area on top to the last digit. This is why CDFs are the practical tool: areas under a
+    curve are hard, but <i>two table lookups and a subtraction</i> are easy.
+  </p>
+
+  <h2>The normal, and the 68–95–99.7 rule</h2>
+  <p style="font-size:14px;max-width:780px">
+    The <b>normal</b> (Gaussian) density <code>f(x) = (1/(σ√(2π))) · e<sup>−(x−μ)²/(2σ²)</sup></code> is the bell
+    you already met as the limit in the central limit theorem. Two numbers fix it: the center <code>μ</code> and
+    the spread <code>σ</code>. Its CDF has no elementary closed form — there is no clean antiderivative of
+    <code>e<sup>−x²</sup></code> — so we evaluate it numerically (here via the error function, <code>F(x) =
+    ½[1 + erf((x−μ)/(σ√2))]</code>). Because the shape never changes, the area within a fixed number of standard
+    deviations is a universal constant, the <b>empirical rule</b>: about <b>68%</b> within <code>μ ± σ</code>,
+    <b>95%</b> within <code>μ ± 2σ</code>, and <b>99.7%</b> within <code>μ ± 3σ</code>. Press <b>μ ± 1σ</b> and
+    <b>μ ± 2σ</b> above to set the bounds there and read those numbers straight off <code>F(b) − F(a)</code>.
+    Those three percentages are why "two-sigma" is shorthand for "surprising" and "three-sigma" for "almost
+    never" — and why a 95% confidence interval is built from <code>± 1.96 σ</code>, the bounds that fence off
+    exactly 95% of this curve.
+  </p>
+
+  <h2>The exponential and the uniform — same machinery</h2>
+  <p style="font-size:14px;max-width:780px">
+    Nothing above was special to the bell. The <b>exponential(λ)</b> models waiting times: density
+    <code>f(x) = λe<sup>−λx</sup></code> for <code>x ≥ 0</code>, with the clean closed-form CDF
+    <code>F(x) = 1 − e<sup>−λx</sup></code>. It is heavily front-loaded — most of the area sits near zero — and
+    "memoryless." The <b>uniform(ℓ, r)</b> is the flat case: density <code>1/(r−ℓ)</code> on the interval and 0
+    outside, so its CDF is a straight ramp <code>(x−ℓ)/(r−ℓ)</code> climbing from 0 to 1, and probability is
+    just the fraction of the interval you cover. Switch between all three and watch the same story repeat: a
+    density on top whose total area is 1, a monotone CDF on the bottom from 0 to 1, and the shaded interval
+    always equal to the bracketed rise <code>F(b) − F(a)</code>.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x) => PR.round(x, 3);
+  const fmt4 = (x) => PR.round(x, 4);
+
+  // Each distribution: parameter spec, the visible x-domain, and closed-form pdf/cdf.
+  // Probability is computed from the CDF in every case (the page never integrates numerically).
+  const DISTS = {
+    normal: {
+      label: "Normal(μ, σ)",
+      params: [
+        { name: "μ", min: -5, max: 5, step: 0.1, val: 0 },
+        { name: "σ", min: 0.3, max: 3, step: 0.05, val: 1 },
+      ],
+      domain: (p) => [p[0] - 4 * p[1], p[0] + 4 * p[1]],
+      pdf: (x, p) => PR.normPdf(x, p[0], p[1]),
+      cdf: (x, p) => PR.normCdf(x, p[0], p[1]),
+    },
+    exponential: {
+      label: "Exponential(λ)",
+      params: [
+        { name: "λ", min: 0.2, max: 3, step: 0.1, val: 1 },
+      ],
+      domain: (p) => [0, 6 / p[0]],
+      pdf: (x, p) => (x < 0 ? 0 : p[0] * Math.exp(-p[0] * x)),
+      cdf: (x, p) => (x < 0 ? 0 : 1 - Math.exp(-p[0] * x)),
+    },
+    uniform: {
+      label: "Uniform(ℓ, r)",
+      params: [
+        { name: "ℓ (left)", min: -3, max: 3, step: 0.1, val: 0 },
+        { name: "r (right)", min: -2, max: 4, step: 0.1, val: 1 },
+      ],
+      domain: (p) => { const lo = Math.min(p[0], p[1]), hi = Math.max(p[0], p[1]); const m = 0.25 * (hi - lo) + 0.3; return [lo - m, hi + m]; },
+      pdf: (x, p) => { const lo = Math.min(p[0], p[1]), hi = Math.max(p[0], p[1]); return (x >= lo && x <= hi && hi > lo) ? 1 / (hi - lo) : 0; },
+      cdf: (x, p) => { const lo = Math.min(p[0], p[1]), hi = Math.max(p[0], p[1]); if (hi <= lo) return x < lo ? 0 : 1; if (x <= lo) return 0; if (x >= hi) return 1; return (x - lo) / (hi - lo); },
+    },
+  };
+
+  let current = "normal";
+
+  function readParams() {
+    const cfg = DISTS[current];
+    const out = [parseFloat($("p1").value)];
+    if (cfg.params.length > 1) out.push(parseFloat($("p2").value));
+    return out;
+  }
+
+  // Set the two parameter sliders' names/ranges/values for the current distribution.
+  function configureParams(setDefaults) {
+    const cfg = DISTS[current];
+    const p1 = cfg.params[0];
+    $("p1name").textContent = p1.name;
+    $("p1").min = p1.min; $("p1").max = p1.max; $("p1").step = p1.step;
+    if (setDefaults) $("p1").value = p1.val;
+    if (cfg.params.length > 1) {
+      const p2 = cfg.params[1];
+      $("p2wrap").style.display = "";
+      $("p2name").textContent = p2.name;
+      $("p2").min = p2.min; $("p2").max = p2.max; $("p2").step = p2.step;
+      if (setDefaults) $("p2").value = p2.val;
+    } else {
+      $("p2wrap").style.display = "none";
+    }
+  }
+
+  // Point the bound sliders a,b at the current visible domain; clamp current values into it.
+  function configureBounds(keepVals) {
+    const dom = DISTS[current].domain(readParams());
+    const step = Math.max((dom[1] - dom[0]) / 400, 0.001);
+    ["a", "b"].forEach((id) => { $(id).min = dom[0]; $(id).max = dom[1]; $(id).step = step; });
+    if (!keepVals) {
+      // default bounds: middle third of the domain
+      $("a").value = dom[0] + 0.35 * (dom[1] - dom[0]);
+      $("b").value = dom[0] + 0.65 * (dom[1] - dom[0]);
+    } else {
+      $("a").value = Math.min(Math.max(parseFloat($("a").value), dom[0]), dom[1]);
+      $("b").value = Math.min(Math.max(parseFloat($("b").value), dom[0]), dom[1]);
+    }
+  }
+
+  function draw() {
+    const cfg = DISTS[current];
+    const p = readParams();
+    $("p1val").textContent = fmt(p[0]);
+    if (cfg.params.length > 1) $("p2val").textContent = fmt(p[1]);
+
+    const dom = cfg.domain(p);
+    const xlo = dom[0], xhi = dom[1];
+    let a = parseFloat($("a").value), b = parseFloat($("b").value);
+    a = Math.min(Math.max(a, xlo), xhi);
+    b = Math.min(Math.max(b, xlo), xhi);
+    const lo = Math.min(a, b), hi = Math.max(a, b);   // sorted bounds for the interval
+    $("aval").textContent = fmt(lo);
+    $("bval").textContent = fmt(hi);
+
+    const xs = PR.linspace(xlo, xhi, 320);
+    const fy = xs.map((x) => cfg.pdf(x, p));
+
+    const Fa = cfg.cdf(lo, p), Fb = cfg.cdf(hi, p);
+    const P = Fb - Fa;
+
+    // ---------- TOP: PDF with shaded interval ----------
+    const shadeXs = PR.linspace(lo, hi, 120);
+    const pdfData = [
+      { type: "scatter", mode: "lines", x: xs, y: fy,
+        line: { color: "#1f77b4", width: 2.5 }, name: "density f(x)", hoverinfo: "x+y" },
+      { type: "scatter", mode: "lines", x: shadeXs, y: shadeXs.map((x) => cfg.pdf(x, p)),
+        fill: "tozeroy", fillcolor: "rgba(31,119,180,0.28)",
+        line: { color: "rgba(31,119,180,0)", width: 0 }, name: "P(a ≤ X ≤ b)", hoverinfo: "skip" },
+      // boundary verticals
+      { type: "scatter", mode: "lines", x: [lo, lo], y: [0, cfg.pdf(lo, p)],
+        line: { color: "#1f77b4", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false },
+      { type: "scatter", mode: "lines", x: [hi, hi], y: [0, cfg.pdf(hi, p)],
+        line: { color: "#1f77b4", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false },
+    ];
+    const ymax = Math.max.apply(null, fy) * 1.18 + 1e-6;
+    Plotly.react("pdfPlot", pdfData, {
+      title: { text: "PDF  f(x)  —  shaded area = P(a ≤ X ≤ b)  (" + cfg.label + ")", font: { size: 13 } },
+      margin: { l: 48, r: 14, t: 32, b: 28 },
+      xaxis: { range: [xlo, xhi], zeroline: false },
+      yaxis: { range: [0, ymax], title: { text: "density", font: { size: 11 } }, rangemode: "tozero" },
+      showlegend: true,
+      legend: { x: 0.99, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+      annotations: [
+        { x: (lo + hi) / 2, y: cfg.pdf((lo + hi) / 2, p) * 0.45, text: "area = " + fmt(P),
+          showarrow: false, font: { size: 12, color: "#0d3c61" } },
+      ],
+    }, { responsive: true });
+
+    // ---------- BOTTOM: CDF with drops + bracket F(b)−F(a) ----------
+    const Fy = xs.map((x) => cfg.cdf(x, p));
+    const cdfData = [
+      { type: "scatter", mode: "lines", x: xs, y: Fy,
+        line: { color: "#176d2c", width: 2.5 }, name: "CDF F(x)", hoverinfo: "x+y" },
+      // vertical drops at a and b down to the axis
+      { type: "scatter", mode: "lines", x: [lo, lo], y: [0, Fa],
+        line: { color: "#176d2c", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false },
+      { type: "scatter", mode: "lines", x: [hi, hi], y: [0, Fb],
+        line: { color: "#176d2c", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false },
+      // horizontal guides at the two heights
+      { type: "scatter", mode: "lines", x: [xlo, hi], y: [Fa, Fa],
+        line: { color: "#999", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false },
+      { type: "scatter", mode: "lines", x: [xlo, hi], y: [Fb, Fb],
+        line: { color: "#999", width: 1, dash: "dot" }, hoverinfo: "skip", showlegend: false },
+      // the red bracket: vertical rise from F(a) to F(b) at x = b
+      { type: "scatter", mode: "lines+markers", x: [hi, hi], y: [Fa, Fb],
+        line: { color: "#d62728", width: 3 }, marker: { size: 6, color: "#d62728" },
+        name: "F(b) − F(a)", hoverinfo: "y" },
+      // markers on the curve at a and b
+      { type: "scatter", mode: "markers", x: [lo, hi], y: [Fa, Fb],
+        marker: { size: 7, color: "#176d2c" }, hoverinfo: "x+y", showlegend: false },
+    ];
+    Plotly.react("cdfPlot", cdfData, {
+      title: { text: "CDF  F(x) = P(X ≤ x)  —  red bracket = F(b) − F(a)", font: { size: 13 } },
+      margin: { l: 48, r: 14, t: 32, b: 34 },
+      xaxis: { range: [xlo, xhi], title: { text: "x", font: { size: 11 } }, zeroline: false },
+      yaxis: { range: [0, 1.05], title: { text: "F(x)", font: { size: 11 } } },
+      showlegend: true,
+      legend: { x: 0.99, y: 0.4, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.6)" },
+      annotations: [
+        { x: hi, y: (Fa + Fb) / 2, text: "  " + fmt(P), showarrow: false, xanchor: "left",
+          font: { size: 12, color: "#d62728" } },
+      ],
+    }, { responsive: true });
+
+    // ---------- STATUS ----------
+    let html =
+      '<span class="tag one">P(' + fmt(lo) + ' ≤ X ≤ ' + fmt(hi) + ') = F(b) − F(a) = ' +
+      '<b>' + fmt4(P) + '</b></span><br>' +
+      'from the CDF: &nbsp;<code>F(b) = F(' + fmt(hi) + ') = ' + fmt4(Fb) + '</code> &nbsp;−&nbsp; ' +
+      '<code>F(a) = F(' + fmt(lo) + ') = ' + fmt4(Fa) + '</code> &nbsp;=&nbsp; <code>' + fmt4(P) + '</code><br>' +
+      '<span style="color:#666">that subtraction is the shaded area on the top plot — the integral ' +
+      '∫<sub>a</sub><sup>b</sup> f dx, computed without integrating.</span>';
+
+    if (current === "exponential") {
+      html += '<br><span style="color:#666">closed form: F(x) = 1 − e<sup>−λx</sup>, so ' +
+        'P = (1 − e<sup>−λ·' + fmt(hi) + '</sup>) − (1 − e<sup>−λ·' + fmt(lo) + '</sup>).</span>';
+    }
+    if (current === "uniform") {
+      const ul = Math.min(p[0], p[1]), ur = Math.max(p[0], p[1]);
+      html += '<br><span style="color:#666">closed form: F is the ramp (x−ℓ)/(r−ℓ) on [' + fmt(ul) + ', ' +
+        fmt(ur) + '], so P is just the fraction of that interval you cover.</span>';
+    }
+    if (current === "normal") {
+      const mu = p[0], sig = p[1];
+      const e1 = cfg.cdf(mu + sig, p) - cfg.cdf(mu - sig, p);
+      const e2 = cfg.cdf(mu + 2 * sig, p) - cfg.cdf(mu - 2 * sig, p);
+      const e3 = cfg.cdf(mu + 3 * sig, p) - cfg.cdf(mu - 3 * sig, p);
+      html += '<br><span class="tag inf">68–95–99.7 rule</span> &nbsp;' +
+        'μ ± 1σ: <code>' + (100 * e1).toFixed(2) + '%</code> &nbsp;·&nbsp; ' +
+        'μ ± 2σ: <code>' + (100 * e2).toFixed(2) + '%</code> &nbsp;·&nbsp; ' +
+        'μ ± 3σ: <code>' + (100 * e3).toFixed(2) + '%</code>';
+    }
+    $("status").innerHTML = html;
+  }
+
+  // ---- presets ----
+  const PRESETS = {
+    stdnormal:  () => { current = "normal";      configureParams(true);  $("p1").value = 0;  $("p2").value = 1;   configureBounds(false); $("a").value = -1; $("b").value = 1; },
+    widenormal: () => { current = "normal";      configureParams(true);  $("p1").value = 0;  $("p2").value = 2.5; configureBounds(false); $("a").value = -3; $("b").value = 3; },
+    exp:        () => { current = "exponential"; configureParams(true);  $("p1").value = 1;  configureBounds(false); $("a").value = 0; $("b").value = 1; },
+    unif:       () => { current = "uniform";     configureParams(true);  $("p1").value = 0;  $("p2").value = 1;   configureBounds(false); $("a").value = 0.2; $("b").value = 0.8; },
+    pm1:        () => { if (current !== "normal") { current = "normal"; configureParams(true); } configureBounds(true); const mu = parseFloat($("p1").value), s = parseFloat($("p2").value); $("a").value = mu - s; $("b").value = mu + s; },
+    pm2:        () => { if (current !== "normal") { current = "normal"; configureParams(true); } configureBounds(true); const mu = parseFloat($("p1").value), s = parseFloat($("p2").value); $("a").value = mu - 2 * s; $("b").value = mu + 2 * s; },
+  };
+
+  // ---- wiring ----
+  $("p1").addEventListener("input", () => { configureBounds(true); draw(); });
+  $("p2").addEventListener("input", () => { configureBounds(true); draw(); });
+  $("a").addEventListener("input", draw);
+  $("b").addEventListener("input", draw);
+
+  document.querySelectorAll(".preset[data-dist]").forEach((btn) => {
+    btn.onclick = () => { current = btn.dataset.dist; configureParams(true); configureBounds(false); draw(); };
+  });
+  document.querySelectorAll(".preset[data-preset]").forEach((btn) => {
+    btn.onclick = () => { PRESETS[btn.dataset.preset](); draw(); };
+  });
+
+  // initial: standard normal with ±1σ-ish bounds
+  configureParams(true);
+  configureBounds(false);
+  $("a").value = -1; $("b").value = 1;
+  draw();
+})();
+</script>
+</body>
+</html>

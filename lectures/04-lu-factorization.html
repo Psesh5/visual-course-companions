@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 4 — Factorization A = LU · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* page-local: numeric matrix tables for L, U, A, LU */
+  .matrows { display: flex; flex-wrap: wrap; gap: 22px; align-items: center; margin: 10px 0; }
+  .matbox { text-align: center; }
+  .matbox .lbl { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  table.mat { border-collapse: collapse; margin: 0 auto; }
+  table.mat td { width: 46px; height: 38px; text-align: center; font-size: 15px;
+                 font-variant-numeric: tabular-nums; border: 1px solid transparent; }
+  /* bracket look */
+  table.mat { border-left: 2px solid #333; border-right: 2px solid #333; }
+  table.mat td.cell { background: #fafafa; }
+  table.mat td.empty { color: #ccc; }
+  table.mat td.pivot { background: #e7f3ea; font-weight: 700; color: #176d2c; }
+  table.mat td.mult  { background: #fdeede; font-weight: 700; color: #9a6b00; }
+  table.mat td.diag1 { background: #eef3fb; color: #1f77b4; }
+  .eq { font-size: 22px; color: var(--muted); }
+  .steplog { background: #f4f7fb; border: 1px solid #d6e2f0; border-radius: 8px;
+             padding: 10px 14px; margin: 12px 0; font-size: 14px; min-height: 22px; }
+  .steplog code { background: #e8eef6; padding: 1px 5px; border-radius: 4px; }
+  .ok  { color: #176d2c; font-weight: 700; }
+  .formula { background: #fffdf5; border: 1px solid #f0e6c8; border-radius: 8px;
+             padding: 6px 12px; font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+             display: inline-block; margin: 4px 0; }
+  .mtxt { font-family: ui-monospace, Menlo, monospace; }
+  table.handelim { border-collapse: collapse; margin: 6px 0; font-size: 14px; }
+  table.handelim td { padding: 3px 10px; font-variant-numeric: tabular-nums; }
+  table.handelim td.op { color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+  td.bad { background:#fdecec; font-weight:700; color:#c0392b; }
+  td.good{ background:#e7f3ea; font-weight:700; color:#176d2c; }
+  .cost-bars { display:flex; align-items:flex-end; gap:0; height:170px; margin:8px 0 2px;
+               border-bottom:1px solid #ccc; }
+  .cost-bars .bar { flex:1 1 auto; background:#1f77b4; border-radius:2px 2px 0 0; min-width:2px; }
+  .perm-grid { display:flex; flex-wrap:wrap; gap:16px; margin:10px 0; }
+  .perm-cell { text-align:center; }
+  .perm-cell .lbl { font-size:12px; color:var(--muted); margin-bottom:3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 4 · Factorization <span class="mtxt">A = LU</span></h1>
+  <div class="sub">Elimination isn't just a way to solve <code>Ax = b</code> — it <b>factors</b> the matrix.
+    The row operations live in a lower-triangular <code>L</code>, and the result lives in an
+    upper-triangular <code>U</code>. The big idea: <b>L is just a record of the elimination multipliers.</b>
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <!-- ============================ WARM-UP 2x2 ============================ -->
+  <div class="note">
+    <b>Warm-up (2×2).</b> Take <span class="mtxt">A = [[2, 1], [8, 7]]</span>. One elimination step clears the
+    8: subtract <b>4×</b> row 1 from row 2 (the multiplier is <span class="mtxt">ℓ₂₁ = 4</span>). That leaves
+    <span class="mtxt">U = [[2, 1], [0, 3]]</span>, and recording the multiplier gives
+    <span class="mtxt">L = [[1, 0], [4, 1]]</span>. Check: <span class="mtxt">L·U = A</span>.
+  </div>
+
+  <!-- ============================ 3x3 STEPPER ============================ -->
+  <h2>Step through elimination: A → U, and watch L fill in</h2>
+  <p style="font-size:14px;max-width:780px">
+    Now the lecture matrix <span class="mtxt">A = [[2, 1, 0], [4, 5, 2], [2, 5, 5]]</span>. Press
+    <b>Step</b> to perform one elimination at a time. Each time we subtract a multiple of a pivot row, the
+    multiplier <code>ℓᵢⱼ</code> is written straight into <code>L</code> below the diagonal,
+    and the row of <code>A</code> becomes a row of <code>U</code>. No row exchanges are needed here.
+  </p>
+
+  <div class="controls">
+    <button id="step" class="primary">Step ▶</button>
+    <button id="reset">Reset</button>
+    <span class="rng" id="phase">Start: working matrix = A. L = I.</span>
+  </div>
+
+  <div class="matrows">
+    <div class="matbox">
+      <div class="lbl">working matrix (becomes U)</div>
+      <div id="work"></div>
+    </div>
+    <div class="matbox">
+      <div class="lbl">L &nbsp;(1's on diagonal, multipliers below)</div>
+      <div id="Ltab"></div>
+    </div>
+  </div>
+
+  <div class="steplog" id="log">Press <b>Step</b> to begin elimination.</div>
+
+  <!-- ============================ VERIFY A = LU ============================ -->
+  <h2>Verify <span class="mtxt">A = L · U</span> numerically</h2>
+  <p style="font-size:14px;max-width:780px">
+    Once elimination finishes, <code>L</code> and <code>U</code> are fixed. Multiplying them back should
+    reproduce <code>A</code> exactly. Finish the stepper above, then check the product here.
+  </p>
+  <div class="controls"><button id="verify">Compute L · U</button></div>
+  <div class="matrows">
+    <div class="matbox"><div class="lbl">L</div><div id="vL"></div></div>
+    <div class="eq">×</div>
+    <div class="matbox"><div class="lbl">U</div><div id="vU"></div></div>
+    <div class="eq">=</div>
+    <div class="matbox"><div class="lbl">L · U</div><div id="vLU"></div></div>
+    <div class="eq">vs</div>
+    <div class="matbox"><div class="lbl">A</div><div id="vA"></div></div>
+  </div>
+  <div class="steplog" id="vlog">Compute the product to compare against A.</div>
+
+  <!-- ============================ GEOMETRY ============================ -->
+  <h2>The geometry: <span class="mtxt">L</span> shears, <span class="mtxt">U</span> scales</h2>
+  <p style="font-size:14px;max-width:780px">
+    A 2×2 view makes the factorization tangible. Using the warm-up
+    <span class="mtxt">A = [[2,1],[8,7]] = L·U</span> with
+    <span class="mtxt">L = [[1,0],[4,1]]</span>, <span class="mtxt">U = [[2,1],[0,3]]</span>, watch the unit
+    square get transformed. Apply <code>U</code> first (an upper-triangular map — scaling plus a horizontal
+    shear), then <code>L</code> (a lower-triangular map — a pure vertical shear). The composition lands exactly
+    on <code>A</code>'s image. Triangular pieces are simple motions; their product is the full transformation.
+  </p>
+  <div class="controls">
+    <button class="geo primary" data-m="I">Unit square</button>
+    <button class="geo" data-m="U">Apply U</button>
+    <button class="geo" data-m="LU">Then apply L (= A)</button>
+    <button class="geo" data-m="A">A directly</button>
+  </div>
+  <div class="plots"><div id="geo" class="plot" style="flex:1 1 560px;height:480px"></div></div>
+
+  <!-- ============================ WHAT YOU'RE SEEING ============================ -->
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>The stepper.</b> Elimination drives <code>A</code> to upper-triangular form <code>U</code> by
+    subtracting multiples of higher rows from lower rows. The multiplier you use to kill the
+    <code>(i, j)</code> entry — call it <code>ℓᵢⱼ</code> — is exactly the number that belongs in
+    position <code>(i, j)</code> of <code>L</code>. You never recompute <code>L</code>; you just
+    <i>collect</i> the multipliers as you go. That is why <code>L</code> is lower-triangular with 1's on the
+    diagonal: the diagonal records "1× this row stays," and below it sit the subtractions.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Why it works.</b> Each elimination step is left-multiplication by an elementary matrix
+    <code>Eᵢⱼ</code>. Doing them all gives <code>E … E A = U</code>, so
+    <code>A = (E … E)⁻¹ U = L U</code>. The miracle is that <code>L = (E … E)⁻¹</code> assembles with no
+    extra work: the inverses just put each multiplier back with a <i>plus</i> sign, in its own slot, with no
+    cross-terms — provided we eliminate top-down and left-to-right.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>The geometry.</b> An upper-triangular <code>U</code> keeps the x-axis structured and scales/shears;
+    a lower-triangular <code>L</code> with unit diagonal is a shear that leaves the first coordinate alone and
+    pushes the second. Neither distorts area beyond its diagonal product, and
+    <code>det A = det L · det U = (1)·(product of pivots)</code>.
+  </p>
+
+  <!-- ============================ WORKED MATH ============================ -->
+  <h2>The math, done by hand</h2>
+  <p style="font-size:14px;max-width:780px">
+    Eliminate <span class="mtxt">A = [[2,1,0],[4,5,2],[2,5,5]]</span> column by column. The first pivot is
+    <span class="mtxt">2</span> (row 1).
+  </p>
+
+  <p style="font-size:14px"><b>Step 1 — clear column 1, row 2.</b> Multiplier
+    <span class="formula">ℓ₂₁ = 4 / 2 = 2</span>. Do <span class="mtxt">R2 ← R2 − 2·R1</span>:</p>
+  <table class="handelim">
+    <tr><td class="op">R2:</td><td>4 5 2</td><td class="op">− 2·(2 1 0) =</td><td><b>0 3 2</b></td></tr>
+  </table>
+
+  <p style="font-size:14px"><b>Step 2 — clear column 1, row 3.</b> Multiplier
+    <span class="formula">ℓ₃₁ = 2 / 2 = 1</span>. Do <span class="mtxt">R3 ← R3 − 1·R1</span>:</p>
+  <table class="handelim">
+    <tr><td class="op">R3:</td><td>2 5 5</td><td class="op">− 1·(2 1 0) =</td><td><b>0 4 5</b></td></tr>
+  </table>
+
+  <p style="font-size:14px"><b>Step 3 — clear column 2, row 3.</b> The second pivot is now
+    <span class="mtxt">3</span> (the updated row 2). Multiplier
+    <span class="formula">ℓ₃₂ = 4 / 3</span>. Do <span class="mtxt">R3 ← R3 − (4/3)·R2</span>:</p>
+  <table class="handelim">
+    <tr><td class="op">R3:</td><td>0 4 5</td><td class="op">− (4/3)·(0 3 2) =</td><td><b>0 0 7/3</b></td></tr>
+  </table>
+
+  <p style="font-size:14px;max-width:780px">The pivots are <span class="mtxt">2, 3, 7/3</span>, so</p>
+  <div class="formula" style="font-size:14px">
+    U = [[2, 1, 0], [0, 3, 2], [0, 0, 7/3]]
+  </div>
+  <p style="font-size:14px;max-width:780px">Assemble <code>L</code> with 1's on the diagonal and each multiplier
+    in its own slot <span class="mtxt">(i, j)</span>:</p>
+  <div class="formula" style="font-size:14px">
+    L = [[1, 0, 0], [ℓ₂₁=2, 1, 0], [ℓ₃₁=1, ℓ₃₂=4/3, 1]]
+  </div>
+  <p style="font-size:14px;max-width:780px">
+    Multiplying confirms <span class="mtxt">L·U = A</span>, and
+    <span class="mtxt">det A = 2 · 3 · 7/3 = 14</span> (= product of pivots, since
+    <span class="mtxt">det L = 1</span>).
+  </p>
+
+  <!-- ============================ LDU SPLIT ============================ -->
+  <h2>Splitting out the pivots: <span class="mtxt">A = L D U</span></h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang notes that <code>U</code> still carries the pivots on its diagonal. You can pull them out into a
+    diagonal matrix <code>D</code>, leaving an <code>U</code> with <b>1's on the diagonal</b> — now both
+    <code>L</code> and the upper factor have unit diagonals and the asymmetry is gone. Using the
+    2×2 warm-up <span class="mtxt">A = [[2,1],[8,7]]</span>: divide row 1 of <code>U</code> by its pivot
+    <span class="mtxt">2</span> (giving <span class="mtxt">1, 1/2</span>) and row 2 by its pivot
+    <span class="mtxt">3</span> (giving <span class="mtxt">1</span>). "MATLAB would produce either one."
+  </p>
+  <div class="matrows" style="font-size:14px">
+    <div class="matbox"><div class="lbl">L</div>
+      <div class="formula" style="margin:0">[[1, 0], [4, 1]]</div></div>
+    <div class="eq">×</div>
+    <div class="matbox"><div class="lbl">D (pivots)</div>
+      <div class="formula" style="margin:0">[[2, 0], [0, 3]]</div></div>
+    <div class="eq">×</div>
+    <div class="matbox"><div class="lbl">U (unit diag)</div>
+      <div class="formula" style="margin:0">[[1, 1/2], [0, 1]]</div></div>
+    <div class="eq">=</div>
+    <div class="matbox"><div class="lbl">A</div>
+      <div class="formula" style="margin:0">[[2, 1], [8, 7]]</div></div>
+  </div>
+
+  <!-- ============== WHY INVERSES: THE SPURIOUS "10" ============== -->
+  <h2>The real magic: why <span class="mtxt">L</span> (not <span class="mtxt">E</span>) is the clean one</h2>
+  <p style="font-size:14px;max-width:780px">
+    The deepest point in the lecture is <i>why we write</i> <span class="mtxt">A = L U</span> instead of
+    <span class="mtxt">E A = U</span>. Strang's example: suppose
+    <span class="mtxt">E₂₁</span> subtracts <b>2</b>×row 1 from row 2, and
+    <span class="mtxt">E₃₂</span> subtracts <b>5</b>×row 2 from row 3 (and <span class="mtxt">E₃₁ = I</span>).
+    Multiply the <code>E</code>'s together and an ugly extra entry appears — a spurious
+    <span class="mtxt">10</span> in position (3,1) — because "two of row 1 got removed from row 2, and then five
+    of <i>that</i> got removed from row 3, so altogether ten of row 1 got thrown into row 3."
+    Press the button to watch the <span class="bad">10</span> appear in <code>E</code>, then vanish in
+    <code>L</code>.
+  </p>
+  <div class="controls">
+    <button id="showE" class="primary">Show E = E₃₂·E₂₁</button>
+    <button id="showL">Show L = E₂₁⁻¹·E₃₂⁻¹</button>
+  </div>
+  <div class="matrows" id="magicRow"></div>
+  <div class="steplog" id="magicLog">
+    Reverse order <span class="mtxt">(E₃₂E₂₁)⁻¹ = E₂₁⁻¹E₃₂⁻¹</span> is what makes the multipliers drop
+    straight into place.
+  </div>
+
+  <div class="note">
+    <b>Row exchanges.</b> This all assumed no zero pivots, so we never had to swap rows. If a pivot comes out
+    zero (or you swap for numerical stability), record the swaps in a permutation matrix <code>P</code> and you
+    get <span class="mtxt">P·A = L·U</span> instead. Every square matrix has such a factorization.
+  </div>
+
+  <!-- ============================ COST: 1/3 n^3 ============================ -->
+  <h2>How expensive is elimination? About <span class="mtxt">⅓ n³</span></h2>
+  <p style="font-size:14px;max-width:780px">
+    "Can we think together how expensive is elimination?" The first step changes essentially every entry of an
+    <span class="mtxt">n×n</span> matrix — cost ≈ <span class="mtxt">n²</span>. The next step works on the
+    remaining <span class="mtxt">(n−1)×(n−1)</span> block — cost ≈ <span class="mtxt">(n−1)²</span> — and so on
+    down to <span class="mtxt">1²</span>. The total is
+    <span class="formula">n² + (n−1)² + ⋯ + 2² + 1² ≈ ⅓ n³</span>
+    The <b>⅓</b> is exactly the calculus fact <span class="mtxt">∫₀ⁿ x² dx = ⅓ n³</span>: "somehow that one
+    third takes account of the fact that the numbers are getting smaller." The bars below are the per-step costs
+    <span class="mtxt">k²</span>; their total area fills about one third of the full <span class="mtxt">n³</span>
+    box.
+  </p>
+  <div class="controls">
+    <label style="font-size:13px">n = <input id="costN" type="range" min="3" max="100" value="20" style="vertical-align:middle"></label>
+    <span class="rng" id="costLbl"></span>
+  </div>
+  <div class="cost-bars" id="costBars"></div>
+  <div class="steplog" id="costLog"></div>
+  <p style="font-size:14px;max-width:780px">
+    And the right-hand side <code>b</code>? "It's just one column," carried through elimination and back
+    substitution — only <span class="mtxt">n²</span> operations. So you pay the one-time
+    <span class="mtxt">⅓n³</span> price to factor <span class="mtxt">A = LU</span>, then solve each new
+    <span class="mtxt">b</span> cheaply at <span class="mtxt">n²</span>. (Determinants by cofactors would cost
+    <span class="mtxt">n!</span> — far worse.)
+  </p>
+
+  <!-- ============================ PERMUTATIONS ============================ -->
+  <h2>Permutations: the six 3×3 matrices, and <span class="mtxt">P⁻¹ = Pᵀ</span></h2>
+  <p style="font-size:14px;max-width:780px">
+    When a zero shows up in a pivot position you swap rows, and the swaps are recorded in a <b>permutation
+    matrix</b> <code>P</code> — "all the ways I can take the identity matrix and rearrange its rows." For 3×3
+    there are exactly <span class="mtxt">3! = 6</span> of them (the identity, three single-swaps, and two
+    3-cycles). They form a group: products and inverses of permutations are again permutations, and the
+    "curious fact" is that <span class="mtxt">P⁻¹ = Pᵀ</span>. Click any matrix to verify
+    <span class="mtxt">P·Pᵀ = I</span>.
+  </p>
+  <div class="perm-grid" id="permGrid"></div>
+  <div class="steplog" id="permLog">Click a permutation matrix to check <span class="mtxt">P·Pᵀ = I</span>.</div>
+  <p style="font-size:14px;max-width:780px">
+    For 4×4 there are <span class="mtxt">4! = 24</span>, and in general <span class="mtxt">n!</span>. With
+    permutations in hand, every square matrix factors as <span class="mtxt">P·A = L·U</span>.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+/* =========================================================================
+   Page-local LU stepper + geometry. Uses LA.round for tidy display.
+   ========================================================================= */
+const A0 = [[2,1,0],[4,5,2],[2,5,5]];
+const r3 = (v) => {
+  // pretty-print: show nice fractions for the two values that aren't integers
+  if (Math.abs(v - 4/3) < 1e-9) return "4/3";
+  if (Math.abs(v - 7/3) < 1e-9) return "7/3";
+  return String(LA.round(v));
+};
+
+/* The ordered elimination steps for a 3x3 with no row exchanges. */
+const STEPS = [
+  { i:1, j:0, txt:(m)=>`Column 1, row 2 → ℓ₂₁ = 4/2 = <b>${r3(m)}</b>. R2 ← R2 − ${r3(m)}·R1.` },
+  { i:2, j:0, txt:(m)=>`Column 1, row 3 → ℓ₃₁ = 2/2 = <b>${r3(m)}</b>. R3 ← R3 − ${r3(m)}·R1.` },
+  { i:2, j:1, txt:(m)=>`Column 2, row 3 → ℓ₃₂ = 4/3 = <b>${r3(m)}</b>. R3 ← R3 − ${r3(m)}·R2.` },
+];
+
+let W, L, k;   // working matrix, L, step index
+function init() {
+  W = A0.map(r => r.slice());
+  L = [[1,0,0],[0,1,0],[0,0,1]];
+  k = 0;
+  document.getElementById("phase").textContent = "Start: working matrix = A. L = I.";
+  document.getElementById("log").innerHTML = "Press <b>Step</b> to begin elimination.";
+  render();
+}
+
+/* Build a matrix HTML table. opts.classify(i,j,v)->className for special cells. */
+function matTable(M, classify) {
+  let h = '<table class="mat">';
+  for (let i = 0; i < M.length; i++) {
+    h += "<tr>";
+    for (let j = 0; j < M[i].length; j++) {
+      const v = M[i][j];
+      const cls = classify ? classify(i, j, v) : "cell";
+      h += `<td class="${cls}">${cls === "empty" ? "" : r3(v)}</td>`;
+    }
+    h += "</tr>";
+  }
+  return h + "</table>";
+}
+
+function render(active) {
+  // working matrix: highlight pivots (current diagonal of completed cols) lightly
+  const work = matTable(W, (i,j,v) => {
+    if (active && active.i === i && active.j === j) return "mult";  // cell being zeroed
+    return "cell";
+  });
+  // L: diagonal = diag1, filled multipliers = mult, not-yet-filled below-diag = empty
+  const Lt = matTable(L, (i,j) => {
+    if (i === j) return "diag1";
+    if (i > j) {
+      // filled if we've already done step (i,j)
+      const done = STEPS.slice(0, k).some(s => s.i === i && s.j === j);
+      return done ? "mult" : "empty";
+    }
+    return "cell"; // upper zeros
+  });
+  document.getElementById("work").innerHTML = work;
+  document.getElementById("Ltab").innerHTML = Lt;
+}
+
+function step() {
+  if (k >= STEPS.length) {
+    document.getElementById("log").innerHTML =
+      '<span class="ok">Elimination complete.</span> Working matrix is now U; L holds every multiplier. ' +
+      'Scroll down to verify <span class="mtxt">L·U = A</span>.';
+    return;
+  }
+  const s = STEPS[k];
+  const piv = W[s.j][s.j];
+  const mult = W[s.i][s.j] / piv;
+  // record multiplier into L, then eliminate the row
+  L[s.i][s.j] = mult;
+  for (let c = 0; c < 3; c++) W[s.i][c] = W[s.i][c] - mult * W[s.j][c];
+  k++;
+  render({ i: s.i, j: s.j });
+  document.getElementById("phase").textContent =
+    `Step ${k} of ${STEPS.length}: eliminated entry (${s.i+1}, ${s.j+1}).`;
+  document.getElementById("log").innerHTML = s.txt(mult) +
+    (k === STEPS.length ? ' &nbsp;<span class="ok">→ U is upper-triangular. Done.</span>' : "");
+}
+
+document.getElementById("step").onclick  = step;
+document.getElementById("reset").onclick = init;
+init();
+
+/* ----------------------- Verify A = L · U ----------------------- */
+function matmul(X, Y) {
+  const n = X.length, m = Y[0].length, p = Y.length, out = [];
+  for (let i = 0; i < n; i++) { out.push([]); for (let j = 0; j < m; j++) {
+    let s = 0; for (let t = 0; t < p; t++) s += X[i][t] * Y[t][j];
+    out[i].push(s);
+  }}
+  return out;
+}
+document.getElementById("verify").onclick = () => {
+  if (k < STEPS.length) {
+    document.getElementById("vlog").innerHTML =
+      'Finish the stepper above first (press <b>Step</b> until elimination completes).';
+    return;
+  }
+  const U = W;                       // working matrix is U after elimination
+  const LU = matmul(L, U);
+  const plain = (M) => matTable(M, () => "cell");
+  document.getElementById("vL").innerHTML  = plain(L);
+  document.getElementById("vU").innerHTML  = plain(U);
+  document.getElementById("vLU").innerHTML = plain(LU);
+  document.getElementById("vA").innerHTML  = plain(A0);
+  // numeric equality check
+  let ok = true;
+  for (let i=0;i<3;i++) for (let j=0;j<3;j++) if (Math.abs(LU[i][j]-A0[i][j])>1e-9) ok=false;
+  document.getElementById("vlog").innerHTML = ok
+    ? '<span class="ok">✓ L · U = A exactly.</span> The product reconstructs the original matrix.'
+    : 'Mismatch — re-run the stepper.';
+};
+
+/* ----------------------- Geometry: L shears, U scales ----------------------- */
+const G = {
+  L:  [[1,0],[4,1]],
+  U:  [[2,1],[0,3]],
+  A:  [[2,1],[8,7]],
+};
+// unit square corners (closed loop)
+const SQ = [[0,0],[1,0],[1,1],[0,1],[0,0]];
+function applyMat(M, pts) { return pts.map(([x,y]) => [M[0][0]*x+M[0][1]*y, M[1][0]*x+M[1][1]*y]); }
+
+function geoTrace(pts, color, fill, name) {
+  return { x: pts.map(p=>p[0]), y: pts.map(p=>p[1]), mode:"lines+markers", type:"scatter",
+           line:{color,width:3}, marker:{size:5,color}, fill: fill||"none",
+           fillcolor: "rgba(31,119,180,0.12)", name };
+}
+function drawGeo(mode) {
+  const base = geoTrace(SQ, "#bbb", "toself", "unit square");
+  let traces = [base], title = "Unit square";
+  if (mode === "U") {
+    traces.push(geoTrace(applyMat(G.U, SQ), "#9a6b00", "toself", "U·square"));
+    title = "U applied: scale + horizontal shear";
+  } else if (mode === "LU") {
+    const u = applyMat(G.U, SQ);
+    traces.push(geoTrace(u, "#9a6b00", "none", "U·square"));
+    traces.push(geoTrace(applyMat(G.L, u), "#176d2c", "toself", "L·U·square = A·square"));
+    title = "L then U = A: vertical shear lands on A's image";
+  } else if (mode === "A") {
+    traces.push(geoTrace(applyMat(G.A, SQ), "#1f77b4", "toself", "A·square"));
+    title = "A applied directly (same image as L·U)";
+  }
+  Plotly.react("geo", traces, {
+    title: { text: title, font:{size:14} },
+    margin: { l:40, r:10, t:34, b:34 },
+    xaxis: { range:[-1,11], zeroline:true, title:"x" },
+    yaxis: { range:[-1,11], zeroline:true, scaleanchor:"x", scaleratio:1, title:"y" },
+    showlegend: true, legend:{font:{size:11}},
+  }, { displayModeBar:false, responsive:true });
+}
+document.querySelectorAll(".geo").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".geo").forEach(x=>x.classList.remove("primary"));
+  b.classList.add("primary");
+  drawGeo(b.dataset.m);
+});
+drawGeo("I");
+
+/* ---------- The spurious "10": E vs L (Strang's numbers) ---------- */
+/* E21 subtracts 2*row1 from row2; E32 subtracts 5*row2 from row3; E31 = I. */
+const E21  = [[1,0,0],[-2,1,0],[0,0,1]];
+const E32  = [[1,0,0],[0,1,0],[0,-5,1]];
+const E    = matmul(E32, E21);                 // -> has spurious -10 at (3,1)
+const Linv21 = [[1,0,0],[2,1,0],[0,0,1]];      // inverses: plus sign
+const Linv32 = [[1,0,0],[0,1,0],[0,5,1]];
+const Lmagic = matmul(Linv21, Linv32);         // -> clean: 2 and 5 sit in place
+function magicTable(M, badcell, goodcells) {
+  return matTable(M, (i,j) => {
+    if (badcell && i===badcell[0] && j===badcell[1]) return "bad";
+    if (goodcells && goodcells.some(g=>g[0]===i&&g[1]===j)) return "good";
+    return "cell";
+  });
+}
+function showMagic(which) {
+  const row = document.getElementById("magicRow");
+  if (which === "E") {
+    row.innerHTML =
+      '<div class="matbox"><div class="lbl">E₃₂</div>'+matTable(E32,()=> "cell")+'</div>'+
+      '<div class="eq">×</div>'+
+      '<div class="matbox"><div class="lbl">E₂₁</div>'+matTable(E21,()=> "cell")+'</div>'+
+      '<div class="eq">=</div>'+
+      '<div class="matbox"><div class="lbl">E (combined)</div>'+magicTable(E,[2,0],null)+'</div>';
+    document.getElementById("magicLog").innerHTML =
+      'There it is: the spurious <span class="bad">−10</span> at (3,1). '+
+      '"Altogether ten of row 1 got thrown into row 3." E is <i>not</i> an attractive matrix.';
+  } else {
+    row.innerHTML =
+      '<div class="matbox"><div class="lbl">E₂₁⁻¹</div>'+matTable(Linv21,()=> "cell")+'</div>'+
+      '<div class="eq">×</div>'+
+      '<div class="matbox"><div class="lbl">E₃₂⁻¹</div>'+matTable(Linv32,()=> "cell")+'</div>'+
+      '<div class="eq">=</div>'+
+      '<div class="matbox"><div class="lbl">L = clean!</div>'+magicTable(Lmagic,null,[[1,0],[2,1]])+'</div>';
+    document.getElementById("magicLog").innerHTML =
+      '<span class="ok">No cross-term.</span> The multipliers <span class="good">2</span> and '+
+      '<span class="good">5</span> just sit in their slots — (3,1) is 0. '+
+      'In the right (reverse) order "the multipliers just sit in the matrix L. I have no work to do."';
+  }
+}
+document.getElementById("showE").onclick = () => {
+  document.getElementById("showE").classList.add("primary");
+  document.getElementById("showL").classList.remove("primary");
+  showMagic("E");
+};
+document.getElementById("showL").onclick = () => {
+  document.getElementById("showL").classList.add("primary");
+  document.getElementById("showE").classList.remove("primary");
+  showMagic("L");
+};
+showMagic("E");
+
+/* ---------- Cost: sum of k^2 ~ 1/3 n^3 ---------- */
+const costN = document.getElementById("costN");
+function drawCost() {
+  const n = +costN.value;
+  let sum = 0;
+  for (let k = 1; k <= n; k++) sum += k*k;     // n^2 + (n-1)^2 + ... + 1^2
+  const cube = n*n*n;
+  // bars: cost k^2 for step on a (k x k) block, k from n down to 1
+  let h = "";
+  for (let k = n; k >= 1; k--) {
+    const pct = (k*k) / (n*n) * 100;           // tallest bar = first step = n^2
+    h += `<div class="bar" style="height:${pct}%" title="step on ${k}×${k}: ${k*k} ops"></div>`;
+  }
+  document.getElementById("costBars").innerHTML = h;
+  document.getElementById("costLbl").textContent = `n = ${n}`;
+  document.getElementById("costLog").innerHTML =
+    `Total ops = <code>${sum.toLocaleString()}</code>. &nbsp; ` +
+    `n³ = <code>${cube.toLocaleString()}</code>, &nbsp; ⅓n³ ≈ <code>${Math.round(cube/3).toLocaleString()}</code>. ` +
+    `&nbsp; Ratio total / n³ = <b>${(sum/cube).toFixed(3)}</b> → approaches <span class="ok">0.333…</span> as n grows.`;
+}
+costN.oninput = drawCost;
+drawCost();
+
+/* ---------- The six 3x3 permutation matrices; P^-1 = P^T ---------- */
+const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+function transpose(M){ return M[0].map((_,j)=>M.map(r=>r[j])); }
+/* rows of identity in a given order -> permutation matrix */
+const permFromRows = (o) => o.map(r => I3[r]);
+const PERMS = [
+  { lbl:"I (no swap)",      P: permFromRows([0,1,2]) },
+  { lbl:"P₁₂ (swap 1,2)",   P: permFromRows([1,0,2]) },
+  { lbl:"P₁₃ (swap 1,3)",   P: permFromRows([2,1,0]) },
+  { lbl:"P₂₃ (swap 2,3)",   P: permFromRows([0,2,1]) },
+  { lbl:"cycle 1→2→3→1",    P: permFromRows([1,2,0]) },
+  { lbl:"cycle 1→3→2→1",    P: permFromRows([2,0,1]) },
+];
+function drawPerms() {
+  let h = "";
+  PERMS.forEach((p, idx) => {
+    h += `<div class="perm-cell" data-idx="${idx}"><div class="lbl">${p.lbl}</div>` +
+         matTable(p.P, (i,j,v)=> v===1 ? "pivot" : "cell") + "</div>";
+  });
+  document.getElementById("permGrid").innerHTML = h;
+  document.querySelectorAll("#permGrid .perm-cell").forEach(c => c.onclick = () => {
+    const p = PERMS[+c.dataset.idx];
+    const PPt = matmul(p.P, transpose(p.P));
+    let ok = true;
+    for (let i=0;i<3;i++) for (let j=0;j<3;j++)
+      if (Math.abs(PPt[i][j] - I3[i][j]) > 1e-9) ok = false;
+    document.getElementById("permLog").innerHTML = ok
+      ? `<span class="ok">✓ ${p.lbl}: P·Pᵀ = I.</span> The inverse is the transpose — so P⁻¹ = Pᵀ.`
+      : "Unexpected — re-check.";
+  });
+}
+drawPerms();
+</script>
+</body>
+</html>

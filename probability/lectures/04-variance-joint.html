@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Variance; joint PMFs · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Variance &amp; joint PMFs</h1>
+  <div class="sub">The mean tells you where a random variable sits; the <b>variance</b> tells you how far
+    it typically strays. <code>Var(X) = E[(X−μ)²]</code> is the average <i>squared</i> distance from the
+    mean, and its square root <code>σ</code> is the spread on the same scale as <code>X</code>. Then we put
+    two variables in one table — a <b>joint PMF</b> <code>p(x,y)</code> — and watch what
+    <i>independence</i> buys us: the variance of a sum just <i>adds</i>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> the <span style="color:#1f77b4">top plot</span> is a tiny distribution living on the
+    five points <code>{−2,−1,0,1,2}</code>. One slider pumps probability mass from a spike at the center out
+    toward the tails, always keeping <code>E[X]=0</code>. The shaded band is <code>μ ± σ</code>: watch it widen
+    as the variance grows. The <span style="color:#176d2c">bottom plots</span> are two fair dice — first the
+    full <code>6×6</code> joint table <code>p(x,y)</code>, then the derived distribution of the sum
+    <code>S = X + Y</code>. Toggle between <i>independent</i> dice and a <i>rigged</i> pair where
+    <code>Y = X</code>, and the status box checks whether the variances still add.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Spread the mass (E[X] stays 0):</span>
+    <button class="preset" data-s="0">spike at 0 · Var=0</button>
+    <button class="preset" data-s="50">uniform · Var=2</button>
+    <button class="preset" data-s="100">U-shaped · Var=4</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">spread&nbsp; <b>s = <span id="sval">0.50</span></b>&nbsp;
+      <input type="range" id="spread" min="0" max="100" value="50" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(0 = all mass at the center, 1 = all mass on the ±2 tails)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Two dice (joint PMF):</span>
+    <button class="preset" data-d="indep">independent · p(x,y)=1/36</button>
+    <button class="preset" data-d="equal">rigged Y=X · perfectly dependent</button>
+  </div>
+
+  <div class="plots">
+    <div id="varPlot" class="plot"></div>
+  </div>
+  <div class="plots">
+    <div id="jointPlot" class="plot"></div>
+    <div id="sumPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>What variance measures, and why we square</h2>
+  <p style="font-size:14px;max-width:780px">
+    Fix the mean <code>μ = E[X]</code>. The deviation <code>X − μ</code> is how far a draw lands from the
+    center — but it is sometimes positive, sometimes negative, and on average it is exactly zero
+    (<code>E[X − μ] = 0</code>), so the raw deviation tells us nothing about spread. The fix is to square
+    first: <code>(X − μ)²</code> is always <code>≥ 0</code>, and its average is the <b>variance</b>:
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <code>Var(X) = E[(X − μ)²] = Σ&#x2096; (k − μ)² · p(k)</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Read that as a weighted average of squared distances: each value <code>k</code> contributes its squared
+    miss <code>(k − μ)²</code>, weighted by how likely it is, <code>p(k)</code>. Drag the slider above. At
+    <code>s = 0</code> every draw <i>is</i> the mean, so every term is zero and <code>Var = 0</code> — a sure
+    thing has no spread. Push mass outward and the far points, with the biggest <code>(k−μ)²</code>, start to
+    count: at the uniform setting <code>Var = (4+1+0+1+4)/5 = 2</code>, and at the U-shape, with all the mass
+    sitting at <code>±2</code>, <code>Var = 4</code>. Squaring is also why outliers dominate variance — a point
+    twice as far away contributes <i>four</i> times as much.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The catch with squaring is units: if <code>X</code> is in dollars, <code>Var(X)</code> is in dollars²,
+    which means nothing to anyone. So we take the square root and define the <b>standard deviation</b>
+    <code>σ = √Var(X)</code>, back on the same scale as <code>X</code>. That is the half-width of the shaded
+    band in the top plot. Tsitsiklis' mental model: <code>σ</code> is the <i>typical distance</i> of a draw
+    from the mean — not exact, but the right order of magnitude, and the number you actually quote.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    One algebraic shortcut worth memorizing, because it saves arithmetic every time:
+    <code>Var(X) = E[X²] − (E[X])²</code>. For our symmetric distribution <code>μ = 0</code>, so
+    <code>Var(X) = E[X²]</code> exactly — which is why the variance is just the average of the squared values
+    you see accumulating in the status box.
+  </p>
+
+  <h2>The joint PMF: one table for two variables</h2>
+  <p style="font-size:14px;max-width:780px">
+    Now roll two fair dice and call the faces <code>X</code> and <code>Y</code>. A single number won't
+    describe the pair; we need a whole table. The <b>joint PMF</b> <code>p(x,y) = P(X = x and Y = y)</code>
+    assigns a probability to each of the <code>36</code> cells of the <code>6×6</code> grid in the heatmap, and
+    — like any PMF — the entries are nonnegative and sum to <code>1</code>:
+    <code>Σ&#x2093; Σ&#x1d67; p(x,y) = 1</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    From the table you recover each variable alone by summing along a row or a column — these are the
+    <b>marginal</b> PMFs: <code>p&#x2093;(x) = Σ&#x1d67; p(x,y)</code> and <code>p&#x1d67;(y) = Σ&#x2093; p(x,y)</code>.
+    For fair dice each margin is uniform, <code>1/6</code> on every face, in both the independent and the
+    rigged settings. That is the whole point of the <code>Y = X</code> preset: <b>the marginals do not pin down
+    the joint table.</b> Two very different worlds — fully independent versus perfectly locked together — have
+    the <i>identical</i> margins. You cannot reconstruct the joint from the marginals; you need the table.
+  </p>
+
+  <h2>Independence is an assumption you can see</h2>
+  <p style="font-size:14px;max-width:780px">
+    <code>X</code> and <code>Y</code> are <b>independent</b> when the joint factors into the product of the
+    marginals, cell by cell: <code>p(x,y) = p&#x2093;(x) · p&#x1d67;(y)</code>. For two fair dice that is
+    <code>(1/6)(1/6) = 1/36</code> in <i>every</i> cell — the flat heatmap of the <i>independent</i> preset.
+    Knowing <code>X</code> tells you nothing about <code>Y</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Flip to <i>rigged Y = X</i>. Now all the mass collapses onto the diagonal: <code>p(k,k) = 1/6</code> and
+    every off-diagonal cell is <code>0</code>. The margins are still uniform <code>1/6</code> — but
+    <code>p(1,2) = 0 ≠ (1/6)(1/6)</code>, so the factorization fails and the variables are as dependent as can
+    be: <code>X</code> determines <code>Y</code> exactly. Independence is not the default; it is a real
+    structural claim about the table, and the heatmap lets you check it at a glance — uniform fill means
+    independent, structure on the diagonal means dependent.
+  </p>
+
+  <h2>The derived distribution of the sum, and why variance adds</h2>
+  <p style="font-size:14px;max-width:780px">
+    The sum <code>S = X + Y</code> is a function of the pair, so its PMF is a <b>derived distribution</b>: to
+    get <code>p&#x209b;(s)</code> we collect every cell of the joint table with <code>x + y = s</code> and add
+    their probabilities. For independent dice that count runs <code>1,2,3,4,5,6,5,4,3,2,1</code> over
+    <code>s = 2…12</code>, each over <code>36</code> — the familiar triangle, peaked at <code>7</code> because
+    there are simply more ways to make a <code>7</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    Expectation always adds, no assumptions needed: <code>E[S] = E[X] + E[Y] = 3.5 + 3.5 = 7</code> by
+    linearity, in <i>both</i> presets. Variance is the delicate one. The clean rule
+    <code>Var(X + Y) = Var(X) + Var(Y)</code> holds <b>only when X and Y are independent</b>. Each fair die has
+    <code>Var = 35/12 ≈ 2.917</code>, so for the independent dice
+    <code>Var(S) = 35/12 + 35/12 = 70/12 ≈ 5.833</code> — and you can confirm it directly from the triangular
+    PMF. The general truth carries a correction term, <code>Var(X+Y) = Var(X) + Var(Y) + 2·Cov(X,Y)</code>,
+    and independence is exactly what makes the covariance vanish.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The <i>rigged Y = X</i> preset shows what happens when you forget the assumption. Now <code>S = 2X</code>,
+    which lands only on the even values <code>{2,4,6,8,10,12}</code>, each with probability <code>1/6</code> —
+    a totally different, much wider distribution. Scaling pulls the variance out by the square of the factor:
+    <code>Var(2X) = 4·Var(X) = 140/12 ≈ 11.667</code>, exactly <i>double</i> the naive sum because here
+    <code>Cov(X,Y) = Var(X)</code> is as large as it can be. Same margins, same <code>E[S] = 7</code>, but the
+    spread of the sum is twice as big. That gap — <code>11.667</code> versus <code>5.833</code> — is the price
+    of pretending dependent things are independent, and the status box keeps both numbers in front of you.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x) => PR.round(x, 3);
+  const K = [-2, -1, 0, 1, 2];                 // support of the spread distribution
+
+  let diceMode = "indep";                       // "indep" | "equal"
+
+  // Anchor distributions on {-2,-1,0,1,2}; all symmetric so E[X]=0 always.
+  const SPIKE   = [0, 0, 1, 0, 0];
+  const UNIFORM = [0.2, 0.2, 0.2, 0.2, 0.2];
+  const USHAPE  = [0.5, 0, 0, 0, 0.5];
+
+  // Spread parameter s in [0,1]: 0..0.5 interpolates spike→uniform, 0.5..1 uniform→U-shape.
+  function pmfFor(s) {
+    const lerp = (a, b, t) => a.map((v, i) => v * (1 - t) + b[i] * t);
+    return s <= 0.5 ? lerp(SPIKE, UNIFORM, s / 0.5) : lerp(UNIFORM, USHAPE, (s - 0.5) / 0.5);
+  }
+
+  // --- top plot: the editable PMF with a ±σ band ---
+  function drawVariance(s) {
+    const p = pmfFor(s);
+    const mu = K.reduce((acc, k, i) => acc + k * p[i], 0);          // = 0 by symmetry
+    let varr = 0, terms = [];
+    K.forEach((k, i) => {
+      const t = (k - mu) * (k - mu) * p[i];
+      varr += t;
+      if (p[i] > 1e-9) terms.push("(" + k + ")²·" + fmt(p[i]));
+    });
+    const sigma = Math.sqrt(varr);
+
+    const data = [{
+      type: "bar", x: K, y: p, width: 0.55,
+      marker: { color: "#9fc6e8", line: { color: "#3a7bbf", width: 1 } },
+      hovertemplate: "P(X=%{x}) = %{y:.3f}<extra></extra>", name: "p(k)",
+    }];
+
+    const shapes = [
+      { type: "line", x0: 0, x1: 0, y0: 0, y1: 1.08, yref: "paper",
+        line: { color: "#b00020", width: 1.5, dash: "dot" } },
+    ];
+    if (sigma > 0.02) {
+      shapes.unshift({
+        type: "rect", x0: -sigma, x1: sigma, y0: 0, y1: 1, yref: "paper",
+        fillcolor: "rgba(176,0,32,0.08)", line: { width: 0 }, layer: "below",
+      });
+    }
+
+    Plotly.react("varPlot", data, {
+      title: { text: "Spread the mass — PMF on {−2,−1,0,1,2}  (shaded = μ ± σ)", font: { size: 13 } },
+      margin: { l: 46, r: 12, t: 34, b: 36 },
+      xaxis: { tickvals: K, range: [-2.7, 2.7], title: { text: "value k", font: { size: 11 } } },
+      yaxis: { range: [0, 1.05], title: { text: "probability p(k)", font: { size: 11 } } },
+      shapes, bargap: 0.1, showlegend: false,
+      annotations: [
+        { x: sigma, y: 1.0, yref: "paper", text: "μ+σ", showarrow: false,
+          font: { size: 11, color: "#b00020" }, xanchor: "left" },
+        { x: 0, y: 1.1, yref: "paper", text: "μ=0", showarrow: false,
+          font: { size: 11, color: "#b00020" } },
+      ],
+    }, { responsive: true });
+
+    return { mu, varr, sigma, terms };
+  }
+
+  // --- bottom plots: joint PMF heatmap + derived PMF of the sum ---
+  function jointCell(x, y) {                    // x,y in 1..6
+    return diceMode === "indep" ? 1 / 36 : (x === y ? 1 / 6 : 0);
+  }
+
+  function drawDice() {
+    const faces = [1, 2, 3, 4, 5, 6];
+    const z = faces.map((y) => faces.map((x) => jointCell(x, y)));
+
+    Plotly.react("jointPlot", [{
+      type: "heatmap", x: faces, y: faces, z,
+      colorscale: [[0, "#f3f7fb"], [1, "#176d2c"]], zmin: 0, zmax: 1 / 6,
+      xgap: 2, ygap: 2,
+      colorbar: { title: { text: "p(x,y)", font: { size: 11 } }, thickness: 12 },
+      hovertemplate: "p(%{x},%{y}) = %{z:.4f}<extra></extra>",
+    }], {
+      title: { text: "Joint PMF p(x,y) — two dice  (" +
+        (diceMode === "indep" ? "independent" : "rigged Y=X") + ")", font: { size: 13 } },
+      margin: { l: 40, r: 12, t: 34, b: 36 },
+      xaxis: { tickvals: faces, title: { text: "X", font: { size: 11 } }, constrain: "domain" },
+      yaxis: { tickvals: faces, title: { text: "Y", font: { size: 11 } },
+        scaleanchor: "x", scaleratio: 1, autorange: "reversed" },
+    }, { responsive: true });
+
+    // Derived PMF of S = X + Y by summing the joint over the anti-diagonals x+y=s.
+    const sVals = [], sP = [];
+    for (let s = 2; s <= 12; s++) {
+      let acc = 0;
+      for (let x = 1; x <= 6; x++) { const y = s - x; if (y >= 1 && y <= 6) acc += jointCell(x, y); }
+      sVals.push(s); sP.push(acc);
+    }
+    const ES = sVals.reduce((a, s, i) => a + s * sP[i], 0);
+    const VS = sVals.reduce((a, s, i) => a + (s - ES) * (s - ES) * sP[i], 0);
+
+    Plotly.react("sumPlot", [{
+      type: "bar", x: sVals, y: sP, width: 0.7,
+      marker: { color: "#9ed3a8", line: { color: "#176d2c", width: 1 } },
+      hovertemplate: "P(S=%{x}) = %{y:.4f}<extra></extra>",
+    }], {
+      title: { text: "Derived PMF of the sum S = X + Y", font: { size: 13 } },
+      margin: { l: 46, r: 12, t: 34, b: 36 },
+      xaxis: { tickvals: sVals, range: [1.3, 12.7], title: { text: "s", font: { size: 11 } } },
+      yaxis: { range: [0, 0.20], title: { text: "p(s)", font: { size: 11 } } },
+      bargap: 0.15, showlegend: false,
+    }, { responsive: true });
+
+    return { ES, VS };
+  }
+
+  function draw() {
+    const s = parseInt($("spread").value, 10) / 100;
+    $("sval").textContent = s.toFixed(2);
+    const V = drawVariance(s);
+    const D = drawDice();
+
+    const dieVar = 35 / 12;
+    const indep = diceMode === "indep";
+    const sumOfVars = 2 * dieVar;                // 70/12
+
+    let html = '<span class="tag one">Var(X) = E[(X−μ)²] = Σ (k−μ)² p(k)</span><br>';
+    html += 'top distribution: &nbsp;<code>μ = ' + fmt(V.mu) + '</code>, &nbsp;<code>Var(X) = ' +
+            (V.terms.length ? V.terms.join(" + ") + " = " : "") + fmt(V.varr) + '</code>, &nbsp;<code>σ = ' +
+            fmt(V.sigma) + '</code><br>';
+    html += '<span style="color:#666">drag the slider: the band μ±σ widens exactly as the squared-distance ' +
+            'sum grows.</span><br><br>';
+
+    html += '<span class="tag ' + (indep ? "one" : "none") + '">Two dice — ' +
+            (indep ? "independent: p(x,y) = p(x)·p(y) = 1/36" :
+                     "rigged Y=X: p(k,k)=1/6, all off-diagonal cells 0") + '</span><br>';
+    html += 'sum: &nbsp;<code>E[S] = E[X]+E[Y] = 3.5 + 3.5 = 7</code> &nbsp;→ from the PMF &nbsp;<code>' +
+            fmt(D.ES) + '</code> ✓ &nbsp;<span style="color:#666">(linearity — holds either way)</span><br>';
+    if (indep) {
+      html += 'independent ⇒ &nbsp;<code>Var(S) = Var(X)+Var(Y) = 35/12 + 35/12 = ' + fmt(sumOfVars) +
+              '</code> &nbsp;→ from the PMF &nbsp;<code>' + fmt(D.VS) + '</code> ✓ &nbsp;variance ADDS.';
+    } else {
+      html += 'here <code>S = 2X</code>, so &nbsp;<code>Var(S) = 4·Var(X) = 140/12 = ' + fmt(D.VS) +
+              '</code> &nbsp;≠ &nbsp;<code>Var(X)+Var(Y) = ' + fmt(sumOfVars) + '</code> ' +
+              '<span class="tag none">variance does NOT add — X,Y are dependent</span><br>' +
+              '<span style="color:#666">the gap is 2·Cov(X,Y); independence is exactly what makes it zero.</span>';
+    }
+    $("status").innerHTML = html;
+  }
+
+  // wiring
+  $("spread").addEventListener("input", draw);
+  document.querySelectorAll(".preset[data-s]").forEach((b) => {
+    b.onclick = () => { $("spread").value = b.dataset.s; draw(); };
+  });
+  document.querySelectorAll(".preset[data-d]").forEach((b) => {
+    b.onclick = () => { diceMode = b.dataset.d; draw(); };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

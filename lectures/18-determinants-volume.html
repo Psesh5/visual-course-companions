@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 18–20 — Determinants &amp; volume · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* page-local helpers, in keeping with the shared palette */
+  .matgrid { display:inline-grid; grid-template-columns:repeat(2,auto); gap:6px 10px;
+             align-items:center; font-size:14px; margin:4px 0; }
+  .matgrid label { color:#444; }
+  .matgrid input[type=range] { width:150px; vertical-align:middle; }
+  .matgrid .val { font-variant-numeric:tabular-nums; color:#1a1a1a; width:34px;
+                  display:inline-block; text-align:right; }
+  .bigdet { font-size:18px; }
+  .bigdet b { font-variant-numeric:tabular-nums; }
+  .swap { font-size:13px; padding:5px 11px; }
+  table.props { border-collapse:collapse; font-size:14px; margin:8px 0; }
+  table.props td { padding:5px 10px; border-bottom:1px solid #eee; vertical-align:top; }
+  table.props td:first-child { font-weight:600; white-space:nowrap; color:#1f4e79; }
+  .math { font-size:14px; max-width:780px; }
+  .math code, .mono { font-variant-numeric:tabular-nums; }
+  .eq { background:#f7f9fc; border:1px solid #e3eaf3; border-radius:8px;
+        padding:8px 12px; margin:8px 0; font-size:14px; overflow-x:auto; }
+  .signpos { color:#176d2c; font-weight:700; }
+  .signneg { color:#b00020; font-weight:700; }
+  .signzero{ color:#9a6b00; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lectures 18–20 · Determinants, cofactors, and the determinant as volume</h1>
+  <div class="sub">The determinant is one number squeezed out of a square matrix that answers a
+    geometric question: <b>how much does the matrix scale (signed) area or volume?</b>
+    <code>det = 0</code> means the columns collapse to a lower dimension — the matrix is singular.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The big picture.</b> For a 2×2 matrix the determinant is the <i>signed area</i> of the
+    parallelogram spanned by its columns; for 3×3 it is the <i>signed volume</i> of the
+    parallelepiped. Drag the sliders below and watch the area/volume number track the determinant
+    exactly — and watch it hit <b>0</b> the moment the vectors line up (singular), and <b>flip sign</b>
+    when you swap two columns (orientation reverses).
+  </div>
+
+  <!-- ============================================================ -->
+  <h2>1 · 2D — det = signed area of a parallelogram</h2>
+  <p class="math">
+    Columns <code>v₁ = (a, c)</code> and <code>v₂ = (b, d)</code> of
+    <code>A = [[a, b], [c, d]]</code>. The blue parallelogram they span has signed area
+    <code>det A = ad − bc</code>. Make the two arrows parallel and the area flattens to 0;
+    swap them and the sign flips.
+  </p>
+
+  <div class="plots">
+    <div style="flex:0 0 auto">
+      <div class="matgrid">
+        <label>a (v₁.x)</label><span><input id="a" type="range" min="-5" max="5" step="0.25" value="3"><span class="val" id="a_v">3</span></span>
+        <label>c (v₁.y)</label><span><input id="c" type="range" min="-5" max="5" step="0.25" value="1"><span class="val" id="c_v">1</span></span>
+        <label>b (v₂.x)</label><span><input id="b" type="range" min="-5" max="5" step="0.25" value="1"><span class="val" id="b_v">1</span></span>
+        <label>d (v₂.y)</label><span><input id="d" type="range" min="-5" max="5" step="0.25" value="2"><span class="val" id="d_v">2</span></span>
+      </div>
+      <div class="controls">
+        <button class="swap" id="swap2">⇄ swap columns</button>
+        <button class="swap" id="parallel2">make parallel</button>
+      </div>
+      <div class="status bigdet">
+        det A = <span class="mono">ad − bc</span> =
+        <span class="mono" id="d2_expr"></span> = <b id="d2_val"></b><br>
+        <span id="d2_msg"></span>
+      </div>
+    </div>
+    <div id="plot2" class="plot" style="flex:1 1 460px;height:460px"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2>1b · Area of any triangle from its three corners</h2>
+  <p class="math">
+    Strang closes Lecture 20 with a gem: the area of a triangle with corners
+    <code>(x₁,y₁)</code>, <code>(x₂,y₂)</code>, <code>(x₃,y₃)</code> needs <b>no base, no height, no
+    square roots</b> — just the coordinates, through a 3×3 determinant:
+  </p>
+  <div class="eq"><code>Area = ½ · det [[x₁, y₁, 1], [x₂, y₂, 1], [x₃, y₃, 1]]</code></div>
+  <p class="math">
+    Why the column of 1's? Subtracting one row from the others moves the triangle to start at the
+    origin (Strang's trick), leaving <code>½(ad − bc)</code> for corners <code>0, (a,b), (c,d)</code>.
+    The triangle is half the parallelogram. Drag the three vertices:
+  </p>
+  <div class="plots">
+    <div style="flex:0 0 auto">
+      <div class="matgrid">
+        <label>P₁ x</label><span><input id="tx1" type="range" min="-5" max="5" step="0.25" value="0"><span class="val" id="tx1_v"></span></span>
+        <label>P₁ y</label><span><input id="ty1" type="range" min="-5" max="5" step="0.25" value="0"><span class="val" id="ty1_v"></span></span>
+        <label>P₂ x</label><span><input id="tx2" type="range" min="-5" max="5" step="0.25" value="4"><span class="val" id="tx2_v"></span></span>
+        <label>P₂ y</label><span><input id="ty2" type="range" min="-5" max="5" step="0.25" value="1"><span class="val" id="ty2_v"></span></span>
+        <label>P₃ x</label><span><input id="tx3" type="range" min="-5" max="5" step="0.25" value="1"><span class="val" id="tx3_v"></span></span>
+        <label>P₃ y</label><span><input id="ty3" type="range" min="-5" max="5" step="0.25" value="3"><span class="val" id="ty3_v"></span></span>
+      </div>
+      <div class="status bigdet">
+        det = <span class="mono" id="tri2_det"></span>,&nbsp; Area = ½|det| = <b id="tri2_area"></b><br>
+        <span id="tri2_msg" style="font-size:13px"></span>
+      </div>
+    </div>
+    <div id="tri2_plot" class="plot" style="flex:1 1 420px;height:420px"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2>2 · 3D — det = signed volume of a parallelepiped</h2>
+  <p class="math">
+    The three columns of a 3×3 matrix span a parallelepiped (a slanted box). Its signed volume is
+    <code>det A</code> (computed with <code>LA.det3</code>). Slide the columns until the three vectors
+    become <b>coplanar</b> — the box goes flat and the volume drops to 0. That is exactly the singular case.
+  </p>
+
+  <div class="plots">
+    <div style="flex:0 0 auto">
+      <div class="matgrid">
+        <label>col₁</label><span class="mono" id="lab1" style="color:#1f77b4"></span>
+        <label style="padding-left:8px">x</label><span><input id="m00" type="range" min="-3" max="3" step="0.25" value="2"><span class="val" id="m00_v"></span></span>
+        <label style="padding-left:8px">y</label><span><input id="m10" type="range" min="-3" max="3" step="0.25" value="0"><span class="val" id="m10_v"></span></span>
+        <label style="padding-left:8px">z</label><span><input id="m20" type="range" min="-3" max="3" step="0.25" value="0"><span class="val" id="m20_v"></span></span>
+        <label>col₂</label><span class="mono" id="lab2" style="color:#2ca02c"></span>
+        <label style="padding-left:8px">x</label><span><input id="m01" type="range" min="-3" max="3" step="0.25" value="0.5"><span class="val" id="m01_v"></span></span>
+        <label style="padding-left:8px">y</label><span><input id="m11" type="range" min="-3" max="3" step="0.25" value="2"><span class="val" id="m11_v"></span></span>
+        <label style="padding-left:8px">z</label><span><input id="m21" type="range" min="-3" max="3" step="0.25" value="0"><span class="val" id="m21_v"></span></span>
+        <label>col₃</label><span class="mono" id="lab3" style="color:#ff7f0e"></span>
+        <label style="padding-left:8px">x</label><span><input id="m02" type="range" min="-3" max="3" step="0.25" value="0"><span class="val" id="m02_v"></span></span>
+        <label style="padding-left:8px">y</label><span><input id="m12" type="range" min="-3" max="3" step="0.25" value="0.5"><span class="val" id="m12_v"></span></span>
+        <label style="padding-left:8px">z</label><span><input id="m22" type="range" min="-3" max="3" step="0.25" value="2"><span class="val" id="m22_v"></span></span>
+      </div>
+      <div class="controls">
+        <button class="swap" id="swap3">⇄ swap col₁ &amp; col₂</button>
+        <button class="swap" id="flat3">make coplanar</button>
+      </div>
+      <div class="status bigdet">
+        det A = <b id="d3_val"></b> &nbsp;=&nbsp; volume<br>
+        <span id="d3_msg"></span>
+      </div>
+    </div>
+    <div id="plot3" class="plot" style="flex:1 1 460px;height:500px"></div>
+  </div>
+
+  <!-- ============================================================ -->
+  <h2>3 · The properties Strang uses to <i>define</i> the determinant</h2>
+  <p class="math">
+    Strang builds the determinant from a short list of rules. Everything else (the formula, the
+    cofactor expansion, Cramer's rule) follows from these:
+  </p>
+  <table class="props">
+    <tr><td>det I = 1</td><td>The unit box (columns = standard basis) has volume 1.</td></tr>
+    <tr><td>row swap → sign flip</td><td>Exchanging two rows multiplies the determinant by −1
+        (orientation reverses). Two equal rows ⇒ det = 0.</td></tr>
+    <tr><td>linear in each row</td><td>Scaling one row by <code>t</code> scales det by <code>t</code>;
+        and det is additive in any single row (other rows fixed).</td></tr>
+    <tr><td>dependent rows → det = 0</td><td>If the rows (equivalently columns) are linearly dependent,
+        the box is flat: the matrix is singular.</td></tr>
+    <tr><td>det(AB) = det(A)·det(B)</td><td>Volumes multiply under composition; hence
+        <code>det(A⁻¹) = 1/det(A)</code>.</td></tr>
+    <tr><td>det(Aᵀ) = det(A)</td><td>Transpose leaves the determinant unchanged — so every row rule
+        is also a column rule.</td></tr>
+  </table>
+
+  <h2>4 · Cofactor expansion (one 3×3 example)</h2>
+  <p class="math">
+    Expanding along the first row, with cofactors <code>C₁ⱼ = (−1)<sup>1+j</sup>·M₁ⱼ</code> (the signed
+    2×2 minors):
+  </p>
+  <div class="eq" id="cof_eq"></div>
+  <p class="math">
+    The signs alternate in the checkerboard pattern
+    <code>[[+,−,+],[−,+,−],[+,−,+]]</code>. You may expand along <i>any</i> row or column and get the
+    same number.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2>5 · The "big formula" — a sum over all n! permutations</h2>
+  <p class="math">
+    Before cofactors, Strang derives the <b>big formula</b> straight from the three properties.
+    Split each row into its coordinate pieces (linearity), throw away every term with a repeated
+    column (those have a zero column ⇒ determinant 0), and the <b>survivors</b> are exactly the products
+    that take <i>one entry from each row and each column</i>. There are <code>n!</code> survivors —
+    one per permutation — and each carries a <span class="signpos">+</span> or
+    <span class="signneg">−</span> sign equal to <code>det P</code> of that permutation
+    (<span class="signpos">+</span> for an even number of row exchanges,
+    <span class="signneg">−</span> for odd).
+  </p>
+  <div class="eq"><code>det A = Σ<sub>(over all permutations α,β,…,ω of 1…n)</sub> ±&nbsp;a<sub>1α</sub>·a<sub>2β</sub>·a<sub>3γ</sub> … a<sub>nω</sub></code></div>
+  <p class="math">
+    Strang's count: 2×2 has <b>2 terms</b> (<code>+ad − bc</code>); 3×3 has <b>3! = 6 terms</b>
+    (half plus, half minus); 4×4 has <b>4! = 24</b>; in general <code>n!</code>. Pick a size and watch
+    the survivors — the permutation, its parity, and the signed product — enumerate themselves:
+  </p>
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Matrix size:</span>
+    <button class="swap" data-bign="2">2×2 (2 terms)</button>
+    <button class="swap" data-bign="3">3×3 (6 terms)</button>
+    <button class="swap" data-bign="4">4×4 (24 terms)</button>
+  </div>
+  <div class="eq" id="big_eq" style="font-size:13px"></div>
+  <p class="math">
+    Each surviving term is <code>a<sub>1,σ(1)</sub>·a<sub>2,σ(2)</sub>…</code> where <code>σ</code> runs through
+    every permutation. The <span class="signpos">+/−</span> is <code>det P<sub>σ</sub></code>: the identity
+    order <code>1 2 3</code> is <span class="signpos">+</span>, a single swap like <code>2 1 3</code> is
+    <span class="signneg">−</span>, two swaps like <code>2 3 1</code> back to <span class="signpos">+</span>.
+    Notice the 4×4 counter-diagonal permutation <code>4 3 2 1</code> comes out
+    <span class="signpos">+</span> (it takes two exchanges, not one) — Strang's warning that the "wrong
+    diagonal" is only minus for 3×3.
+  </p>
+
+  <!-- ============================================================ -->
+  <h2>6 · Strang's tridiagonal-of-ones example — a periodic determinant</h2>
+  <p class="math">
+    Strang's favourite cofactor example: the <code>n×n</code> matrix that is <b>all 1's on the main
+    diagonal and the two neighbouring diagonals, 0 elsewhere</b> (a tridiagonal matrix of ones).
+    Cofactor expansion along the first row gives the beautiful recursion
+  </p>
+  <div class="eq"><code>D<sub>n</sub> = D<sub>n−1</sub> − D<sub>n−2</sub></code>
+    &nbsp;(the <code>−</code> comes from the off-diagonal 1, whose cofactor carries a minus sign).</div>
+  <p class="math">
+    With <code>D₁ = 1</code> and <code>D₂ = 0</code>, the sequence is
+    <code>1, 0, −1, −1, 0, 1, 1, 0, −1, …</code> — it <b>repeats with period 6</b>. (So Strang notes
+    <code>D₆₁ = D₁ = 1</code>.) Below, the recursion runs live with the matrix drawn alongside;
+    the value is also checked against <code>LA.det3</code> for <code>n = 3</code>.
+  </p>
+  <div class="plots">
+    <div style="flex:0 0 auto">
+      <div class="controls">
+        <button class="swap" id="tri_dec">− smaller</button>
+        <span class="mono" id="tri_n" style="font-size:15px;padding:0 8px"></span>
+        <button class="swap" id="tri_inc">+ larger</button>
+      </div>
+      <div class="status bigdet">
+        D<sub><span id="tri_nlab"></span></sub> = D<sub><span id="tri_n1"></span></sub> − D<sub><span id="tri_n2"></span></sub>
+        = <span class="mono" id="tri_rec"></span> = <b id="tri_val"></b><br>
+        <span id="tri_msg" style="font-size:13px"></span>
+      </div>
+      <div class="eq" id="tri_seq" style="font-size:13px"></div>
+    </div>
+    <div id="tri_plot" class="plot" style="flex:1 1 380px;height:380px"></div>
+  </div>
+
+  <h2>7 · Cramer's rule and the inverse</h2>
+  <p class="math">
+    For an invertible <code>A</code>, the solution of <code>Ax = b</code> has each coordinate as a ratio
+    of determinants:
+  </p>
+  <div class="eq"><code>x<sub>i</sub> = det(B<sub>i</sub>) / det(A)</code>,
+    where <code>B<sub>i</sub></code> is <code>A</code> with its <code>i</code>-th column replaced by
+    <code>b</code>. <span class="math">(This is exactly the formula used in <code>LA.analyze</code>.)</span></div>
+  <p class="math">And the inverse is the transposed cofactor matrix (the <i>adjugate</i>) divided by the
+    determinant:</p>
+  <div class="eq"><code>A⁻¹ = (1 / det A) · Cᵀ</code> &nbsp; where <code>C</code> is the matrix of cofactors.</div>
+
+  <h2>Worked math</h2>
+
+  <p class="math"><b>2×2 via cofactors.</b> Expanding
+    <code>[[a, b], [c, d]]</code> along the first row: the cofactor of <code>a</code> is
+    <code>+d</code>, the cofactor of <code>b</code> is <code>−c</code>, so</p>
+  <div class="eq"><code>det = a·(+d) + b·(−c) = ad − bc.</code></div>
+  <p class="math">Geometrically <code>|ad − bc|</code> is the parallelogram's area: base
+    <code>|v₁|</code> times height (the component of <code>v₂</code> perpendicular to <code>v₁</code>).
+    Shearing <code>v₂</code> along <code>v₁</code> changes neither — matching "adding a multiple of one
+    row to another leaves det unchanged."</p>
+
+  <p class="math"><b>3×3 via cofactors (general formula).</b></p>
+  <div class="eq"><code>det = a₁₁(a₂₂a₃₃ − a₂₃a₃₂) − a₁₂(a₂₁a₃₃ − a₂₃a₃₁) + a₁₃(a₂₁a₃₂ − a₂₂a₃₁).</code></div>
+  <p class="math">This is precisely the expression coded in <code>LA.det3</code>. Its absolute value is the
+    parallelepiped's volume = base-area × perpendicular height; the sign records orientation
+    (right- vs left-handed triple).</p>
+
+  <p class="math"><b>Worked cofactor expansion.</b> Take</p>
+  <div class="eq"><code>A = [[2, 1, 1], [1, 3, 2], [1, 0, 0]].</code></div>
+  <p class="math">Expanding along the bottom row (two zeros make it cheap) — signs
+    <code>[+, −, +]</code> on row 3:</p>
+  <div class="eq">
+    <code>det = 1·(+1)·det[[1,1],[3,2]] − 0 + 0</code><br>
+    <code>&nbsp;&nbsp;&nbsp;&nbsp;= 1·(1·2 − 1·3) = 1·(2 − 3) = −1.</code>
+  </div>
+  <p class="math">Check along the first row instead:
+    <code>2·det[[3,2],[0,0]] − 1·det[[1,2],[1,0]] + 1·det[[1,3],[1,0]]
+    = 2·0 − 1·(0 − 2) + 1·(0 − 3) = 0 + 2 − 3 = −1.</code> Same answer, as the properties guarantee.</p>
+
+  <p class="math"><b>Cramer's-rule example.</b> Solve</p>
+  <div class="eq"><code>2x + y = 5,&nbsp;&nbsp; 1x + 3y = 6.</code> &nbsp; So
+    <code>A = [[2,1],[1,3]]</code>, <code>b = (5, 6)</code>.</div>
+  <p class="math"><code>det A = 2·3 − 1·1 = 5.</code> Replace columns with <code>b</code>:</p>
+  <div class="eq">
+    <code>B₁ = [[5,1],[6,3]] ⇒ det B₁ = 5·3 − 1·6 = 9,</code><br>
+    <code>B₂ = [[2,5],[1,6]] ⇒ det B₂ = 2·6 − 5·1 = 7.</code>
+  </div>
+  <div class="eq"><code>x = det B₁ / det A = 9/5 = 1.8,&nbsp;&nbsp; y = det B₂ / det A = 7/5 = 1.4.</code></div>
+  <p class="math">Check: <code>2(1.8) + 1.4 = 5 ✓</code> and <code>1.8 + 3(1.4) = 6 ✓</code>.</p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  const R2 = LA.round;
+
+  /* ---------------- 2D parallelogram (signed area) ---------------- */
+  const ids2 = ["a","c","b","d"];
+  const el2 = {}; ids2.forEach(k => { el2[k] = document.getElementById(k); });
+  function valEl(id){ return document.getElementById(id + "_v"); }
+
+  function draw2() {
+    const a = +el2.a.value, c = +el2.c.value, b = +el2.b.value, d = +el2.d.value;
+    ids2.forEach(k => valEl(k).textContent = R2(+el2[k].value));
+    const v1 = [a, c], v2 = [b, d];
+    const det = a*d - b*c;
+
+    // parallelogram corners: 0 -> v1 -> v1+v2 -> v2 -> 0
+    const px = [0, v1[0], v1[0]+v2[0], v2[0], 0];
+    const py = [0, v1[1], v1[1]+v2[1], v2[1], 0];
+
+    const fill = det > 1e-9 ? "rgba(31,119,180,0.22)"
+               : det < -1e-9 ? "rgba(176,0,32,0.18)"
+               : "rgba(154,107,0,0.15)";
+
+    const data = [
+      { type:"scatter", mode:"lines", x:px, y:py, fill:"toself",
+        fillcolor:fill, line:{color:"#888", width:1}, hoverinfo:"skip", showlegend:false },
+      // v1 arrow (blue)
+      { type:"scatter", mode:"lines+markers", x:[0,v1[0]], y:[0,v1[1]],
+        line:{color:LA.VEC[0], width:5}, marker:{size:[0,9], color:LA.VEC[0], symbol:"arrow-up", angleref:"previous"},
+        name:"v₁", showlegend:false },
+      // v2 arrow (green)
+      { type:"scatter", mode:"lines+markers", x:[0,v2[0]], y:[0,v2[1]],
+        line:{color:LA.VEC[1], width:5}, marker:{size:[0,9], color:LA.VEC[1], symbol:"arrow-up", angleref:"previous"},
+        name:"v₂", showlegend:false },
+      { type:"scatter", mode:"text", x:[v1[0],v2[0]], y:[v1[1],v2[1]],
+        text:["  v₁","  v₂"], textfont:{color:[LA.VEC[0],LA.VEC[1]], size:14},
+        textposition:"top right", hoverinfo:"skip", showlegend:false },
+    ];
+
+    document.getElementById("d2_expr").textContent =
+      `(${R2(a)})(${R2(d)}) − (${R2(b)})(${R2(c)})`;
+    const dv = document.getElementById("d2_val");
+    dv.textContent = R2(det);
+    dv.className = Math.abs(det) < 1e-9 ? "signzero" : det > 0 ? "signpos" : "signneg";
+
+    const msg = document.getElementById("d2_msg");
+    if (Math.abs(det) < 1e-9)
+      msg.innerHTML = "<span class='signzero'>Area 0 — columns are parallel (dependent). Matrix is singular.</span>";
+    else if (det > 0)
+      msg.innerHTML = "Positive (right-handed): v₂ is counter-clockwise from v₁.";
+    else
+      msg.innerHTML = "<span class='signneg'>Negative — orientation reversed (v₂ clockwise from v₁).</span>";
+
+    const M = 6;
+    Plotly.react("plot2", data, {
+      margin:{l:30,r:10,t:10,b:30},
+      xaxis:{range:[-M,M], zeroline:true, zerolinecolor:"#ccc", title:"x"},
+      yaxis:{range:[-M,M], zeroline:true, zerolinecolor:"#ccc", scaleanchor:"x", scaleratio:1, title:"y"},
+    }, { responsive:true });
+  }
+  ids2.forEach(k => el2[k].addEventListener("input", draw2));
+
+  document.getElementById("swap2").onclick = () => {
+    const a=el2.a.value, c=el2.c.value;
+    el2.a.value = el2.b.value; el2.c.value = el2.d.value;
+    el2.b.value = a; el2.d.value = c; draw2();
+  };
+  document.getElementById("parallel2").onclick = () => {
+    // make v2 = 0.6 * v1  -> determinant 0
+    el2.b.value = R2(0.6 * +el2.a.value);
+    el2.d.value = R2(0.6 * +el2.c.value); draw2();
+  };
+
+  /* ---------------- 3D parallelepiped (signed volume) ---------------- */
+  // matrix entry ids: m[row][col]
+  const cell = (r,c) => "m" + r + c;
+  const allCells = [];
+  for (let r=0;r<3;r++) for (let c=0;c<3;c++) allCells.push(cell(r,c));
+  const E = {}; allCells.forEach(id => E[id] = document.getElementById(id));
+
+  function col(c){ return [ +E[cell(0,c)].value, +E[cell(1,c)].value, +E[cell(2,c)].value ]; }
+
+  function box(o, u, v, w) {
+    // 8 corners of parallelepiped o + au + bv + cw, a,b,c in {0,1}
+    const P = [];
+    for (const a of [0,1]) for (const b of [0,1]) for (const c of [0,1])
+      P.push([ o[0]+a*u[0]+b*v[0]+c*w[0],
+               o[1]+a*u[1]+b*v[1]+c*w[1],
+               o[2]+a*u[2]+b*v[2]+c*w[2] ]);
+    // index map: idx(a,b,c) = a*4 + b*2 + c
+    const I = (a,b,c) => a*4 + b*2 + c;
+    // mesh3d triangles for all 6 faces
+    const tri = [];
+    const quad = (p,q,r,s) => { tri.push([p,q,r]); tri.push([p,r,s]); };
+    quad(I(0,0,0),I(1,0,0),I(1,1,0),I(0,1,0)); // c=0
+    quad(I(0,0,1),I(1,0,1),I(1,1,1),I(0,1,1)); // c=1
+    quad(I(0,0,0),I(1,0,0),I(1,0,1),I(0,0,1)); // b=0
+    quad(I(0,1,0),I(1,1,0),I(1,1,1),I(0,1,1)); // b=1
+    quad(I(0,0,0),I(0,1,0),I(0,1,1),I(0,0,1)); // a=0
+    quad(I(1,0,0),I(1,1,0),I(1,1,1),I(1,0,1)); // a=1
+    return {
+      x: P.map(p=>p[0]), y: P.map(p=>p[1]), z: P.map(p=>p[2]),
+      i: tri.map(t=>t[0]), j: tri.map(t=>t[1]), k: tri.map(t=>t[2]),
+    };
+  }
+
+  function draw3() {
+    allCells.forEach(id => valEl(id).textContent = R2(+E[id].value));
+    const c1 = col(0), c2 = col(1), c3 = col(2);
+    // A has columns c1,c2,c3; LA.det3 takes rows, so build the matrix by rows
+    const A = [ [c1[0],c2[0],c3[0]],
+                [c1[1],c2[1],c3[1]],
+                [c1[2],c2[2],c3[2]] ];
+    const det = LA.det3(A);
+
+    document.getElementById("lab1").textContent = "(" + c1.map(R2).join(", ") + ")";
+    document.getElementById("lab2").textContent = "(" + c2.map(R2).join(", ") + ")";
+    document.getElementById("lab3").textContent = "(" + c3.map(R2).join(", ") + ")";
+
+    const flat = Math.abs(det) < 1e-9;
+    const boxColor = flat ? "#9a6b00" : det > 0 ? LA.VEC[0] : "#b00020";
+    const m = box([0,0,0], c1, c2, c3);
+
+    const data = [
+      { type:"mesh3d", x:m.x, y:m.y, z:m.z, i:m.i, j:m.j, k:m.k,
+        color:boxColor, opacity:0.28, flatshading:true, hoverinfo:"skip" },
+    ];
+    [c1,c2,c3].forEach((v,idx) => {
+      LA.arrow([0,0,0], v, LA.VEC[idx], 7).forEach(t => data.push(t));
+    });
+    data.push({ type:"scatter3d", mode:"text",
+      x:[c1[0],c2[0],c3[0]], y:[c1[1],c2[1],c3[1]], z:[c1[2],c2[2],c3[2]],
+      text:["  col₁","  col₂","  col₃"], textfont:{size:13},
+      hoverinfo:"skip", showlegend:false });
+
+    const dv = document.getElementById("d3_val");
+    dv.textContent = R2(det);
+    dv.className = flat ? "signzero" : det > 0 ? "signpos" : "signneg";
+    const msg = document.getElementById("d3_msg");
+    if (flat)
+      msg.innerHTML = "<span class='signzero'>Volume 0 — the three columns are coplanar (dependent). Singular.</span>";
+    else if (det > 0)
+      msg.innerHTML = "Positive volume — right-handed column triple.";
+    else
+      msg.innerHTML = "<span class='signneg'>Negative volume — orientation flipped (left-handed triple).</span>";
+
+    Plotly.react("plot3", data,
+      { scene: LA.SCENE(), margin:{l:0,r:0,t:6,b:0}, showlegend:false },
+      { responsive:true });
+  }
+  allCells.forEach(id => E[id].addEventListener("input", draw3));
+
+  document.getElementById("swap3").onclick = () => {
+    for (let r=0;r<3;r++){
+      const t = E[cell(r,0)].value;
+      E[cell(r,0)].value = E[cell(r,1)].value;
+      E[cell(r,1)].value = t;
+    }
+    draw3();
+  };
+  document.getElementById("flat3").onclick = () => {
+    // force col3 = col1 + col2  -> coplanar -> det 0
+    for (let r=0;r<3;r++)
+      E[cell(r,2)].value = R2(+E[cell(r,0)].value + +E[cell(r,1)].value);
+    draw3();
+  };
+
+  /* ---------------- cofactor-expansion display ---------------- */
+  (function () {
+    const A = [[2,1,1],[1,3,2],[1,0,0]];
+    const a = A;
+    const m11 = a[1][1]*a[2][2] - a[1][2]*a[2][1];
+    const m12 = a[1][0]*a[2][2] - a[1][2]*a[2][0];
+    const m13 = a[1][0]*a[2][1] - a[1][1]*a[2][0];
+    const det = a[0][0]*m11 - a[0][1]*m12 + a[0][2]*m13;
+    document.getElementById("cof_eq").innerHTML =
+      "<code>A = [[2, 1, 1], [1, 3, 2], [1, 0, 0]]</code><br>" +
+      "<code>det = a₁₁·det[[3,2],[0,0]] − a₁₂·det[[1,2],[1,0]] + a₁₃·det[[1,3],[1,0]]</code><br>" +
+      `<code>&nbsp;&nbsp;&nbsp;&nbsp;= 2·(${m11}) − 1·(${m12}) + 1·(${m13}) = ${det}.</code>`;
+  })();
+
+  /* ---------------- 1b · triangle area from corners ---------------- */
+  (function () {
+    const ids = ["tx1","ty1","tx2","ty2","tx3","ty3"];
+    const el = {}; ids.forEach(k => el[k] = document.getElementById(k));
+    function drawTri() {
+      ids.forEach(k => valEl(k).textContent = R2(+el[k].value));
+      const x1=+el.tx1.value, y1=+el.ty1.value,
+            x2=+el.tx2.value, y2=+el.ty2.value,
+            x3=+el.tx3.value, y3=+el.ty3.value;
+      // det [[x1,y1,1],[x2,y2,1],[x3,y3,1]]  via LA.det3
+      const det = LA.det3([[x1,y1,1],[x2,y2,1],[x3,y3,1]]);
+      const area = Math.abs(det) / 2;
+
+      document.getElementById("tri2_det").textContent = R2(det);
+      const av = document.getElementById("tri2_area");
+      av.textContent = R2(area);
+      av.className = Math.abs(det) < 1e-9 ? "signzero" : "signpos";
+      const msg = document.getElementById("tri2_msg");
+      if (Math.abs(det) < 1e-9)
+        msg.innerHTML = "<span class='signzero'>Area 0 — the three corners are collinear (degenerate triangle).</span>";
+      else
+        msg.innerHTML = (det > 0 ? "det &gt; 0: vertices listed counter-clockwise."
+                                 : "<span class='signneg'>det &lt; 0: vertices listed clockwise.</span>")
+                        + " Area is always ½|det|.";
+
+      const px = [x1,x2,x3,x1], py = [y1,y2,y3,y1];
+      const data = [
+        { type:"scatter", mode:"lines", x:px, y:py, fill:"toself",
+          fillcolor: Math.abs(det) < 1e-9 ? "rgba(154,107,0,0.15)" : "rgba(31,119,180,0.22)",
+          line:{color:"#888", width:1}, hoverinfo:"skip", showlegend:false },
+        { type:"scatter", mode:"markers+text", x:[x1,x2,x3], y:[y1,y2,y3],
+          marker:{size:9, color:LA.VEC}, text:["  P₁","  P₂","  P₃"],
+          textposition:"top right", textfont:{size:13}, hoverinfo:"skip", showlegend:false },
+      ];
+      const M = 6;
+      Plotly.react("tri2_plot", data, {
+        margin:{l:30,r:10,t:10,b:30},
+        xaxis:{range:[-M,M], zeroline:true, zerolinecolor:"#ccc", title:"x"},
+        yaxis:{range:[-M,M], zeroline:true, zerolinecolor:"#ccc", scaleanchor:"x", scaleratio:1, title:"y"},
+      }, { responsive:true });
+    }
+    ids.forEach(k => el[k].addEventListener("input", drawTri));
+    drawTri();
+  })();
+
+  /* ---------------- 5 · big formula: enumerate permutations ---------------- */
+  (function () {
+    const box = document.getElementById("big_eq");
+    // generate all permutations of [0..n-1] with their parity (sign)
+    function permsWithSign(n) {
+      const base = []; for (let i=0;i<n;i++) base.push(i);
+      const out = [];
+      function rec(arr, rest) {
+        if (!rest.length) { out.push(arr); return; }
+        for (let i=0;i<rest.length;i++)
+          rec(arr.concat(rest[i]), rest.slice(0,i).concat(rest.slice(i+1)));
+      }
+      rec([], base);
+      // sign = (-1)^(number of inversions)
+      return out.map(p => {
+        let inv = 0;
+        for (let i=0;i<p.length;i++) for (let j=i+1;j<p.length;j++) if (p[i] > p[j]) inv++;
+        return { p, sign: inv % 2 === 0 ? 1 : -1 };
+      });
+    }
+    function render(n) {
+      const terms = permsWithSign(n);
+      const parts = terms.map(({p, sign}) => {
+        const factors = p.map((col, row) => `a<sub>${row+1}${col+1}</sub>`).join("·");
+        const order = p.map(c => c+1).join(" ");
+        const cls = sign > 0 ? "signpos" : "signneg";
+        const s = sign > 0 ? "+" : "−";
+        return `<span class="${cls}">${s}</span> ${factors} <span style="color:#999">(σ=${order})</span>`;
+      });
+      box.innerHTML = `<code>det A = </code><br><code>` + parts.join("<br>") + `</code><br>` +
+        `<span style="font-size:12px;color:#444">${terms.length} survivors = ${n}! &nbsp;·&nbsp; ` +
+        `${terms.filter(t=>t.sign>0).length} plus, ${terms.filter(t=>t.sign<0).length} minus</span>`;
+    }
+    document.querySelectorAll("[data-bign]").forEach(btn =>
+      btn.addEventListener("click", () => render(+btn.dataset.bign)));
+    render(3);
+  })();
+
+  /* ---------------- 6 · tridiagonal-of-ones, periodic determinant ---------------- */
+  (function () {
+    let n = 5;
+    // D_n = D_{n-1} - D_{n-2}, D_1 = 1, D_2 = 0
+    function Dseq(upto) {
+      const D = [null, 1, 0]; // 1-indexed; D[1]=1, D[2]=0
+      for (let k=3;k<=upto;k++) D[k] = D[k-1] - D[k-2];
+      return D;
+    }
+    // build the n×n tridiagonal-of-ones matrix
+    function triMat(k) {
+      const A = [];
+      for (let i=0;i<k;i++){ const r=[]; for (let j=0;j<k;j++) r.push(Math.abs(i-j) <= 1 ? 1 : 0); A.push(r); }
+      return A;
+    }
+    function set(id, v){ document.getElementById(id).textContent = v; }
+    function draw() {
+      n = Math.max(1, Math.min(9, n));
+      const D = Dseq(Math.max(n, 9));
+      set("tri_n", "n = " + n);
+      set("tri_nlab", n);
+      set("tri_n1", n-1 >= 1 ? (n-1) : "—");
+      set("tri_n2", n-2 >= 1 ? (n-2) : "—");
+      const valEl2 = document.getElementById("tri_val");
+      valEl2.textContent = D[n];
+      valEl2.className = D[n] === 0 ? "signzero" : D[n] > 0 ? "signpos" : "signneg";
+
+      if (n >= 3)
+        set("tri_rec", `(${D[n-1]}) − (${D[n-2]})`);
+      else
+        document.getElementById("tri_rec").textContent = (n === 1) ? "D₁ = 1 (base)" : "D₂ = 0 (base)";
+
+      // checkerboard-period note + LA.det3 cross-check at n=3
+      let msg = "";
+      if (n === 3) {
+        const d3 = LA.det3(triMat(3));
+        msg = `LA.det3 of the 3×3 tridiagonal-of-ones = <b>${R2(d3)}</b> — matches the recursion.`;
+      } else {
+        msg = "Period 6: the sequence repeats 1, 0, −1, −1, 0, 1, …";
+      }
+      document.getElementById("tri_msg").innerHTML = msg;
+
+      // sequence strip D1..D9 with current highlighted
+      const strip = [];
+      for (let k=1;k<=9;k++) {
+        const cls = k === n ? "background:#fff3cd;border-radius:4px;padding:1px 4px;font-weight:700" : "color:#444";
+        strip.push(`<span style="${cls}">D<sub>${k}</sub>=${D[k]}</span>`);
+      }
+      document.getElementById("tri_seq").innerHTML =
+        "<code style='font-size:12px'>" + strip.join("&nbsp; ") + "</code>";
+
+      // draw the matrix as a heatmap-ish mesh (entries shown as text on a grid)
+      const A = triMat(n);
+      const xs=[], ys=[], txt=[], cols=[];
+      for (let i=0;i<n;i++) for (let j=0;j<n;j++) {
+        xs.push(j); ys.push(n-1-i); txt.push(String(A[i][j]));
+        cols.push(A[i][j] ? "#1f77b4" : "#dfe6ef");
+      }
+      const data = [
+        { type:"scatter", mode:"markers+text", x:xs, y:ys, text:txt,
+          marker:{ size:30, color:cols, symbol:"square" },
+          textfont:{ color:"#fff", size:13 }, hoverinfo:"skip", showlegend:false },
+      ];
+      Plotly.react("tri_plot", data, {
+        margin:{l:10,r:10,t:10,b:10},
+        xaxis:{ range:[-0.6, n-0.4], visible:false },
+        yaxis:{ range:[-0.6, n-0.4], visible:false, scaleanchor:"x", scaleratio:1 },
+      }, { responsive:true });
+    }
+    document.getElementById("tri_inc").onclick = () => { n++; draw(); };
+    document.getElementById("tri_dec").onclick = () => { n--; draw(); };
+    draw();
+  })();
+
+  draw2();
+  draw3();
+})();
+</script>
+</body>
+</html>

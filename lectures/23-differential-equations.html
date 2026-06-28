@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 23 — Differential equations &amp; e^{At} · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  table.eig { border-collapse: collapse; font-size: 14px; margin: 6px 0; }
+  table.eig td, table.eig th { padding: 3px 10px; text-align: left; border-bottom: 1px solid #eee; }
+  .eqn { font-family: "Cambria Math", Georgia, serif; font-size: 16px; }
+  .verdict { font-weight: 700; }
+  .verdict.stable { color: #176d2c; }
+  .verdict.steady { color: #9a6b00; }
+  .verdict.unstable { color: #b00020; }
+  .verdict.spiral { color: #1f77b4; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 23 · Differential equations and e<sup>At</sup></h1>
+  <div class="sub">Strang's bridge from eigenvalues to motion: the system
+    <code>du/dt = Au</code> is solved by <code>u(t) = e<sup>At</sup>u(0)</code>.
+    Eigenvalues decide whether the solution <b>decays, holds steady, oscillates, or blows up</b>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The explorer:</b> pick a matrix <code>A</code> below. The left panel is the <b>phase portrait</b> — gray
+    arrows show the velocity <code>Au</code> at each point, colored curves are real solution trajectories
+    <code>u(t)=e<sup>At</sup>u(0)</code> integrated forward in time, and the dashed lines are the
+    <b>eigenvector directions</b> (the special straight-line solutions). The right panel plots each component
+    <code>u₁(t)</code>, <code>u₂(t)</code> versus time. The status box reports the eigenvalues and the stability verdict.
+  </div>
+
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Load a preset:</span>
+    <button class="preset" data-p="steady">Strang's example (λ = 0, −3)</button>
+    <button class="preset" data-p="node">Stable node (λ both &lt; 0)</button>
+    <button class="preset" data-p="saddle">Saddle (λ &lt; 0 &lt; λ)</button>
+    <button class="preset" data-p="spiral">Stable spiral (complex λ)</button>
+    <button class="preset" data-p="source">Unstable source (λ both &gt; 0)</button>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="plots">
+    <div id="phase" class="plot"></div>
+    <div id="time"  class="plot"></div>
+  </div>
+
+  <h2>The intuition: eigenvalues steer the flow</h2>
+  <p style="font-size:14px;max-width:760px">
+    A differential equation <code>du/dt = Au</code> says: <i>the velocity of the point <code>u</code> is the matrix
+    <code>A</code> applied to its current position</i>. That is exactly the gray vector field — drop a particle
+    anywhere and it rides the arrows. The colored trajectories are what you get by following those arrows in time.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    The magic is that the messy curved flow is really just a blend of <b>pure exponentials along the eigenvectors</b>.
+    Start <i>exactly</i> on an eigenvector <code>x</code> and you stay on that line forever, scaling like
+    <code>e<sup>λt</sup></code> — that is the dashed straight-line solution. A real eigenvalue
+    <code>λ&lt;0</code> pulls the line inward (decay); <code>λ&gt;0</code> pushes it outward (growth);
+    <code>λ=0</code> freezes it (a line of steady states). Every other start is a mix of the two, so the long-run
+    behavior is governed by whichever eigenvalue has the <b>largest real part</b>.
+  </p>
+  <ul style="font-size:14px;max-width:760px">
+    <li><b>All Re(λ) &lt; 0</b> → every term <code>e<sup>λt</sup></code> decays → <span class="verdict stable">stable</span>,
+        flow spirals/slides into the origin.</li>
+    <li><b>Some λ = 0 (rest &lt; 0)</b> → one term is constant → <span class="verdict steady">steady state</span>,
+        flow settles onto the <code>λ=0</code> eigenvector line.</li>
+    <li><b>Any Re(λ) &gt; 0</b> → that term explodes → <span class="verdict unstable">unstable</span>, trajectories fly off.</li>
+    <li><b>Complex λ = a ± bi</b> → <code>e<sup>at</sup>(cos bt ± i sin bt)</code> → <b>rotation</b> (the <code>b</code>)
+        times growth/decay (the <code>a</code>) → a <span class="verdict spiral">spiral</span>.</li>
+  </ul>
+
+  <h2>The worked math</h2>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    <b>1. Diagonalize.</b> Write <code>A = SΛS⁻¹</code>, where the columns of <code>S</code> are the eigenvectors
+    <code>x₁, x₂</code> and <code>Λ = diag(λ₁, λ₂)</code>. Substituting <code>u = Sv</code> turns the coupled system
+    into <code>dv/dt = Λv</code>, which is just two <i>uncoupled</i> scalar equations
+    <code>dvᵢ/dt = λᵢ vᵢ</code>, each solved by <code>vᵢ(t) = e<sup>λᵢt</sup> vᵢ(0)</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    <b>2. General solution.</b> Transforming back, &nbsp;
+    <code>u(t) = c₁ e<sup>λ₁t</sup> x₁ + c₂ e<sup>λ₂t</sup> x₂</code>, &nbsp;
+    where <code>c = S⁻¹u(0)</code> are the coordinates of the start in the eigenvector basis.
+  </p>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    <b>3. The matrix exponential — the power series.</b> "There's a power series for exponentials," says Strang.
+    Borrow the scalar Taylor series <code>e<sup>x</sup> = Σ xⁿ/n! = 1 + x + x²/2! + x³/3! + …</code> and just put a
+    <i>matrix</i> in the exponent:
+    <code>e<sup>At</sup> = I + At + (At)²/2! + (At)³/3! + … = Σ (At)ⁿ/n!</code>.
+    This is the <b>definition</b>, and it is better-behaved than the scalar geometric series — dividing by the
+    factorials <code>n!</code> makes it <b>always converge</b>, for any matrix <code>A</code> and any <code>t</code>.
+  </p>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    <b>Why it equals S e<sup>Λt</sup> S⁻¹.</b> Substitute <code>A = SΛS⁻¹</code>. Each power telescopes because the
+    inner factors cancel: <code>A² = SΛS⁻¹·SΛS⁻¹ = SΛ²S⁻¹</code>, and generally <code>Aⁿ = SΛⁿS⁻¹</code>. Writing
+    <code>I = S I S⁻¹</code> and pulling the common <code>S … S⁻¹</code> out of every term:
+    <br>
+    <code>e<sup>At</sup> = S(I + Λt + Λ²t²/2! + …)S⁻¹ = S e<sup>Λt</sup> S⁻¹</code>, where
+    <code>e<sup>Λt</sup> = diag(e<sup>λ₁t</sup>, e<sup>λ₂t</sup>)</code> is just the scalar exponentials down the
+    diagonal. Then <code>u(t) = e<sup>At</sup> u(0)</code> reproduces the eigenvector sum in step 2.
+    <i>(Side note from lecture: the same trick on <code>I + At + (At)² + …</code> — no factorials — sums to
+    <code>(I − At)⁻¹</code>, the geometric series, but that one only converges when the eigenvalues of
+    <code>At</code> are below 1. The factorial version never fails. The whole construction assumes <code>A</code> is
+    diagonalizable — degenerate matrices without a full set of eigenvectors have no <code>S⁻¹</code>.)</i>
+  </p>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    <b>4. Stability.</b> Since <code>S</code> and <code>S⁻¹</code> don't move with <code>t</code>, the fate of
+    <code>e<sup>At</sup></code> is the fate of <code>e<sup>Λt</sup></code>: <code>e<sup>At</sup> → 0</code> (so
+    <code>u→0</code> for every start) <b>iff every</b> <code>Re(λᵢ) &lt; 0</code> — the eigenvalues live in the
+    <b>left half of the complex plane</b>. A zero eigenvalue leaves a surviving constant term (steady state); any
+    positive real part makes <code>e<sup>At</sup></code> blow up. For a complex <code>λ = a ± bi</code> only the real
+    part <code>a</code> decides growth: <code>|e<sup>(a+bi)t</sup>| = e<sup>at</sup></code>, since
+    <code>|cos bt + i sin bt| = 1</code> just rotates on the unit circle. (Contrast: matrix <i>powers</i>
+    <code>Aᵏ → 0</code> need <code>|λ| &lt; 1</code> — eigenvalues inside the unit circle, not the left half-plane.)
+  </p>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    <b>5. The 2×2 shortcut.</b> For <code>A = [[a,b],[c,d]]</code> you can read stability off the matrix without
+    finding the eigenvalues. Both eigenvalues have negative real part <b>iff</b> <code>trace = a+d &lt; 0</code>
+    <b>and</b> <code>det = ad−bc &gt; 0</code>. Reason: trace <code>= λ₁+λ₂</code> and det <code>= λ₁λ₂</code>; two
+    negatives give a negative sum and a positive product. <i>A negative trace alone is not enough</i> — Strang's
+    counterexample <code>[[−2,0],[0,1]]</code> has trace <code>−1 &lt; 0</code> but <code>det = −2 &lt; 0</code>, a
+    <code>λ = +1</code> hiding inside, so it blows up. (Reversing every sign of <code>A</code> flips the sign of
+    each eigenvalue — turning the stable example into a blow-up.)
+  </p>
+
+  <h2>Worked example — Strang's matrix on the board</h2>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    Strang's example (load the first preset) is <code>A = [[−1, 2], [1, −2]]</code> with start
+    <code>u(0) = (1, 0)</code> — "everything is in <code>u₁</code> at time zero." He reads the eigenvalues
+    straight off the matrix: the <b>second column is −2 times the first</b>, so <code>A</code> is singular ⇒
+    <code>λ₁ = 0</code>. The <b>trace is −1 + (−2) = −3</b>, and eigenvalues sum to the trace, so
+    <code>λ₂ = −3</code>. (Check: <code>det(A − λI) = λ² + 3λ = λ(λ+3)</code>.)
+  </p>
+  <ul style="font-size:14px;max-width:760px" class="eqn">
+    <li><code>λ₁ = 0</code>: <code>Ax = 0</code> ⇒ <code>−x + 2y = 0</code> ⇒ <code>x₁ = (2, 1)</code>.</li>
+    <li><code>λ₂ = −3</code>: <code>(A+3I)x = 0</code> with <code>[[2,2],[1,1]]</code> ⇒ <code>x + y = 0</code> ⇒ <code>x₂ = (1, −1)</code>.</li>
+  </ul>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    So <code>u(t) = c₁ e<sup>0·t</sup>(2,1) + c₂ e<sup>−3t</sup>(1,−1) = c₁(2,1) + c₂ e<sup>−3t</sup>(1,−1)</code>.
+    Matching <code>u(0) = (1,0)</code> gives <code>2c₁ + c₂ = 1</code> and <code>c₁ − c₂ = 0</code>, so
+    <code>c₁ = c₂ = 1/3</code> (Strang spots this by eye: equal weights give <code>(3,0)</code>, scale by a third).
+    The <code>e<sup>−3t</sup></code> term decays away; the constant term survives. As <code>t → ∞</code> every
+    trajectory glides onto the <code>λ=0</code> eigenvector line and stops at the steady state
+    <code>u(∞) = ⅓·(2,1) = (2/3, 1/3)</code> — "two-thirds of one-third."
+  </p>
+
+  <h2>Strang's final example — turning one 2nd-order ODE into a 2×2 system</h2>
+  <p style="font-size:14px;max-width:760px">
+    The whole machine above eats a <i>first-order system</i> <code>du/dt = Au</code>. But most physics gives you a
+    <b>single higher-order equation</b> — a mass on a spring with damping is
+    <code>y″ + b y′ + K y = 0</code>. Strang's trick (the same one he used for Fibonacci) is to <b>stack the unknown
+    and its derivative into a vector</b> and add one trivial equation, converting the scalar 2nd-order ODE into a
+    2×2 first-order system that the eigenvalue method solves directly.
+  </p>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    Let the state vector be <code>u = (y′, y)</code>. Then:
+  </p>
+  <ul style="font-size:14px;max-width:760px" class="eqn">
+    <li>The ODE itself says <code>y″ = −b y′ − K y</code> &nbsp;→ first row of <code>A</code>.</li>
+    <li>The trivial identity <code>y′ = y′</code> &nbsp;→ second row of <code>A</code> (just a <code>1</code> and a <code>0</code>).</li>
+  </ul>
+  <p style="font-size:14px;max-width:760px" class="eqn">
+    Stacked: &nbsp;<code>d/dt (y′, y) = [[−b, −K], [1, 0]] · (y′, y)</code>, &nbsp;so
+    <code>A = [[−b, −K], [1, 0]]</code>. Its eigenvalues are exactly the roots of the equation's own characteristic
+    polynomial <code>λ² + bλ + K = 0</code> — the eigenvalues "come out in a natural way connected to the
+    differential equation." (A 5th-order equation becomes a 5×5 with the coefficients along the top row and ones on
+    the subdiagonal — a companion matrix.) Play with the damping <code>b</code> and stiffness <code>K</code> below
+    and watch the phase portrait of <code>(y′, y)</code>: under-damped springs spiral in, over-damped ones slide
+    straight to rest, and <code>b &lt; 0</code> (negative damping = energy pumped in) blows up.
+  </p>
+  <div class="controls" id="so_controls" style="margin-bottom:10px">
+    <label style="font-size:13px;margin-right:14px">damping b = <span id="bVal" style="font-weight:700"></span>
+      <input type="range" id="bRange" min="-1" max="4" step="0.1" value="0.5" style="vertical-align:middle"></label>
+    <label style="font-size:13px;margin-right:14px">stiffness K = <span id="kVal" style="font-weight:700"></span>
+      <input type="range" id="kRange" min="0.2" max="6" step="0.1" value="4" style="vertical-align:middle"></label>
+    <button class="preset" data-so="under">Under-damped (spiral)</button>
+    <button class="preset" data-so="over">Over-damped (node)</button>
+    <button class="preset" data-so="undamped">Undamped (center)</button>
+    <button class="preset" data-so="neg">Negative damping (blow up)</button>
+  </div>
+  <div class="status" id="so_status"></div>
+  <div class="plots">
+    <div id="so_phase" class="plot"></div>
+    <div id="so_time"  class="plot"></div>
+  </div>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  const { linspace, round } = LA;
+
+  const PRESETS = {
+    steady: { A: [[-1, 2], [1, -2]],  T: 4,  starts: [[1,0],[2.4,0.2],[-1,1.5],[-2,-1.5],[0.5,2.4],[1.5,-2.2]] },
+    node:   { A: [[-1, 0.5], [0, -2]], T: 4,  starts: [[2,1.8],[-2,1.8],[2,-1.8],[-2,-1.8],[2.2,0]] },
+    saddle: { A: [[1, 0], [0, -1]],   T: 2.2,starts: [[0.15,2],[ -0.15,2],[0.15,-2],[-0.15,-2],[2,0.15],[2,-0.15]] },
+    spiral: { A: [[0, 1], [-1, -0.3]],T: 18, starts: [[2,0],[-2.2,0],[0,2.2],[1.4,-1.4]] },
+    source: { A: [[0.4, 1], [-1, 0.4]],T: 4, starts: [[0.25,0],[-0.25,0],[0,0.25],[0.15,0.15]] },
+  };
+
+  // ---- 2x2 eigen-analysis (real or complex) ----
+  function eig2(A) {
+    const a = A[0][0], b = A[0][1], c = A[1][0], d = A[1][1];
+    const tr = a + d, det = a * d - b * c;
+    const disc = tr * tr - 4 * det;
+    if (disc >= 0) {
+      const s = Math.sqrt(disc);
+      const l1 = (tr + s) / 2, l2 = (tr - s) / 2;
+      // eigenvector for real lambda: (A - lI) v = 0
+      const vecFor = (l) => {
+        // row [a-l, b]; v perpendicular within nullspace -> (b, l-a) if b!=0, else (l-d, c)
+        let v;
+        if (Math.abs(b) > 1e-9) v = [b, l - a];
+        else if (Math.abs(c) > 1e-9) v = [l - d, c];
+        else v = (Math.abs(a - l) < 1e-9) ? [1, 0] : [0, 1];
+        const n = Math.hypot(v[0], v[1]) || 1;
+        return [v[0] / n, v[1] / n];
+      };
+      return { complex: false, l1, l2, x1: vecFor(l1), x2: vecFor(l2) };
+    }
+    const re = tr / 2, im = Math.sqrt(-disc) / 2;
+    return { complex: true, re, im };
+  }
+
+  // ---- numerical integration (RK4) of u' = A u ----
+  function flow(A, u0, T, dt) {
+    const f = (u) => [A[0][0]*u[0] + A[0][1]*u[1], A[1][0]*u[0] + A[1][1]*u[1]];
+    const add = (p, q, s) => [p[0] + s*q[0], p[1] + s*q[1]];
+    const n = Math.max(2, Math.round(T / dt));
+    const xs = [u0[0]], ys = [u0[1]], ts = [0];
+    let u = u0.slice();
+    const LIM = 12; // stop if trajectory escapes the view
+    for (let i = 0; i < n; i++) {
+      const k1 = f(u);
+      const k2 = f(add(u, k1, dt/2));
+      const k3 = f(add(u, k2, dt/2));
+      const k4 = f(add(u, k3, dt));
+      u = [u[0] + dt/6*(k1[0]+2*k2[0]+2*k3[0]+k4[0]),
+           u[1] + dt/6*(k1[1]+2*k2[1]+2*k3[1]+k4[1])];
+      xs.push(u[0]); ys.push(u[1]); ts.push((i+1)*dt);
+      if (Math.abs(u[0]) > LIM || Math.abs(u[1]) > LIM) break;
+    }
+    return { xs, ys, ts };
+  }
+
+  function fmt(v) { const r = round(v); return (r >= 0 ? " " : "") + r; }
+
+  function verdict(e) {
+    if (e.complex) {
+      if (e.re < -1e-9) return { cls: "stable",   txt: "Stable spiral — complex λ with Re(λ) < 0: rotation that decays into the origin." };
+      if (e.re >  1e-9) return { cls: "unstable", txt: "Unstable spiral — complex λ with Re(λ) > 0: rotation that grows without bound." };
+      return { cls: "spiral", txt: "Center — pure imaginary λ: closed orbits, neither growing nor decaying." };
+    }
+    const m = Math.max(e.l1, e.l2), mn = Math.min(e.l1, e.l2);
+    if (m > 1e-9 && mn < -1e-9) return { cls: "unstable", txt: "Saddle — one λ > 0 and one λ < 0: unstable. Almost every trajectory escapes along the λ > 0 eigenvector." };
+    if (m > 1e-9)               return { cls: "unstable", txt: "Unstable source — both λ > 0: e^{At} blows up, every trajectory flies outward." };
+    if (Math.abs(m) <= 1e-9)    return { cls: "steady",   txt: "Steady state — one λ = 0 (rest < 0): the e^{0·t} term survives, so the flow settles onto the λ = 0 eigenvector line instead of the origin." };
+    return { cls: "stable", txt: "Stable node — both λ < 0: every e^{λt} decays, all trajectories slide into the origin." };
+  }
+
+  function draw(key) {
+    const P = PRESETS[key], A = P.A;
+    const e = eig2(A);
+    const R = 3.2;
+
+    // ---- phase portrait ----
+    const data = [];
+
+    // vector field: arrows of Au on a grid (normalized for readability)
+    const gx = linspace(-R, R, 11), gy = linspace(-R, R, 11);
+    const segX = [], segY = [], headX = [], headY = [];
+    const scale = 0.28;
+    for (const x of gx) for (const y of gy) {
+      const vx = A[0][0]*x + A[0][1]*y, vy = A[1][0]*x + A[1][1]*y;
+      const mag = Math.hypot(vx, vy) || 1;
+      // log-ish normalization so arrows are comparable
+      const len = scale * (R * 2 / 10);
+      const ux = vx / mag * len, uy = vy / mag * len;
+      segX.push(x, x + ux, null);
+      segY.push(y, y + uy, null);
+      headX.push(x + ux); headY.push(y + uy);
+    }
+    data.push({ type: "scatter", mode: "lines", x: segX, y: segY,
+                line: { color: "#cfd6df", width: 1.4 }, hoverinfo: "skip", showlegend: false });
+    data.push({ type: "scatter", mode: "markers", x: headX, y: headY,
+                marker: { color: "#aab4c0", size: 3 }, hoverinfo: "skip", showlegend: false });
+
+    // eigenvector lines (real case): the straight-line solutions
+    if (!e.complex) {
+      [[e.x1, e.l1], [e.x2, e.l2]].forEach((pair, i) => {
+        const v = pair[0], l = pair[1];
+        const col = i === 0 ? "#176d2c" : "#9a6b00";
+        data.push({ type: "scatter", mode: "lines",
+          x: [-R*v[0], R*v[0]], y: [-R*v[1], R*v[1]],
+          line: { color: col, width: 2.5, dash: "dash" },
+          name: `eigvec λ=${round(l)}`, hoverinfo: "name" });
+      });
+    }
+
+    // trajectories u(t) = e^{At} u(0)
+    const dt = P.T / 600;
+    const trajColors = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e", "#17becf"];
+    const timeData = [];
+    P.starts.forEach((u0, i) => {
+      const col = trajColors[i % trajColors.length];
+      const tr = flow(A, u0, P.T, dt);
+      data.push({ type: "scatter", mode: "lines", x: tr.xs, y: tr.ys,
+        line: { color: col, width: 2 }, showlegend: false,
+        hovertemplate: "(%{x:.2f}, %{y:.2f})<extra></extra>" });
+      // start dot + end dot
+      data.push({ type: "scatter", mode: "markers", x: [u0[0]], y: [u0[1]],
+        marker: { color: col, size: 7 }, showlegend: false, hoverinfo: "skip" });
+      data.push({ type: "scatter", mode: "markers",
+        x: [tr.xs[tr.xs.length-1]], y: [tr.ys[tr.ys.length-1]],
+        marker: { color: col, size: 5, symbol: "x" }, showlegend: false, hoverinfo: "skip" });
+      // time series for the right panel (first 3 trajectories, to avoid clutter)
+      if (i < 3) {
+        timeData.push({ type: "scatter", mode: "lines", x: tr.ts, y: tr.xs,
+          line: { color: col, width: 2 }, name: `u₁ start ${i+1}` });
+        timeData.push({ type: "scatter", mode: "lines", x: tr.ts, y: tr.ys,
+          line: { color: col, width: 2, dash: "dot" }, name: `u₂ start ${i+1}` });
+      }
+    });
+
+    // origin marker
+    data.push({ type: "scatter", mode: "markers", x: [0], y: [0],
+      marker: { color: "#000", size: 6, symbol: "circle-open" }, showlegend: false, hoverinfo: "skip" });
+
+    Plotly.react("phase", data, {
+      title: { text: "Phase portrait: vector field Au + trajectories", font: { size: 13 } },
+      xaxis: { title: "u₁", range: [-R, R], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+      yaxis: { title: "u₂", range: [-R, R], zeroline: true },
+      margin: { l: 44, r: 10, t: 30, b: 40 },
+      legend: { font: { size: 11 }, orientation: "h", y: -0.14 },
+    }, { responsive: true });
+
+    Plotly.react("time", timeData, {
+      title: { text: "Components vs time:  u₁ (solid), u₂ (dotted)", font: { size: 13 } },
+      xaxis: { title: "t" },
+      yaxis: { title: "uᵢ(t)" },
+      margin: { l: 44, r: 10, t: 30, b: 40 },
+      legend: { font: { size: 11 } },
+    }, { responsive: true });
+
+    // ---- status box ----
+    const v = verdict(e);
+    let eigHtml;
+    if (e.complex) {
+      eigHtml = `λ = ${round(e.re)} ± ${round(Math.abs(e.im))} i`;
+    } else {
+      eigHtml = `λ₁ = ${round(e.l1)}, &nbsp; x₁ = (${fmt(e.x1[0])}, ${fmt(e.x1[1])}) &nbsp;|&nbsp; `
+              + `λ₂ = ${round(e.l2)}, &nbsp; x₂ = (${fmt(e.x2[0])}, ${fmt(e.x2[1])})`;
+    }
+    const Aw = A.map(r => `[${fmt(r[0])}, ${fmt(r[1])}]`).join(", ");
+    document.getElementById("status").innerHTML =
+      `<div><b>du/dt = Au</b> with <code>A = [${Aw}]</code></div>` +
+      `<div style="margin-top:6px" class="eqn">${eigHtml}</div>` +
+      `<div style="margin-top:6px">Verdict: <span class="verdict ${v.cls}">${v.txt}</span></div>`;
+  }
+
+  document.querySelectorAll(".preset[data-p]").forEach((btn) => {
+    btn.onclick = () => draw(btn.dataset.p);
+  });
+  draw("steady");
+
+  // ============================================================
+  //  Second-order ODE explorer:  y'' + b y' + K y = 0
+  //  state u = (y', y),  A = [[-b, -K], [1, 0]]
+  // ============================================================
+  const bRange = document.getElementById("bRange");
+  const kRange = document.getElementById("kRange");
+  const SO_PRESETS = {
+    under:   { b: 0.5, K: 4 },   // small damping -> complex roots -> spiral
+    over:    { b: 5,   K: 4 },   // large damping -> two real negative roots -> node
+    undamped:{ b: 0,   K: 4 },   // no damping -> pure imaginary -> center (closed orbits)
+    neg:     { b: -0.6,K: 4 },   // negative damping -> Re(lambda) > 0 -> blow up
+  };
+
+  function drawSO() {
+    const b = parseFloat(bRange.value), K = parseFloat(kRange.value);
+    document.getElementById("bVal").textContent = round(b);
+    document.getElementById("kVal").textContent = round(K);
+    const A = [[-b, -K], [1, 0]];
+    const e = eig2(A);
+    const R = 3.2;
+    // choose a time window long enough to show the motion
+    const T = e.complex ? (e.re < -1e-9 ? 14 : (e.re > 1e-9 ? 6 : 18)) : 8;
+    const starts = [[0, 2.2], [0, -2.2], [2, 0], [-2, 0], [1.4, 1.4]];
+
+    const data = [];
+    // vector field
+    const gx = linspace(-R, R, 11), gy = linspace(-R, R, 11);
+    const segX = [], segY = [], headX = [], headY = [];
+    const len = 0.28 * (R * 2 / 10);
+    for (const x of gx) for (const y of gy) {
+      const vx = A[0][0]*x + A[0][1]*y, vy = A[1][0]*x + A[1][1]*y;
+      const mag = Math.hypot(vx, vy) || 1;
+      const ux = vx / mag * len, uy = vy / mag * len;
+      segX.push(x, x + ux, null); segY.push(y, y + uy, null);
+      headX.push(x + ux); headY.push(y + uy);
+    }
+    data.push({ type: "scatter", mode: "lines", x: segX, y: segY,
+                line: { color: "#cfd6df", width: 1.4 }, hoverinfo: "skip", showlegend: false });
+    data.push({ type: "scatter", mode: "markers", x: headX, y: headY,
+                marker: { color: "#aab4c0", size: 3 }, hoverinfo: "skip", showlegend: false });
+
+    if (!e.complex) {
+      [[e.x1, e.l1], [e.x2, e.l2]].forEach((pair, i) => {
+        const v = pair[0], l = pair[1], col = i === 0 ? "#176d2c" : "#9a6b00";
+        data.push({ type: "scatter", mode: "lines",
+          x: [-R*v[0], R*v[0]], y: [-R*v[1], R*v[1]],
+          line: { color: col, width: 2.5, dash: "dash" },
+          name: `eigvec λ=${round(l)}`, hoverinfo: "name" });
+      });
+    }
+
+    const dt = T / 600;
+    const cols = ["#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e"];
+    const timeData = [];
+    starts.forEach((u0, i) => {
+      const col = cols[i % cols.length];
+      const tr = flow(A, u0, T, dt);
+      data.push({ type: "scatter", mode: "lines", x: tr.xs, y: tr.ys,
+        line: { color: col, width: 2 }, showlegend: false,
+        hovertemplate: "(y'=%{x:.2f}, y=%{y:.2f})<extra></extra>" });
+      data.push({ type: "scatter", mode: "markers", x: [u0[0]], y: [u0[1]],
+        marker: { color: col, size: 7 }, showlegend: false, hoverinfo: "skip" });
+      if (i < 3) {
+        // plot the physical displacement y(t) (the second component)
+        timeData.push({ type: "scatter", mode: "lines", x: tr.ts, y: tr.ys,
+          line: { color: col, width: 2 }, name: `y(t) start ${i+1}` });
+      }
+    });
+    data.push({ type: "scatter", mode: "markers", x: [0], y: [0],
+      marker: { color: "#000", size: 6, symbol: "circle-open" }, showlegend: false, hoverinfo: "skip" });
+
+    Plotly.react("so_phase", data, {
+      title: { text: "Phase portrait of (y′, y)", font: { size: 13 } },
+      xaxis: { title: "y′ (velocity)", range: [-R, R], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+      yaxis: { title: "y (position)", range: [-R, R], zeroline: true },
+      margin: { l: 50, r: 10, t: 30, b: 40 },
+      legend: { font: { size: 11 }, orientation: "h", y: -0.16 },
+    }, { responsive: true });
+
+    Plotly.react("so_time", timeData, {
+      title: { text: "Displacement y(t) vs time", font: { size: 13 } },
+      xaxis: { title: "t" }, yaxis: { title: "y(t)" },
+      margin: { l: 44, r: 10, t: 30, b: 40 }, legend: { font: { size: 11 } },
+    }, { responsive: true });
+
+    const v = verdict(e);
+    let eigHtml;
+    if (e.complex) eigHtml = `λ = ${round(e.re)} ± ${round(Math.abs(e.im))} i`;
+    else eigHtml = `λ₁ = ${round(e.l1)}, λ₂ = ${round(e.l2)}`;
+    document.getElementById("so_status").innerHTML =
+      `<div class="eqn"><b>y″ + ${round(b)} y′ + ${round(K)} y = 0</b> &nbsp;⇒&nbsp; `
+      + `<code>A = [[${fmt(-b)}, ${fmt(-K)}], [ 1,  0]]</code></div>`
+      + `<div style="margin-top:6px" class="eqn">Characteristic roots ${eigHtml}` +
+        ` &nbsp;(roots of λ² + ${round(b)}λ + ${round(K)} = 0)</div>`
+      + `<div style="margin-top:6px">Verdict: <span class="verdict ${v.cls}">${v.txt}</span></div>`;
+  }
+
+  bRange.addEventListener("input", drawSO);
+  kRange.addEventListener("input", drawSO);
+  document.querySelectorAll(".preset[data-so]").forEach((btn) => {
+    btn.onclick = () => {
+      const p = SO_PRESETS[btn.dataset.so];
+      bRange.value = p.b; kRange.value = p.K; drawSO();
+    };
+  });
+  drawSO();
+})();
+</script>
+</body>
+</html>

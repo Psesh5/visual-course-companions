@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 14 — Orthogonal vectors and subspaces · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 14 · Orthogonal vectors and subspaces</h1>
+  <div class="sub">Two vectors are <b>orthogonal</b> when their dot product is zero. Whole subspaces
+    can be orthogonal too — and the four fundamental subspaces split <code>Rⁿ</code> into two
+    perpendicular pairs: <code>row space ⟂ nullspace</code> and <code>column space ⟂ left nullspace</code>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- FIGURE 1 — two vectors, dot product, angle, Pythagoras        -->
+  <!-- ============================================================= -->
+  <div class="note">
+    <b>Figure 1 — Orthogonal vectors.</b> Drag the sliders to set two vectors
+    <code>a</code> (blue) and <code>b</code> (green) in <code>R³</code>. Watch the dot product
+    <code>a·b</code> and the angle <code>θ</code>. When <code>a·b = 0</code> the vectors are
+    <b>perpendicular</b> and the Pythagorean identity
+    <code>‖a+b‖² = ‖a‖² + ‖b‖²</code> holds exactly. The first preset loads Strang's board example
+    <code>x=(1,2,3)</code>, <code>y=(2,−1,2)</code>: <code>xᵀy = 2−2+0 = 0</code>, and the squared lengths
+    check out as <code>14 + 5 = 19</code>.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Presets:</span>
+    <button class="preset" data-fig="1" data-p="strang">Strang's example: x=(1,2,3), y=(2,−1,2)</button>
+    <button class="preset" data-fig="1" data-p="perp">Perpendicular (a·b=0)</button>
+    <button class="preset" data-fig="1" data-p="acute">Acute angle</button>
+    <button class="preset" data-fig="1" data-p="obtuse">Obtuse angle</button>
+  </div>
+
+  <div class="plots">
+    <div id="fig1plot" class="plot"></div>
+    <div style="flex:1 1 360px;min-width:320px">
+      <table class="sys">
+        <tr><td></td><td class="var">x</td><td class="var">y</td><td class="var">z</td></tr>
+        <tr><td><b style="color:#1f77b4">a&nbsp;=</b></td>
+          <td><input class="coef f1" id="a1" type="range" min="-3" max="3" step="0.1" value="2"></td>
+          <td><input class="coef f1" id="a2" type="range" min="-3" max="3" step="0.1" value="0"></td>
+          <td><input class="coef f1" id="a3" type="range" min="-3" max="3" step="0.1" value="0"></td></tr>
+        <tr><td><b style="color:#2ca02c">b&nbsp;=</b></td>
+          <td><input class="coef f1" id="b1" type="range" min="-3" max="3" step="0.1" value="0"></td>
+          <td><input class="coef f1" id="b2" type="range" min="-3" max="3" step="0.1" value="2"></td>
+          <td><input class="coef f1" id="b3" type="range" min="-3" max="3" step="0.1" value="0"></td></tr>
+      </table>
+      <div id="fig1status" class="status"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- FIGURE 2 — plane and its orthogonal complement (normal line)  -->
+  <!-- ============================================================= -->
+  <div class="note">
+    <b>Figure 2 — A subspace and its orthogonal complement.</b> The shaded <b>plane</b> through the
+    origin is a 2-D subspace <code>V</code>. The red <b>line</b> is its orthogonal complement
+    <code>V⟂</code> — the directions perpendicular to <i>every</i> vector in the plane. Set the
+    plane's normal <code>n</code> with the sliders; the plane is everything perpendicular to
+    <code>n</code>, and <code>V⟂</code> is exactly the line through <code>n</code>.
+  </div>
+
+  <div class="plots">
+    <div id="fig2plot" class="plot"></div>
+    <div style="flex:1 1 360px;min-width:320px">
+      <table class="sys">
+        <tr><td></td><td class="var">x</td><td class="var">y</td><td class="var">z</td></tr>
+        <tr><td><b style="color:#b00020">n&nbsp;=</b></td>
+          <td><input class="coef f2" id="n1" type="range" min="-3" max="3" step="0.1" value="1"></td>
+          <td><input class="coef f2" id="n2" type="range" min="-3" max="3" step="0.1" value="1"></td>
+          <td><input class="coef f2" id="n3" type="range" min="-3" max="3" step="0.1" value="1"></td></tr>
+      </table>
+      <div id="fig2status" class="status"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- FIGURE 3 — four subspaces of a rank-2 matrix                  -->
+  <!-- ============================================================= -->
+  <div class="note">
+    <b>Figure 3 — The four subspaces are orthogonal in pairs.</b> For the rank-2 matrix
+    <code>A</code> below: the <b>row space</b> (blue plane, in <code>R³</code>) is perpendicular to
+    the <b>nullspace</b> (red line). Every row of <code>A</code> dots to zero with every nullspace
+    vector. The numbers under the picture verify it.
+  </div>
+
+  <div id="fig3plot" class="plot" style="height:520px"></div>
+  <div id="fig3status" class="status"></div>
+
+  <!-- ============================================================= -->
+  <!-- FIGURE 4 — AᵀA: the matrix that runs the next chapter          -->
+  <!-- ============================================================= -->
+  <div class="note">
+    <b>Figure 4 — The key matrix <code>AᵀA</code>.</b> Strang ends the lecture by jumping ahead to the
+    matrix that drives least squares: <code>AᵀA</code>. It is always <b>square</b> (<code>n×n</code>)
+    and <b>symmetric</b>, and the punchline is <code>rank(AᵀA) = rank(A)</code> and
+    <code>N(AᵀA) = N(A)</code> — so <code>AᵀA</code> is invertible <i>exactly when</i> <code>A</code> has
+    independent columns. Pick one of Strang's two matrices and watch <code>AᵀA</code>, its determinant,
+    and its rank.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Strang's matrices:</span>
+    <button class="preset" data-fig="4" data-p="indep">A = [[1,1],[1,2],[1,5]] — independent columns</button>
+    <button class="preset" data-fig="4" data-p="dep">A = [[1,3],[1,3],[1,3]] — rank 1</button>
+  </div>
+  <div id="fig4plot" class="plot" style="height:420px"></div>
+  <div id="fig4status" class="status"></div>
+
+  <!-- ============================================================= -->
+  <!-- INTUITION                                                      -->
+  <!-- ============================================================= -->
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>Orthogonal = perpendicular = right angle.</b> The dot product measures how much two vectors
+    point the same way. When you tilt <code>a</code> and <code>b</code> until the dot product passes
+    through zero, the arrows form a perfect right angle. At that instant the triangle with legs
+    <code>a</code> and <code>b</code> and hypotenuse <code>a+b</code> is a right triangle — and the
+    Pythagorean theorem is the statement <code>‖a+b‖² = ‖a‖² + ‖b‖²</code>. Try Figure 1's
+    "Perpendicular" preset and watch all three squared lengths line up.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Orthogonal subspaces.</b> Two subspaces are orthogonal when <i>every</i> vector in one is
+    perpendicular to <i>every</i> vector in the other. A plane through the origin and the line along
+    its normal are the cleanest example (Figure 2): no matter which vector you pick in the plane, it
+    makes a right angle with the normal direction. The <b>orthogonal complement</b> <code>V⟂</code>
+    collects <i>all</i> vectors perpendicular to <code>V</code>; in <code>R³</code> a plane (dim 2)
+    pairs with a line (dim 1), and <code>2 + 1 = 3</code>.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>The big payoff — the four subspaces.</b> Strang's "big picture": a matrix <code>A</code> with
+    <code>n</code> columns and <code>m</code> rows splits its two homes perpendicularly.
+    Inside <code>Rⁿ</code>, the <b>row space</b> and the <b>nullspace</b> are orthogonal complements
+    (<code>r + (n−r) = n</code>). Inside <code>Rᵐ</code>, the <b>column space</b> and the
+    <b>left nullspace</b> are orthogonal complements (<code>r + (m−r) = m</code>). Why? If
+    <code>Ax = 0</code>, then each row of <code>A</code> dotted with <code>x</code> is zero — so
+    <code>x</code> is perpendicular to every row, hence to the whole row space. Figure 3 shows this
+    for a concrete rank-2 matrix.
+  </p>
+
+  <!-- ============================================================= -->
+  <!-- WORKED MATH                                                    -->
+  <!-- ============================================================= -->
+  <h2>The worked math</h2>
+
+  <p style="font-size:14px;max-width:780px"><b>1 · Dot product and the definition of orthogonal.</b>
+    For <code>a, b ∈ Rⁿ</code>,</p>
+  <p style="font-size:14px;max-width:780px">
+    <code>a · b = aᵀb = a₁b₁ + a₂b₂ + ··· + aₙbₙ = ‖a‖ ‖b‖ cos θ.</code>
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The length is <code>‖a‖ = √(a·a)</code>. Since <code>‖a‖, ‖b‖ &gt; 0</code> for nonzero vectors,
+    <code>a · b = 0</code> exactly when <code>cos θ = 0</code>, i.e. <code>θ = 90°</code>. That is the
+    <b>definition</b>: <code>a ⟂ b ⇔ a·b = 0</code>. (By convention the zero vector is orthogonal to
+    everything, since <code>0·b = 0</code>.)
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>2 · The Pythagorean derivation.</b>
+    Expand the squared length of the hypotenuse using <code>‖v‖² = v·v</code> and the distributive law:</p>
+  <p style="font-size:14px;max-width:780px">
+    <code>‖a + b‖² = (a+b)·(a+b) = a·a + 2(a·b) + b·b = ‖a‖² + 2(a·b) + ‖b‖².</code>
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The cross term <code>2(a·b)</code> vanishes <b>iff</b> <code>a·b = 0</code>. So
+    <code>‖a + b‖² = ‖a‖² + ‖b‖²</code> holds <b>exactly when</b> <code>a ⟂ b</code> — Pythagoras and
+    orthogonality are the same statement. Figure 1's status box reports all three squared lengths so
+    you can see the equation balance.
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>3 · Subspaces and the orthogonal-complement dimension law.</b>
+    Subspaces <code>V, W ⊆ Rⁿ</code> are <b>orthogonal</b> if <code>v·w = 0</code> for all
+    <code>v ∈ V</code>, <code>w ∈ W</code>. The <b>orthogonal complement</b> is</p>
+  <p style="font-size:14px;max-width:780px">
+    <code>V⟂ = { x ∈ Rⁿ : x · v = 0 for every v ∈ V }.</code>
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    It is itself a subspace, and it captures <i>all</i> perpendicular directions, giving the
+    dimension relation</p>
+  <p style="font-size:14px;max-width:780px">
+    <code>dim V + dim V⟂ = n.</code>
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    For the four subspaces of an <code>m×n</code> matrix of rank <code>r</code> this becomes the
+    fundamental theorem of linear algebra (part 2):</p>
+  <table class="sys" style="font-size:14px;margin:8px 0">
+    <tr><td><b>In Rⁿ:</b></td>
+      <td><code>row space (dim r) ⟂ nullspace (dim n−r)</code></td>
+      <td>&nbsp;⇒&nbsp; <code>r + (n−r) = n</code></td></tr>
+    <tr><td><b>In Rᵐ:</b></td>
+      <td><code>column space (dim r) ⟂ left nullspace (dim m−r)</code></td>
+      <td>&nbsp;⇒&nbsp; <code>r + (m−r) = m</code></td></tr>
+  </table>
+  <p style="font-size:14px;max-width:780px">
+    The row-space/nullspace orthogonality is immediate: <code>Ax = 0</code> says every row
+    <code>rᵢ</code> satisfies <code>rᵢ · x = 0</code>, so <code>x</code> is orthogonal to each row and
+    therefore to their entire span, the row space. The same argument on <code>Aᵀ</code> gives
+    <code>column space ⟂ left nullspace</code>. Figure 3 confirms the first pair numerically for a
+    rank-2 example.
+  </p>
+
+  <p style="font-size:14px;max-width:780px"><b>4 · The matrix <code>AᵀA</code> (coming attraction).</b>
+    Strang closes by previewing the matrix behind least squares. When <code>Ax = b</code> has no
+    solution (too many noisy equations), the <b>good equation</b> to solve instead is</p>
+  <p style="font-size:14px;max-width:780px">
+    <code>AᵀA x̂ = Aᵀb.</code>
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    For any <code>m×n</code> matrix <code>A</code>, the product <code>AᵀA</code> is <code>n×n</code>
+    (square) and <b>symmetric</b>, since <code>(AᵀA)ᵀ = Aᵀ(Aᵀ)ᵀ = AᵀA</code>. The key facts are</p>
+  <p style="font-size:14px;max-width:780px">
+    <code>N(AᵀA) = N(A)</code> &nbsp;and&nbsp; <code>rank(AᵀA) = rank(A).</code>
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    (Reason: if <code>AᵀAx = 0</code> then <code>xᵀAᵀAx = ‖Ax‖² = 0</code>, forcing <code>Ax = 0</code>;
+    the converse is immediate.) So <code>AᵀA</code> is <b>invertible exactly when <code>A</code> has
+    independent columns</b>. Strang's two examples (Figure 4): with
+    <code>A = [[1,1],[1,2],[1,5]]</code> (independent columns) we get
+    <code>AᵀA = [[3,8],[8,30]]</code>, determinant <code>90 − 64 = 26 ≠ 0</code>, invertible; but with
+    a rank-1 <code>A</code> the product is rank-1 and singular (determinant 0).
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  const { round, linspace, planeTrace, arrow, SCENE } = LA;
+
+  /* small vector helpers (kept local — not in linalg.js) */
+  const dot  = (u, v) => u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+  const norm = (u)    => Math.sqrt(dot(u, u));
+  const add  = (u, v) => [u[0]+v[0], u[1]+v[1], u[2]+v[2]];
+  const scal = (k, u) => [k*u[0], k*u[1], k*u[2]];
+
+  const origin = [0, 0, 0];
+  const layout3d = (title) => ({
+    margin: { l: 0, r: 0, t: 28, b: 0 }, title: { text: title, font: { size: 14 } },
+    scene: SCENE(), showlegend: false,
+  });
+  const labelPt = (p, text, color) => ({
+    type: "scatter3d", mode: "text", x:[p[0]], y:[p[1]], z:[p[2]],
+    text:[text], textfont:{ color, size: 14 }, showlegend: false,
+  });
+
+  /* =========================== FIGURE 1 =========================== */
+  const F1 = {
+    strang: { a:[1,2,3],  b:[2,-1,2] },   // Strang's board: x·y=0, 14+5=19
+    perp:   { a:[2,0,0],  b:[0,2,0] },
+    acute:  { a:[2,0.5,0], b:[2,2,0.5] },
+    obtuse: { a:[2,0,0],  b:[-1.5,2,0] },
+  };
+  function readF1() {
+    const v = id => parseFloat(document.getElementById(id).value);
+    return { a:[v("a1"),v("a2"),v("a3")], b:[v("b1"),v("b2"),v("b3")] };
+  }
+  function drawF1() {
+    const { a, b } = readF1();
+    const sum = add(a, b);
+    const traces = [
+      ...arrow(origin, a, "#1f77b4", 8),
+      ...arrow(origin, b, "#2ca02c", 8),
+      ...arrow(origin, sum, "#7f7f7f", 5),
+      // dashed triangle leg from a to a+b (a copy of b) to show right triangle
+      { type:"scatter3d", mode:"lines", x:[a[0],sum[0]], y:[a[1],sum[1]], z:[a[2],sum[2]],
+        line:{ color:"#2ca02c", width:3, dash:"dot" }, showlegend:false },
+      labelPt(a, " a", "#1f77b4"), labelPt(b, " b", "#2ca02c"),
+      labelPt(sum, " a+b", "#555"),
+    ];
+    Plotly.react("fig1plot", traces, layout3d("vectors a, b, and a+b"), { displayModeBar:false });
+
+    const d  = dot(a, b);
+    const na = norm(a), nb = norm(b), ns = norm(sum);
+    let theta = "—";
+    if (na > 1e-9 && nb > 1e-9) {
+      const c = Math.max(-1, Math.min(1, d / (na*nb)));
+      theta = round(Math.acos(c) * 180 / Math.PI) + "°";
+    }
+    const perp = Math.abs(d) < 1e-6;
+    const lhs = round(ns*ns), rhs = round(na*na + nb*nb);
+    document.getElementById("fig1status").innerHTML =
+      `<b>a·b = <span class="tag ${perp?'one':'inf'}">${round(d)}</span></b> &nbsp; θ = ${theta} ` +
+      `${perp ? '&nbsp; ⟂ <b style="color:#176d2c">perpendicular!</b>' : ''}` +
+      `<br><br><b>Pythagoras check:</b><br>` +
+      `‖a‖² = ${round(na*na)} &nbsp; ‖b‖² = ${round(nb*nb)} &nbsp; ‖a+b‖² = <b>${lhs}</b><br>` +
+      `‖a‖²+‖b‖² = <b>${rhs}</b> &nbsp; ` +
+      `<span class="tag ${perp?'one':'none'}">${perp ? '= equal ✓' : '≠ (cross term 2(a·b)='+round(2*d)+')'}</span>`;
+  }
+
+  /* =========================== FIGURE 2 =========================== */
+  function readF2() {
+    const v = id => parseFloat(document.getElementById(id).value);
+    return [v("n1"), v("n2"), v("n3")];
+  }
+  function drawF2() {
+    const n = readF2();
+    const R = 3;
+    const traces = [];
+    const plane = planeTrace(n[0], n[1], n[2], 0, R, "Blues"); // plane n·x = 0 through origin
+    if (plane) traces.push(plane);
+    const nn = norm(n);
+    if (nn > 1e-9) {
+      const u = scal(R / nn, n);            // line V⟂ extends along ±n
+      traces.push(...arrow(origin, u, "#b00020", 8));
+      traces.push(...arrow(origin, scal(-1, u), "#b00020", 6));
+      traces.push(labelPt(u, " V⟂ (normal n)", "#b00020"));
+    }
+    // a couple of sample vectors lying in the plane (perp to n) to make orthogonality visible
+    if (nn > 1e-9) {
+      const helper = Math.abs(n[0]) < 0.9*nn ? [1,0,0] : [0,1,0];
+      let p1 = [ n[1]*helper[2]-n[2]*helper[1], n[2]*helper[0]-n[0]*helper[2], n[0]*helper[1]-n[1]*helper[0] ];
+      const p1n = norm(p1);
+      if (p1n > 1e-9) {
+        p1 = scal(2/p1n, p1);
+        let p2 = [ n[1]*p1[2]-n[2]*p1[1], n[2]*p1[0]-n[0]*p1[2], n[0]*p1[1]-n[1]*p1[0] ];
+        p2 = scal(2/norm(p2), p2);
+        traces.push(...arrow(origin, p1, "#1f77b4", 5));
+        traces.push(...arrow(origin, p2, "#1f77b4", 5));
+        document.getElementById("fig2status").innerHTML =
+          `Plane <code>V</code> = all <code>x</code> with <code>n·x = 0</code> (dim 2). ` +
+          `Line <code>V⟂</code> along <code>n = (${round(n[0])}, ${round(n[1])}, ${round(n[2])})</code> (dim 1).` +
+          `<br><br>Two sample vectors in the plane:<br>` +
+          `<code>v₁·n = ${round(dot(p1,n))}</code> &nbsp; <code>v₂·n = ${round(dot(p2,n))}</code> ` +
+          `&nbsp;→ both <b style="color:#176d2c">0</b>, so every plane vector ⟂ n.` +
+          `<br><br><b>dim V + dim V⟂ = 2 + 1 = 3 = n.</b>`;
+      }
+    } else {
+      document.getElementById("fig2status").innerHTML = "Set a nonzero normal n.";
+    }
+    Plotly.react("fig2plot", traces, layout3d("plane V (blue) and its complement V⟂ (red)"),
+      { displayModeBar:false });
+  }
+
+  /* =========================== FIGURE 3 =========================== */
+  // Rank-2 matrix A (3 columns -> subspaces live in R^3, easy to draw).
+  // A = [[1,2,3],[2,5,7]]  rows span a plane in R^3; nullspace is a line.
+  const A3 = [[1, 2, 3], [2, 5, 7]];
+  function drawF3() {
+    const r1 = A3[0], r2 = A3[1];
+    // nullspace direction: x with A x = 0  ->  cross product of the two rows
+    const x = [ r1[1]*r2[2]-r1[2]*r2[1], r1[2]*r2[0]-r1[0]*r2[2], r1[0]*r2[1]-r1[1]*r2[0] ];
+    const xn = norm(x);
+    const R = 3;
+    const traces = [];
+    // row space = plane through origin with normal x  (x·v=0 for v in row space)
+    const plane = planeTrace(x[0], x[1], x[2], 0, R, "Blues");
+    if (plane) traces.push(plane);
+    // draw the two row vectors inside the plane
+    traces.push(...arrow(origin, r1, "#1f77b4", 6));
+    traces.push(...arrow(origin, r2, "#1f77b4", 6));
+    traces.push(labelPt(r1, " row₁", "#1f77b4"));
+    traces.push(labelPt(r2, " row₂", "#1f77b4"));
+    // nullspace line along x
+    const u = scal(R / xn, x);
+    traces.push(...arrow(origin, u, "#b00020", 8));
+    traces.push(...arrow(origin, scal(-1, u), "#b00020", 6));
+    traces.push(labelPt(u, " nullspace", "#b00020"));
+    Plotly.react("fig3plot", traces, layout3d("row space (plane) ⟂ nullspace (line)"),
+      { displayModeBar:false });
+
+    document.getElementById("fig3status").innerHTML =
+      `<code>A = [[1, 2, 3], [2, 5, 7]]</code>, rank 2 in <code>R³</code> (n = 3).` +
+      `<br>Nullspace direction <code>x = (${round(x[0])}, ${round(x[1])}, ${round(x[2])})</code> ` +
+      `solves <code>Ax = 0</code>.` +
+      `<br><br><b>Orthogonality check (rows · x):</b><br>` +
+      `<code>row₁·x = ${round(dot(r1,x))}</code> &nbsp; ` +
+      `<code>row₂·x = ${round(dot(r2,x))}</code> ` +
+      `&nbsp;→ both <b style="color:#176d2c">0</b>: the nullspace ⟂ the whole row space.` +
+      `<br><br><b>dims:</b> row space 2 + nullspace 1 = 3 = n. ✓`;
+  }
+
+  /* =========================== FIGURE 4 =========================== */
+  // Strang's two A matrices (each m=3 rows, n=2 columns).
+  const F4 = {
+    indep: [[1,1],[1,2],[1,5]],   // independent columns -> AᵀA = [[3,8],[8,30]], det 26
+    dep:   [[1,3],[1,3],[1,3]],   // rank 1 -> AᵀA = [[3,9],[9,27]], det 0
+  };
+  let A4 = F4.indep;
+
+  // numeric helpers for general 3x2 matrices
+  const matT  = (M) => [[M[0][0],M[1][0],M[2][0]], [M[0][1],M[1][1],M[2][1]]]; // 2x3
+  const colRank3x2 = (M) => {
+    // rank of a 3x2 matrix: 0,1, or 2. Compare the two columns.
+    const c1 = [M[0][0],M[1][0],M[2][0]], c2 = [M[0][1],M[1][1],M[2][1]];
+    const n1 = norm(c1), n2 = norm(c2);
+    if (n1 < 1e-9 && n2 < 1e-9) return 0;
+    if (n1 < 1e-9 || n2 < 1e-9) return 1;
+    // parallel columns -> dependent -> rank 1
+    const cross = [c1[1]*c2[2]-c1[2]*c2[1], c1[2]*c2[0]-c1[0]*c2[2], c1[0]*c2[1]-c1[1]*c2[0]];
+    return norm(cross) < 1e-9 ? 1 : 2;
+  };
+  function drawF4() {
+    const A = A4, At = matT(A);
+    // AᵀA = At (2x3) times A (3x2) -> 2x2
+    const ata = [[0,0],[0,0]];
+    for (let i=0;i<2;i++) for (let j=0;j<2;j++)
+      ata[i][j] = At[i][0]*A[0][j] + At[i][1]*A[1][j] + At[i][2]*A[2][j];
+    const det = ata[0][0]*ata[1][1] - ata[0][1]*ata[1][0];
+    const rA = colRank3x2(A);
+    const rAtA = Math.abs(det) > 1e-9 ? 2 : (Math.abs(ata[0][0])+Math.abs(ata[0][1])+Math.abs(ata[1][1]) > 1e-9 ? 1 : 0);
+
+    // visualize the 2x2 AᵀA as an annotated heatmap (entry magnitude as color)
+    const z = [[ata[1][0], ata[1][1]], [ata[0][0], ata[0][1]]]; // flip rows so (0,0) is top-left
+    const text = [[round(ata[1][0]), round(ata[1][1])], [round(ata[0][0]), round(ata[0][1])]];
+    const trace = {
+      type: "heatmap", z, text, texttemplate: "%{text}",
+      textfont: { size: 22, color: "#fff" },
+      x: ["col 1","col 2"], y: ["row 2","row 1"],
+      colorscale: "Blues", showscale: false, xgap: 4, ygap: 4,
+    };
+    Plotly.react("fig4plot", [trace], {
+      margin: { l: 60, r: 10, t: 30, b: 30 },
+      title: { text: "AᵀA  (2×2, symmetric)", font: { size: 14 } },
+    }, { displayModeBar:false });
+
+    const inv = Math.abs(det) > 1e-9;
+    const Arows = A.map(r => "["+r.join(",")+"]").join(", ");
+    document.getElementById("fig4status").innerHTML =
+      `<code>A = [${Arows}]</code> &nbsp; (3×2). &nbsp; rank(A) = <b>${rA}</b>.` +
+      `<br><br><b>AᵀA = [[${round(ata[0][0])}, ${round(ata[0][1])}], [${round(ata[1][0])}, ${round(ata[1][1])}]]</b> ` +
+      `&nbsp; (square + symmetric, since the off-diagonals match: ${round(ata[0][1])} = ${round(ata[1][0])}).` +
+      `<br>det(AᵀA) = ${round(ata[0][0])}·${round(ata[1][1])} − ${round(ata[0][1])}·${round(ata[1][0])} = ` +
+      `<b>${round(det)}</b> &nbsp; ` +
+      `<span class="tag ${inv?'one':'none'}">${inv ? 'invertible ✓' : 'singular — not invertible'}</span>` +
+      `<br><br>rank(AᵀA) = <b>${rAtA}</b> = rank(A) = <b>${rA}</b>. ` +
+      `<span class="tag ${rA===rAtA?'one':'none'}">${rA===rAtA ? 'ranks match ✓' : ''}</span>` +
+      `<br>So <code>AᵀA</code> is invertible exactly when <code>A</code> has independent columns ` +
+      `(here columns are ${rA===2 ? '<b style="color:#176d2c">independent</b>' : '<b style="color:#b00020">dependent</b>'}).`;
+  }
+
+  /* =========================== wiring =========================== */
+  document.querySelectorAll(".f1").forEach(el => el.addEventListener("input", drawF1));
+  document.querySelectorAll(".f2").forEach(el => el.addEventListener("input", drawF2));
+  document.querySelectorAll('.preset[data-fig="1"]').forEach(btn => {
+    btn.onclick = () => {
+      const p = F1[btn.dataset.p];
+      ["a1","a2","a3"].forEach((id,i) => document.getElementById(id).value = p.a[i]);
+      ["b1","b2","b3"].forEach((id,i) => document.getElementById(id).value = p.b[i]);
+      drawF1();
+    };
+  });
+
+  document.querySelectorAll('.preset[data-fig="4"]').forEach(btn => {
+    btn.onclick = () => { A4 = F4[btn.dataset.p]; drawF4(); };
+  });
+
+  drawF1(); drawF2(); drawF3(); drawF4();
+</script>
+</body>
+</html>

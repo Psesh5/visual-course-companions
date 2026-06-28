@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 25 &amp; 27 — Symmetric matrices &amp; positive definiteness · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  .grid2 { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+  table.mat td { padding:2px 3px; }
+  table.tests { border-collapse:collapse; margin:8px 0; font-size:14px; }
+  table.tests th, table.tests td { border:1px solid #e4e4e4; padding:6px 10px; text-align:left; }
+  table.tests th { background:#f4f7fb; font-weight:600; }
+  .pass { color:#176d2c; font-weight:700; }
+  .fail { color:#b00020; font-weight:700; }
+  .verdict { font-size:16px; font-weight:700; margin:6px 0; }
+  .verdict.pd  { color:#176d2c; }
+  .verdict.ind { color:#b00020; }
+  .verdict.psd { color:#9a6b00; }
+  .ev { font-family:ui-monospace,Menlo,monospace; font-size:13px; }
+  math, .formula { font-style:italic; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lectures 25 &amp; 27 · Symmetric matrices &amp; positive definiteness</h1>
+  <div class="sub">A symmetric matrix <code>A = Aᵀ</code> has real eigenvalues and orthogonal eigenvectors.
+    It is <b>positive definite</b> when <code>xᵀAx &gt; 0</code> for every <code>x ≠ 0</code> — the quadratic form
+    is a bowl with a true minimum at the origin. This is the matrix version of the second-derivative test.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The explorer:</b> edit the four entries of the symmetric matrix <code>A = [[a, b],[b, c]]</code> (the two
+    <code>b</code> boxes are linked so <code>A</code> stays symmetric). Watch the quadratic surface
+    <code>f(x,y) = xᵀA x</code> turn into a <b>bowl</b> (positive definite), a <b>saddle</b> (indefinite), or a
+    <b>flat valley</b> (semidefinite). The four classic positive-definite tests are checked live on the right.
+  </div>
+
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Load a preset:</span>
+    <button class="preset" data-p="pd">[[2,1],[1,2]] · bowl (PD)</button>
+    <button class="preset" data-p="saddle">[[1,2],[2,1]] · saddle</button>
+    <button class="preset" data-p="psd">[[1,1],[1,1]] · flat valley</button>
+    <button class="preset" data-p="strong">[[2,-1],[-1,2]] · bowl (PD)</button>
+    <button class="preset" data-p="strang7">Strang [[2,6],[6,7]] · saddle</button>
+    <button class="preset" data-p="strang18">Strang [[2,6],[6,18]] · semidefinite</button>
+    <button class="preset" data-p="strang20">Strang [[2,6],[6,20]] · bowl (PD)</button>
+  </div>
+
+  <div class="controls">
+    <table class="mat" style="display:inline-block;vertical-align:middle">
+      <tr>
+        <td><input class="coef" id="a" value="2"></td>
+        <td><input class="coef" id="b1" value="1"></td>
+      </tr>
+      <tr>
+        <td><input class="coef" id="b2" value="1"></td>
+        <td><input class="coef" id="c" value="2"></td>
+      </tr>
+    </table>
+    <span class="rng">&nbsp; A = [[a, b],[b, c]] &nbsp;→&nbsp; f(x,y) = a·x² + 2b·xy + c·y²</span>
+  </div>
+
+  <div class="grid2" style="margin-top:12px">
+    <div class="plot" id="surf" style="flex:1 1 460px;min-width:360px"></div>
+    <div class="plot" id="ellipse" style="flex:1 1 420px;min-width:340px"></div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <h2>The four positive-definite tests</h2>
+  <table class="tests" id="testtbl">
+    <tr><th>Test</th><th>Condition</th><th>Current value</th><th>Result</th></tr>
+  </table>
+  <p style="font-size:13px;color:#666;max-width:760px">
+    For a symmetric matrix these four tests are <b>equivalent</b> — all pass together or all fail together.
+    Any one of them certifies positive definiteness.
+  </p>
+
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>The surface (left).</b> Every symmetric 2×2 matrix defines a quadratic form
+    <code>f(x,y) = xᵀA x = a·x² + 2b·xy + c·y²</code>. When <code>A</code> is positive definite the surface is a
+    <b>bowl opening upward</b> with its single lowest point at the origin: <code>f &gt; 0</code> in every direction.
+    Make <code>A</code> indefinite (one positive, one negative eigenvalue) and the bowl becomes a <b>saddle</b> —
+    going uphill along one eigenvector and downhill along the other, so the origin is no longer a minimum. A
+    <b>semidefinite</b> matrix gives a flat trough: <code>f = 0</code> along a whole line.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>The ellipse (right).</b> Slice the bowl at height <code>f = 1</code>. The cut is the level set
+    <code>xᵀA x = 1</code>, which for a positive-definite <code>A</code> is an <b>ellipse</b>. Its axes point exactly
+    along the <b>eigenvectors</b> of <code>A</code>, and the half-length along the eigenvector with eigenvalue
+    <code>λ</code> is <code>1/√λ</code>. Big eigenvalue ⇒ steep direction ⇒ short axis; small eigenvalue ⇒ shallow
+    direction ⇒ long axis. When <code>A</code> is not positive definite the level set <code>f = 1</code> is no longer
+    a closed ellipse (it opens into a hyperbola, or a pair of lines), so the ellipse panel reports that.
+  </p>
+
+  <h2>Why positive definite means "minimum"</h2>
+  <p style="font-size:14px;max-width:760px">
+    For a function of several variables, the <b>second-derivative test</b> uses the matrix of second partials
+    (the Hessian <code>H</code>). A critical point is a true <b>minimum</b> exactly when <code>H</code> is
+    <b>positive definite</b>. For our quadratic <code>f = a·x² + 2b·xy + c·y²</code> the Hessian is the constant
+    matrix <code>H = [[2a, 2b],[2b, 2c]] = 2A</code>, so "positive definite" and "the bowl has a minimum at the
+    origin" are the same statement. The single-variable rule <code>f''&gt;0</code> becomes the matrix rule
+    <code>A ≻ 0</code>.
+  </p>
+
+  <h2>The spectral theorem · A = QΛQᵀ (orthogonal eigenvectors)</h2>
+  <p style="font-size:14px;max-width:780px">
+    Strang's "one of the famous theorems of linear algebra": <b>every symmetric matrix factors as
+    <code>A = QΛQᵀ</code></b>, where <code>Q</code> holds <b>orthonormal eigenvectors</b> in its columns
+    (so <code>Q⁻¹ = Qᵀ</code>) and <code>Λ</code> is the diagonal of real eigenvalues. He also called it the
+    <b>principal axis theorem</b> — the eigenvectors are the principal axes. Below, the left panel shows the two
+    orthonormal eigenvectors <code>q₁, q₂</code> sitting at a perfect right angle, with the <code>f=1</code> ellipse
+    they generate. The slider <b>rotates the picture by <code>Qᵀ</code></b>: in those coordinates the ellipse lines
+    up with the axes and <code>A</code> becomes the diagonal matrix <code>Λ</code> — coupling between
+    <code>x</code> and <code>y</code> disappears, exactly Strang's "if I look at the right axis, it becomes
+    diagonal."
+  </p>
+  <div class="controls">
+    <span class="rng" style="margin-right:8px">Rotate toward eigen-axes (apply Qᵀ):</span>
+    <input id="spec_t" type="range" min="0" max="1" step="0.02" value="0" style="width:300px;vertical-align:middle">
+    <span id="spec_lbl" style="font-size:13px;margin-left:8px"></span>
+  </div>
+  <div class="grid2" style="margin-top:10px">
+    <div class="plot" id="spec" style="flex:1 1 460px;min-width:360px;height:420px"></div>
+    <div style="flex:1 1 320px;min-width:300px;font-size:14px">
+      <div id="spec_math" style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.7"></div>
+      <p style="font-size:13px;color:#555;margin-top:10px">
+        <b>Why it's beautiful (Strang).</b> Transpose <code>QΛQᵀ</code> and you get
+        <code>QΛQᵀ</code> back — the form is automatically symmetric. Multiplying it out
+        <i>column-times-row</i> breaks every symmetric matrix into a sum of <b>perpendicular projection
+        matrices</b>: <code>A = λ₁ q₁q₁ᵀ + λ₂ q₂q₂ᵀ</code>. Each <code>q q ᵀ</code> is a rank-1 projection;
+        the eigenvalues are the weights.
+      </p>
+    </div>
+  </div>
+  <p style="font-size:14px;max-width:780px;margin-top:6px">
+    <b>Signs of pivots = signs of eigenvalues.</b> A separate symmetric-matrix fact Strang stresses: you never
+    need to compute eigenvalues to count how many are positive. The <b>number of positive pivots equals the number
+    of positive eigenvalues</b> (he imagines a 50×50 matrix: 28 positive pivots ⇒ exactly 28 positive
+    eigenvalues). Pivots are cheap and stable; eigenvalues are expensive. Both have the same signs, and their
+    products both equal <code>det A</code>. Watch the <b>pivots</b> and <b>eigenvalues</b> rows in the live test
+    table above move together as you edit <code>A</code> — they flip sign at the same moment.
+  </p>
+
+  <h2>Worked math · A = [[2, 1],[1, 2]]</h2>
+  <p style="font-size:14px;max-width:780px">
+    <b>1 · Eigenvalues.</b> Solve <code>det(A − λI) = 0</code>:
+    <code>(2 − λ)² − 1 = 0 ⇒ (2 − λ)² = 1 ⇒ 2 − λ = ±1 ⇒ λ = 1, 3</code>.
+    Both eigenvalues are real (forced by symmetry) and both are <b>positive</b>, so <code>A</code> is positive
+    definite. The eigenvectors are <code>(1, 1)/√2</code> for <code>λ = 3</code> and <code>(1, −1)/√2</code> for
+    <code>λ = 1</code> — and they are <b>orthogonal</b>, another guarantee of symmetry.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>2 · Leading-minor (determinant) test.</b> Check the upper-left determinants:
+    <code>D₁ = 2 &gt; 0</code> and <code>D₂ = det A = 2·2 − 1·1 = 3 &gt; 0</code>. All leading minors positive ⇒ PD.
+    Equivalently the <b>pivots</b> from elimination are <code>2</code> and <code>D₂/D₁ = 3/2</code>, both positive.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>3 · The quadratic form is a sum of squares.</b> Completing the square,
+    <code>f = 2x² + 2xy + 2y² = 2(x + ½y)² + (3/2)y²</code>. Each coefficient (<code>2</code> and
+    <code>3/2</code> — the pivots!) is positive, so <code>f &gt; 0</code> for every <code>(x,y) ≠ (0,0)</code>.
+    That is <code>xᵀA x &gt; 0</code> directly.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>4 · Why eigenvectors are the ellipse axes.</b> Diagonalize <code>A = QΛQᵀ</code> with <code>Q</code>
+    orthogonal. In the rotated coordinates <code>u = Qᵀx</code> the form becomes
+    <code>f = λ₁u₁² + λ₂u₂²</code>, and <code>f = 1</code> is <code>λ₁u₁² + λ₂u₂² = 1</code> — an ellipse with
+    half-axes <code>1/√λ₁</code> and <code>1/√λ₂</code> along the <code>u</code>-axes, i.e. along the eigenvectors of
+    <code>A</code>. For our matrix the half-axes are <code>1/√3 ≈ 0.577</code> (along <code>(1,1)</code>) and
+    <code>1/√1 = 1</code> (along <code>(1,−1)</code>).
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    <b>Putting it together.</b> Eigenvalues &gt; 0 ⇔ pivots &gt; 0 ⇔ leading minors &gt; 0 ⇔
+    <code>xᵀA x &gt; 0</code> ⇔ the quadratic is a bowl with a minimum. Positive definiteness is the multivariable
+    second-derivative test, written in the language of matrices.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const EPS = 1e-9;
+
+  // --- symmetric 2x2 eigen-decomposition (closed form) ---
+  // A = [[a,b],[b,c]]; returns {lam:[l1,l2], vec:[[..],[..]]} sorted l1>=l2, unit eigenvectors
+  function eigSym(a, b, c) {
+    const tr = a + c, dif = a - c;
+    const disc = Math.sqrt(dif * dif + 4 * b * b); // >= 0, real (symmetric)
+    const l1 = (tr + disc) / 2, l2 = (tr - disc) / 2;
+    function vecFor(lam) {
+      // (A - lam I) v = 0 -> [a-lam, b; b, c-lam] v = 0
+      let vx, vy;
+      if (Math.abs(b) > EPS) { vx = lam - c; vy = b; }        // from second row: b*vx + (c-lam)*vy = 0
+      else { // diagonal matrix: eigenvectors are axes
+        if (Math.abs(a - lam) < Math.abs(c - lam)) { vx = 1; vy = 0; }
+        else { vx = 0; vy = 1; }
+      }
+      const n = Math.hypot(vx, vy) || 1;
+      return [vx / n, vy / n];
+    }
+    return { lam: [l1, l2], vec: [vecFor(l1), vecFor(l2)] };
+  }
+
+  // --- pivots from symmetric elimination (LDLᵀ): d1=a, d2=c - b^2/a ---
+  function pivots(a, b, c) {
+    if (Math.abs(a) < EPS) return [a, NaN]; // can't eliminate cleanly; flag
+    return [a, c - (b * b) / a];
+  }
+
+  function fval(a, b, c, x, y) { return a * x * x + 2 * b * x * y + c * y * y; }
+
+  function classify(eig) {
+    const [l1, l2] = eig.lam;
+    if (l1 > EPS && l2 > EPS) return "pd";
+    if (l1 > -EPS && l2 > -EPS) return "psd"; // both >= 0, at least one ~0
+    return "ind"; // a negative eigenvalue present
+  }
+
+  // ---------- drawing ----------
+  function drawSurface(a, b, c) {
+    const R = 2.5, n = 41, gr = LA.linspace(-R, R, n);
+    const X = [], Y = [], Z = [];
+    for (let i = 0; i < n; i++) {
+      X.push([]); Y.push([]); Z.push([]);
+      for (let j = 0; j < n; j++) {
+        const x = gr[j], y = gr[i];
+        X[i].push(x); Y[i].push(y); Z[i].push(fval(a, b, c, x, y));
+      }
+    }
+    const data = [{
+      type: "surface", x: X, y: Y, z: Z, showscale: false, opacity: 0.92,
+      colorscale: "Blues", contours: { z: { show: true, usecolormap: true, project: { z: true } } }
+    }];
+    Plotly.react("surf", data, {
+      title: { text: "f(x,y) = xᵀA x", font: { size: 13 } },
+      scene: { xaxis: { title: "x" }, yaxis: { title: "y" }, zaxis: { title: "f" }, aspectmode: "cube" },
+      margin: { l: 0, r: 0, t: 24, b: 0 }
+    }, { responsive: true });
+  }
+
+  function drawEllipse(a, b, c, eig, cls) {
+    const data = [];
+    const [l1, l2] = eig.lam, [v1, v2] = eig.vec;
+    let title = "Level set  f = 1";
+
+    if (cls === "pd") {
+      // parametric ellipse: point = cos(t)/sqrt(l1) * v1 + sin(t)/sqrt(l2) * v2
+      const N = 200, ex = [], ey = [];
+      const r1 = 1 / Math.sqrt(l1), r2 = 1 / Math.sqrt(l2);
+      for (let k = 0; k <= N; k++) {
+        const t = 2 * Math.PI * k / N;
+        const cc = Math.cos(t) * r1, ss = Math.sin(t) * r2;
+        ex.push(cc * v1[0] + ss * v2[0]);
+        ey.push(cc * v1[1] + ss * v2[1]);
+      }
+      data.push({ type: "scatter", mode: "lines", x: ex, y: ey,
+        line: { color: "#1f77b4", width: 3 }, name: "f = 1", showlegend: false });
+      title = "Ellipse  xᵀA x = 1  (axes = eigenvectors)";
+    } else {
+      // not a closed ellipse — draw the contour f=1 by marching the grid via Plotly contour
+      const R = 4, n = 121, gr = LA.linspace(-R, R, n), Z = [];
+      for (let i = 0; i < n; i++) { Z.push([]); for (let j = 0; j < n; j++) Z[i].push(fval(a, b, c, gr[j], gr[i])); }
+      data.push({ type: "contour", x: gr, y: gr, z: Z, showscale: false,
+        contours: { start: 1, end: 1, coloring: "lines" }, line: { color: "#b00020", width: 2.5 } });
+      title = (cls === "ind") ? "f = 1 is a hyperbola (not an ellipse)" : "f = 1 is a line pair (semidefinite)";
+    }
+
+    // eigenvector arrows scaled to their semi-axis length (only meaningful when defined)
+    const cols = ["#2ca02c", "#ff7f0e"];
+    [[l1, v1], [l2, v2]].forEach(([lam, v], i) => {
+      const len = lam > EPS ? 1 / Math.sqrt(lam) : 1.6; // fixed length if eigenvalue not positive
+      data.push({ type: "scatter", mode: "lines", x: [0, v[0] * len], y: [0, v[1] * len],
+        line: { color: cols[i], width: 4 }, showlegend: false });
+      data.push({ type: "scatter", mode: "markers+text", x: [v[0] * len], y: [v[1] * len],
+        marker: { size: 8, color: cols[i] }, text: ["  λ=" + LA.round(lam)], textposition: "top right",
+        textfont: { size: 11, color: cols[i] }, showlegend: false });
+    });
+
+    Plotly.react("ellipse", data, {
+      title: { text: title, font: { size: 13 } },
+      xaxis: { title: "x", range: [-2.2, 2.2], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+      yaxis: { title: "y", range: [-2.2, 2.2], zeroline: true },
+      margin: { l: 36, r: 10, t: 26, b: 32 }
+    }, { responsive: true });
+  }
+
+  function testRow(name, cond, val, ok) {
+    return `<tr><td>${name}</td><td>${cond}</td><td class="ev">${val}</td>` +
+           `<td class="${ok ? "pass" : "fail"}">${ok ? "✓ pass" : "✗ fail"}</td></tr>`;
+  }
+
+  function update() {
+    const a = parseFloat($("a").value) || 0;
+    const b = parseFloat($("b1").value) || 0;
+    const c = parseFloat($("c").value) || 0;
+    $("b2").value = b; // keep symmetric
+
+    const eig = eigSym(a, b, c);
+    const [l1, l2] = eig.lam;
+    const [p1, p2] = pivots(a, b, c);
+    const D1 = a, D2 = a * c - b * b;
+    const cls = classify(eig);
+
+    drawSurface(a, b, c);
+    drawEllipse(a, b, c, eig, cls);
+
+    // tests
+    const evOK = l1 > EPS && l2 > EPS;
+    const pvOK = p1 > EPS && p2 > EPS;
+    const dmOK = D1 > EPS && D2 > EPS;
+    // xᵀAx>0 for all x: equivalent to PD; sample-confirmed by eigen test
+    const qfOK = evOK;
+    const tbl = $("testtbl");
+    tbl.innerHTML = "<tr><th>Test</th><th>Condition</th><th>Current value</th><th>Result</th></tr>" +
+      testRow("Eigenvalues", "all λ &gt; 0", `λ = ${LA.round(l1)}, ${LA.round(l2)}`, evOK) +
+      testRow("Pivots", "all pivots &gt; 0",
+        `d₁ = ${LA.round(p1)}, d₂ = ${Number.isNaN(p2) ? "—" : LA.round(p2)}`, pvOK) +
+      testRow("Leading minors", "D₁ &gt; 0 and D₂ = det A &gt; 0",
+        `D₁ = ${LA.round(D1)}, D₂ = ${LA.round(D2)}`, dmOK) +
+      testRow("Quadratic form", "xᵀA x &gt; 0 for all x ≠ 0", "f = 2(…)² + … (sum of squares)", qfOK);
+
+    const verdict = cls === "pd"
+      ? `<span class="verdict pd">Positive definite ✓ — the form is a bowl with a true minimum at the origin.</span>`
+      : cls === "psd"
+        ? `<span class="verdict psd">Positive semidefinite — flat valley: f = 0 along a whole line (λ = 0), no strict minimum.</span>`
+        : `<span class="verdict ind">Indefinite — a saddle: positive along one eigenvector, negative along the other.</span>`;
+
+    $("status").innerHTML =
+      `A = [[${LA.round(a)}, ${LA.round(b)}], [${LA.round(b)}, ${LA.round(c)}]] &nbsp;·&nbsp; ` +
+      `trace = ${LA.round(a + c)}, det = ${LA.round(D2)} &nbsp;·&nbsp; ` +
+      `eigenvalues ${LA.round(l1)}, ${LA.round(l2)}<br>${verdict}`;
+  }
+
+  // presets
+  const PRESETS = {
+    pd:     { a: 2, b: 1, c: 2 },
+    saddle: { a: 1, b: 2, c: 1 },
+    psd:    { a: 1, b: 1, c: 1 },
+    strong: { a: 2, b: -1, c: 2 },
+    // Strang's lecture-27 family A = [[2,6],[6,c]]: c=7 saddle, c=18 borderline, c=20 bowl
+    strang7:  { a: 2, b: 6, c: 7 },
+    strang18: { a: 2, b: 6, c: 18 },
+    strang20: { a: 2, b: 6, c: 20 },
+  };
+  document.querySelectorAll(".preset").forEach((btn) => {
+    btn.onclick = () => {
+      const p = PRESETS[btn.dataset.p];
+      $("a").value = p.a; $("b1").value = p.b; $("b2").value = p.b; $("c").value = p.c;
+      update();
+    };
+  });
+  ["a", "b1", "c"].forEach((id) => $(id).addEventListener("input", update));
+  $("b2").addEventListener("input", () => { $("b1").value = $("b2").value; update(); });
+
+  // ---------- spectral theorem A = QΛQᵀ visual (fixed Strang matrix [[2,1],[1,2]]) ----------
+  (function () {
+    const SA = { a: 2, b: 1, c: 2 };                 // Strang's symmetric example
+    const eig = eigSym(SA.a, SA.b, SA.c);            // λ = 3 (along (1,1)), λ = 1 (along (1,-1))
+    const [l1, l2] = eig.lam, [v1, v2] = eig.vec;
+    const cols = ["#2ca02c", "#ff7f0e"];
+
+    // rotation that sends eigenvectors onto the coordinate axes is Qᵀ; v1 is at angle phi.
+    const phi = Math.atan2(v1[1], v1[0]);            // angle of first eigenvector
+    function rot(p, ang) {                           // rotate point p by ang
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      return [ca * p[0] - sa * p[1], sa * p[0] + ca * p[1]];
+    }
+
+    function draw(t) {
+      const ang = -phi * t;                          // t=0 original, t=1 fully rotated to axes (Qᵀ applied)
+      const r1 = 1 / Math.sqrt(l1), r2 = 1 / Math.sqrt(l2);
+      // ellipse f = 1, rotated by ang
+      const N = 220, ex = [], ey = [];
+      for (let k = 0; k <= N; k++) {
+        const th = 2 * Math.PI * k / N;
+        const base = [Math.cos(th) * r1 * v1[0] + Math.sin(th) * r2 * v2[0],
+                      Math.cos(th) * r1 * v1[1] + Math.sin(th) * r2 * v2[1]];
+        const p = rot(base, ang);
+        ex.push(p[0]); ey.push(p[1]);
+      }
+      const data = [{ type: "scatter", mode: "lines", x: ex, y: ey,
+        line: { color: "#1f77b4", width: 3 }, showlegend: false }];
+      [[l1, v1], [l2, v2]].forEach(([lam, v], i) => {
+        const len = 1 / Math.sqrt(lam);
+        const q = rot([v[0] * len, v[1] * len], ang);
+        data.push({ type: "scatter", mode: "lines", x: [0, q[0]], y: [0, q[1]],
+          line: { color: cols[i], width: 4 }, showlegend: false });
+        data.push({ type: "scatter", mode: "markers+text", x: [q[0]], y: [q[1]],
+          marker: { size: 8, color: cols[i] }, text: ["  q" + (i + 1) + " (λ=" + LA.round(lam) + ")"],
+          textposition: "top right", textfont: { size: 11, color: cols[i] }, showlegend: false });
+      });
+      Plotly.react("spec", data, {
+        title: { text: t < 0.5 ? "original basis — A is full (off-diagonal b ≠ 0)"
+                                : "eigen-basis u = Qᵀx — A becomes Λ (diagonal)", font: { size: 13 } },
+        xaxis: { title: "x", range: [-1.6, 1.6], zeroline: true, scaleanchor: "y", scaleratio: 1 },
+        yaxis: { title: "y", range: [-1.6, 1.6], zeroline: true },
+        margin: { l: 36, r: 10, t: 26, b: 32 }
+      }, { responsive: true });
+
+      const q1 = "(1, 1)/√2", q2 = "(1, −1)/√2";
+      $("spec_math").innerHTML =
+        "A = [[2, 1], [1, 2]]<br><br>" +
+        "Q = [ q₁ q₂ ] = (1/√2)·[[1, 1], [1, −1]]<br>" +
+        "Λ = [[3, 0], [0, 1]]   (λ₁=3 → " + q1 + ", λ₂=1 → " + q2 + ")<br><br>" +
+        "A = Q Λ Qᵀ   ·   Qᵀ Q = I   (orthonormal)<br>" +
+        "q₁ · q₂ = 0   ✓ perpendicular";
+      $("spec_lbl").textContent = t < 0.02 ? "x-coordinates (A coupled)"
+        : t > 0.98 ? "u-coordinates (A = Λ, decoupled)"
+        : "rotating by Qᵀ … (" + Math.round(t * 100) + "%)";
+    }
+
+    $("spec_t").addEventListener("input", () => draw(parseFloat($("spec_t").value)));
+    draw(0);
+  })();
+
+  update();
+})();
+</script>
+</body>
+</html>

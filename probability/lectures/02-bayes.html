@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Conditioning and Bayes' rule · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Lecture 2 · Conditioning and Bayes' rule</h1>
+  <div class="sub">Conditioning is just <i>zooming in</i>. Once you learn that event <code>B</code> happened, the
+    world shrinks to <code>B</code> and probabilities are renormalized inside it:
+    <code>P(A|B) = P(A∩B) / P(B)</code>. <b>Bayes' rule</b> reverses the arrow — it turns a test's
+    <code>P(+|disease)</code> into the answer you actually want, <code>P(disease|+)</code>. The famous trap is
+    the <b>base-rate fallacy</b>: a 99%-accurate test for a rare disease is mostly wrong when it says "positive".
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> the unit square on the <span style="color:#176d2c">left</span> is the whole population.
+    Its <b>width</b> is split by the true state — the thin <span style="color:#176d2c">green-ish</span> strip is
+    the diseased fraction <code>P(D)</code>, the wide rest is healthy <code>P(¬D)</code>. Its <b>height</b> inside
+    each strip is split by the <i>test result</i>. So every one of the four rectangles is a <b>joint
+    probability</b>, and its area is exactly that probability. The two <b>positive</b> rectangles are colored
+    solid; everything else is faded. The stacked bar on the right collects <i>only</i> the positives and
+    renormalizes them to height 1 — the green slice of that bar is the posterior <code>P(D|+)</code>. Make the
+    disease rare and watch the green slice shrink even when the test is excellent.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Scenarios:</span>
+    <button class="preset" data-p="0.001,0.99,0.01">rare disease (0.1%) + good test</button>
+    <button class="preset" data-p="0.30,0.90,0.10">common disease (30%)</button>
+    <button class="preset" data-p="0.01,0.999,0.001">near-perfect test</button>
+    <button class="preset" data-p="0.01,0.95,0.20">lots of false positives</button>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">prior prevalence&nbsp; <b>P(D) = <span id="vPrior">1.0</span>%</b>&nbsp;
+      <input type="range" id="prior" min="0" max="0.5" step="0.001" value="0.01" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(the base rate — how common the disease is)</span>
+  </div>
+  <div class="controls">
+    <label style="font-size:14px">sensitivity&nbsp; <b>P(+|D) = <span id="vSens">99.0</span>%</b>&nbsp;
+      <input type="range" id="sens" min="0.5" max="1" step="0.001" value="0.99" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(true-positive rate — catches the sick)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <label style="font-size:14px">false-positive rate&nbsp; <b>P(+|¬D) = <span id="vFpr">5.0</span>%</b>&nbsp;
+      <input type="range" id="fpr" min="0" max="0.5" step="0.001" value="0.05" style="vertical-align:middle;width:240px">
+    </label>
+    <span class="rng">(specificity = 1 − this; how often it cries wolf)</span>
+  </div>
+
+  <div class="plots">
+    <div id="boxPlot" class="plot"></div>
+    <div id="postPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>Conditioning shrinks the sample space</h2>
+  <p style="font-size:14px;max-width:780px">
+    The definition <code>P(A|B) = P(A∩B) / P(B)</code> looks like a formula but it is really a <i>relabeling</i>.
+    Before you learn anything, the whole unit square has total probability 1. The moment you are told
+    <code>B</code> occurred, you throw away the <code>¬B</code> part of the square entirely and treat the
+    leftover region <code>B</code> as your new universe. To keep probabilities adding to 1 you divide by how
+    much of the original square <code>B</code> took up, <code>P(B)</code>. Everything else — independence,
+    Bayes' rule, Markov chains later in the course — is built on this one move. In the Bayes box above, "the
+    test was positive" means: erase the two faded (negative) rectangles, keep the two solid columns of positive
+    cases, and ask what fraction of <i>that</i> region is diseased.
+  </p>
+
+  <h2>Total probability: building the denominator</h2>
+  <p style="font-size:14px;max-width:780px">
+    How likely is a positive test <i>at all</i>? A positive can arrive two ways — a sick person correctly
+    flagged, or a healthy person wrongly flagged — so you add the two disjoint pieces. That is the <b>total
+    probability theorem</b>:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(+) = P(+|D)·P(D)  +  P(+|¬D)·P(¬D)
+        \_________/      \__________/
+       true positives   false positives
+        (TP, green)       (FP, orange)</pre>
+  <p style="font-size:14px;max-width:780px">
+    Geometrically <code>P(+)</code> is the combined area of the two solid rectangles — exactly the total height
+    of the right-hand "positives" bar before we renormalize it. The base rate <code>P(D)</code> weights each
+    branch: when the disease is rare, the healthy branch <code>P(+|¬D)·P(¬D)</code> dominates the sum simply
+    because there are so many more healthy people to mislabel.
+  </p>
+
+  <h2>Bayes' rule: reversing the conditioning</h2>
+  <p style="font-size:14px;max-width:780px">
+    The test gives you <code>P(+|D)</code> — forward, from cause to symptom. You want <code>P(D|+)</code> —
+    backward, from symptom to cause. Bayes' rule is the bridge, and it is just the definition of conditioning
+    applied twice (numerator <code>P(D∩+)</code> written two ways) with total probability filling the
+    denominator:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+            P(+|D)·P(D)                         TP
+P(D|+) = ----------------------------- = ---------------
+         P(+|D)·P(D) + P(+|¬D)·P(¬D)        TP + FP</pre>
+  <p style="font-size:14px;max-width:780px">
+    Read it off the box: the posterior is the <b>diseased (green) slice of the positive column</b>. The prior
+    <code>P(D)</code> is what you believed before the test; the posterior <code>P(D|+)</code> is what you should
+    believe after. The test's job is to move you from one to the other — and how far it moves you depends on
+    the prior you started from.
+  </p>
+
+  <h2>The base-rate fallacy — why screening a rare disease is hard</h2>
+  <p style="font-size:14px;max-width:780px">
+    Press the <b>rare disease (0.1%) + good test</b> preset. The test catches 99% of the sick and false-alarms
+    only 1% of the time — it sounds nearly flawless. Yet the posterior <code>P(D|+)</code> is only about
+    <b>9%</b>. The intuition the fallacy ignores: out of 100,000 people, only ~100 are sick (99 of them test
+    positive), but ~99,900 are healthy, and 1% of <i>those</i> — about 999 people — also test positive. So the
+    positives are 99 real against 999 false, and a positive result is <i>still</i> more likely to be a false
+    alarm than a real case.
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(D|+) = (0.99 · 0.001) / (0.99 · 0.001 + 0.01 · 0.999)
+       = 0.00099 / (0.00099 + 0.00999)
+       = 0.00099 / 0.01098  ≈  0.090   (about 9%)</pre>
+  <p style="font-size:14px;max-width:780px">
+    The lesson is that <b>accuracy alone is meaningless without the base rate</b>. The same test on the
+    <b>common disease (30%)</b> preset gives a posterior above 90% — identical test, opposite conclusion. This
+    is exactly why doctors don't act on a single screening result for a rare condition; they confirm with a
+    second, independent test. A second positive multiplies the odds again (Bayes applied a second time, with
+    the first posterior as the new prior), and the green slice finally fills the bar.
+  </p>
+
+  <h2>The tie to ISLR and classification</h2>
+  <p style="font-size:14px;max-width:780px">
+    Every probabilistic classifier in <i>An Introduction to Statistical Learning</i> is running this exact
+    computation. A spam filter, a fraud model, a medical predictor — each combines the likelihood of the
+    features given a class with the <b>prior prevalence</b> of that class to output a posterior, then thresholds
+    it. The Bayes box is why a model trained on a balanced set degrades when deployed on a population where the
+    positive class is rare: shifting the prior <code>P(D)</code> leftward, exactly as the slider does, collapses
+    the precision (the share of predicted-positives that are truly positive) even though sensitivity and the
+    false-positive rate never changed. Precision <i>is</i> <code>P(D|+)</code> — the green slice — and it lives
+    or dies by the base rate.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+
+  // --- inline Bayes helper: posterior P(D|+) given prior, sensitivity, fpr ---
+  function posteriorPos(prior, sens, fpr) {
+    const tp = sens * prior;                 // P(+|D)P(D)
+    const fp = fpr * (1 - prior);            // P(+|¬D)P(¬D)
+    const denom = tp + fp;
+    return denom > 0 ? tp / denom : 0;
+  }
+  // posterior P(D|−)
+  function posteriorNeg(prior, sens, fpr) {
+    const fn = (1 - sens) * prior;           // P(−|D)P(D)
+    const tn = (1 - fpr) * (1 - prior);      // P(−|¬D)P(¬D)
+    const denom = fn + tn;
+    return denom > 0 ? fn / denom : 0;
+  }
+
+  // colors
+  const C_TP = "#176d2c";   // diseased & positive  (true positive)
+  const C_FP = "#e08a1e";   // healthy  & positive  (false positive)
+  const C_FN = "#cfe6d4";   // diseased & negative  (faded)
+  const C_TN = "#eceff3";   // healthy  & negative  (faded)
+
+  // a filled rectangle as a Plotly scatter trace
+  function rect(x0, x1, y0, y1, color, name, opacity) {
+    return {
+      type: "scatter", mode: "lines", fill: "toself", fillcolor: color,
+      x: [x0, x1, x1, x0, x0], y: [y0, y0, y1, y1, y0],
+      line: { color: "#ffffff", width: 1 }, opacity: opacity == null ? 1 : opacity,
+      hoverinfo: "skip", showlegend: false, name,
+    };
+  }
+  function label(x, y, text, color, size) {
+    return {
+      type: "scatter", mode: "text", x: [x], y: [y],
+      text: [text], textfont: { color: color || "#222", size: size || 11 },
+      hoverinfo: "skip", showlegend: false,
+    };
+  }
+
+  function pct(x, d) { return PR.round(x * 100, d == null ? 1 : d); }
+
+  function draw() {
+    const prior = parseFloat($("prior").value);
+    const sens  = parseFloat($("sens").value);
+    const fpr   = parseFloat($("fpr").value);
+    $("vPrior").textContent = pct(prior, 2);
+    $("vSens").textContent  = pct(sens);
+    $("vFpr").textContent   = pct(fpr);
+
+    const pH = 1 - prior;                    // P(¬D)
+    const tp = sens * prior;                 // true positive area
+    const fn = (1 - sens) * prior;           // false negative area
+    const fp = fpr * pH;                     // false positive area
+    const tn = (1 - fpr) * pH;               // true negative area
+    const pPos = tp + fp;                    // P(+)
+    const post = posteriorPos(prior, sens, fpr);
+    const postNeg = posteriorNeg(prior, sens, fpr);
+
+    // ---------- PLOT 1 : the Bayes box ----------
+    // column widths: diseased [0,prior], healthy [prior,1]; within each, positive at the BOTTOM.
+    const wD0 = 0, wD1 = prior, wH0 = prior, wH1 = 1;
+    const data1 = [];
+    // diseased column
+    data1.push(rect(wD0, wD1, 0,    sens, C_TP, "TP"));        // positive (bottom)
+    data1.push(rect(wD0, wD1, sens, 1,    C_FN, "FN"));        // negative (top, faded)
+    // healthy column
+    data1.push(rect(wH0, wH1, 0,    fpr,  C_FP, "FP"));        // positive (bottom)
+    data1.push(rect(wH0, wH1, fpr,  1,    C_TN, "TN"));        // negative (top, faded)
+
+    // labels inside boxes when there is room
+    if (prior > 0.06) {
+      data1.push(label(prior / 2, sens / 2, "TP", "#fff", 12));
+      data1.push(label(prior / 2, (sens + 1) / 2, "FN", "#6b8f73", 11));
+    }
+    data1.push(label((prior + 1) / 2, fpr / 2, fpr > 0.05 ? "FP" : "", "#fff", 12));
+    data1.push(label((prior + 1) / 2, (fpr + 1) / 2, "TN", "#9aa7b4", 12));
+
+    // the renormalized "positives only" stacked bar to the right of the square
+    const bx0 = 1.18, bx1 = 1.46;
+    if (pPos > 1e-9) {
+      data1.push(rect(bx0, bx1, 0,    post, C_TP, "post"));      // diseased slice (green)
+      data1.push(rect(bx0, bx1, post, 1,    C_FP, "1-post"));    // healthy slice (orange)
+      data1.push(label((bx0 + bx1) / 2, post / 2, post > 0.08 ? pct(post) + "%" : "", "#fff", 12));
+      data1.push(label((bx0 + bx1) / 2, 1.06, "P(D|+)", C_TP, 12));
+    }
+    // bracket label under the positive (bottom) band of the square
+    data1.push(label(0.5, -0.075, "← positives (P(+) = " + pct(pPos, 2) + "%) renormalize to the bar →", "#555", 11));
+
+    Plotly.react("boxPlot", data1, {
+      title: { text: "The Bayes box — area = joint probability", font: { size: 13 } },
+      margin: { l: 30, r: 12, t: 34, b: 36 },
+      xaxis: { range: [-0.04, 1.52], showticklabels: false, zeroline: false, fixedrange: true },
+      yaxis: { range: [-0.14, 1.14], showticklabels: false, zeroline: false, fixedrange: true },
+      showlegend: false, plot_bgcolor: "#fff",
+    }, { responsive: true });
+
+    // ---------- PLOT 2 : posterior vs prior ----------
+    const sweepMax = 0.5;
+    const xs = PR.linspace(0, sweepMax, 200);
+    const ys = xs.map((p) => posteriorPos(p, sens, fpr));
+    const data2 = [
+      { type: "scatter", mode: "lines", x: xs, y: ys,
+        line: { color: C_TP, width: 2.5 }, name: "P(D|+)", hoverinfo: "x+y" },
+      // diagonal: if the test told you nothing, posterior = prior
+      { type: "scatter", mode: "lines", x: [0, sweepMax], y: [0, sweepMax],
+        line: { color: "#bbb", width: 1, dash: "dot" }, name: "prior (no info)", hoverinfo: "skip" },
+      // current operating point
+      { type: "scatter", mode: "markers", x: [prior], y: [post],
+        marker: { size: 11, color: C_FP, line: { color: "#fff", width: 1.5 } },
+        name: "you are here", hoverinfo: "x+y" },
+    ];
+    Plotly.react("postPlot", data2, {
+      title: { text: "Posterior P(D|+) vs. prior prevalence", font: { size: 13 } },
+      margin: { l: 48, r: 12, t: 34, b: 40 },
+      xaxis: { range: [0, sweepMax], title: { text: "prior P(D)", font: { size: 11 } } },
+      yaxis: { range: [0, 1], title: { text: "posterior P(D|+)", font: { size: 11 } } },
+      showlegend: true, legend: { x: 0.98, y: 0.04, xanchor: "right", yanchor: "bottom",
+        font: { size: 11 }, bgcolor: "rgba(255,255,255,0.7)" },
+    }, { responsive: true });
+
+    // ---------- status : worked Bayes computation ----------
+    const f = (x) => PR.round(x, 5);
+    const verdict = post < 0.5
+      ? '<span class="tag none">A positive test is more likely a FALSE alarm than real.</span>'
+      : '<span class="tag one">A positive test now means the disease is more likely than not.</span>';
+    $("status").innerHTML =
+      verdict + '<br>' +
+      'prior <code>P(D) = ' + f(prior) + '</code>, &nbsp; sensitivity <code>P(+|D) = ' + f(sens) + '</code>, ' +
+      '&nbsp; false-positive <code>P(+|¬D) = ' + f(fpr) + '</code> &nbsp;(specificity ' + f(1 - fpr) + ')<br>' +
+      '<b>TP</b> = P(+|D)P(D) = <code>' + f(tp) + '</code> &nbsp;·&nbsp; ' +
+      '<b>FP</b> = P(+|¬D)P(¬D) = <code>' + f(fp) + '</code> &nbsp;·&nbsp; ' +
+      'P(+) = TP+FP = <code>' + f(pPos) + '</code><br>' +
+      '<b>P(D|+)</b> = TP / (TP+FP) = <code>' + f(tp) + ' / ' + f(pPos) + '</code> = ' +
+      '<b style="color:#176d2c">' + pct(post, 2) + '%</b><br>' +
+      '<b>P(D|−)</b> = P(−|D)P(D) / [P(−|D)P(D)+P(−|¬D)P(¬D)] = <code>' + f(fn) + ' / ' + f(fn + tn) + '</code> = ' +
+      '<b>' + pct(postNeg, 3) + '%</b> &nbsp;<span style="color:#666">(a negative is very reassuring)</span>';
+  }
+
+  // wiring
+  ["prior", "sens", "fpr"].forEach((id) => $(id).addEventListener("input", draw));
+  document.querySelectorAll(".preset[data-p]").forEach((b) => {
+    b.onclick = () => {
+      const p = b.dataset.p.split(",");
+      $("prior").value = p[0]; $("sens").value = p[1]; $("fpr").value = p[2];
+      draw();
+    };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

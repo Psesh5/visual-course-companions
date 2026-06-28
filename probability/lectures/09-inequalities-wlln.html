@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Inequalities and the weak law of large numbers · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>Inequalities · The weak law of large numbers</h1>
+  <div class="sub">Take any distribution with a finite mean <code>μ</code> and variance <code>σ²</code> and
+    average <code>n</code> independent draws. The average <code>X̄ₙ</code> doesn't just <i>tend</i> toward
+    <code>μ</code> — we can <b>bound</b> how far it strays, using nothing but those two numbers. Two simple
+    inequalities (Markov, then Chebyshev) pin the average down, and the <b>weak law of large numbers</b>
+    falls out in one line.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> on the <span style="color:#1f77b4">left</span>, watch the <b>running sample average</b>
+    <code>X̄ₙ</code> as you pour in more data — four independent runs, jagged at the start, all funneling
+    onto the true mean <code>μ</code> (the black line) and slipping inside the shaded <code>±ε</code> band and
+    staying there. On the <span style="color:#b00020">right</span> is the promise made by <b>Chebyshev's
+    inequality</b>: the red curve <code>1/k²</code> sits <i>above</i> the actual chance that <code>X̄ₙ</code>
+    lands more than <code>k</code> standard errors from <code>μ</code>. The bound is always valid and usually
+    loose — that gap is the price of asking nothing about the shape of the distribution.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Population (one draw):</span>
+    <button class="preset" data-d="uniform" data-n="100">Uniform [0,1] · n=100</button>
+    <button class="preset" data-d="exponential" data-n="100">Exponential · skewed · n=100</button>
+    <button class="preset" data-d="bernoulli" data-n="200">Bernoulli(0.3) · n=200</button>
+    <button class="preset" data-d="die" data-n="50">Fair die {1…6} · n=50</button>
+  </div>
+  <div class="controls">
+    <button class="preset" id="reroll" style="background:#1f77b4;color:#fff;border-color:#1f77b4">↻ new runs</button>
+    <label style="font-size:14px;margin-left:10px">tolerance&nbsp; <b>ε = <span id="epsval">0.5</span>·σ</b>&nbsp;
+      <input type="range" id="eps" min="0.1" max="1.5" step="0.05" value="0.5" style="vertical-align:middle;width:200px">
+    </label>
+    <span class="rng">(half-width of the band around μ on the left)</span>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <label style="font-size:14px">sample size&nbsp; <b>n = <span id="nval">100</span></b>&nbsp;
+      <input type="range" id="n" min="1" max="500" value="100" style="vertical-align:middle;width:220px">
+    </label>
+    <label style="font-size:14px;margin-left:14px">deviation&nbsp; <b>k = <span id="kval">2.0</span></b>&nbsp;
+      <input type="range" id="k" min="1" max="4" step="0.1" value="2" style="vertical-align:middle;width:180px">
+    </label>
+    <span class="rng">(n &amp; k drive the right-hand bound and the status box)</span>
+  </div>
+
+  <div class="plots">
+    <div id="lawPlot" class="plot"></div>
+    <div id="boundPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>Markov's inequality — the one-line ancestor</h2>
+  <p style="font-size:14px;max-width:780px">
+    Everything here descends from a single, almost trivially simple fact about <b>nonnegative</b> random
+    variables. If <code>Y ≥ 0</code> and <code>a &gt; 0</code>, then
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(Y ≥ a)  ≤  E[Y] / a               ← Markov's inequality</pre>
+  <p style="font-size:14px;max-width:780px">
+    The argument is one sentence, the way Tsitsiklis tells it: the mean <code>E[Y]</code> is an average of
+    nonnegative values, and the slice of probability sitting out at <code>Y ≥ a</code> already contributes at
+    least <code>a</code> times its own weight to that average. So that weight can be at most
+    <code>E[Y]/a</code> — any more and the mean would overshoot. A worked number: if waiting times average
+    <code>E[Y] = 5</code> minutes, then <code>P(Y ≥ 20) ≤ 5/20 = 0.25</code>. We used <i>only</i> the mean and
+    the fact that time can't be negative — nothing about the shape. That blindness is exactly why the bound is
+    weak, and exactly why it always holds.
+  </p>
+
+  <h2>Chebyshev = Markov, aimed at the squared deviation</h2>
+  <p style="font-size:14px;max-width:780px">
+    Now we want to control how far a variable <code>X</code> (mean <code>μ</code>, variance <code>σ²</code>)
+    strays from its mean. The trick is to feed Markov a cleverly chosen nonnegative variable: the
+    <b>squared deviation</b> <code>(X − μ)²</code>, which is <code>≥ 0</code> and has mean exactly
+    <code>E[(X − μ)²] = σ²</code>. Apply Markov with <code>a = ε²</code>:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(|X − μ| ≥ ε)  =  P( (X − μ)² ≥ ε² )  ≤  E[(X−μ)²] / ε²  =  σ² / ε²
+                                                          └── Chebyshev's inequality</pre>
+  <p style="font-size:14px;max-width:780px">
+    That's the whole derivation: <b>Chebyshev is just Markov applied to <code>(X − μ)²</code></b>. Measure the
+    distance in standard deviations by writing <code>ε = kσ</code>, and it collapses to the clean
+    distribution-free statement
+    <code>P(|X − μ| ≥ kσ) ≤ 1/k²</code>. At <code>k = 2</code>: <i>at most</i> a quarter of the probability
+    lies beyond two standard deviations, for <i>any</i> distribution with a finite variance. The red curve on
+    the right is precisely this <code>1/k²</code>, and it sits above the true tail every time.
+  </p>
+
+  <h2>The weak law — a one-line corollary</h2>
+  <p style="font-size:14px;max-width:780px">
+    Apply Chebyshev not to a single draw but to the <b>sample average</b>
+    <code>X̄ₙ = (X₁ + ⋯ + Xₙ)/n</code>. Its mean is still <code>μ</code>, but its variance is
+    <code>Var(X̄ₙ) = σ²/n</code> — the averaging shrinks the spread. Plug that into Chebyshev:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+P(|X̄ₙ − μ| ≥ ε)  ≤  Var(X̄ₙ) / ε²  =  σ² / (n ε²)   ──→  0   as n → ∞</pre>
+  <p style="font-size:14px;max-width:780px">
+    Fix any tolerance <code>ε</code>, however small. The right-hand side has an <code>n</code> in the
+    denominator, so it marches to zero. That is the <b>weak law of large numbers</b>: for every fixed
+    <code>ε &gt; 0</code>, the probability that the sample average misses <code>μ</code> by more than
+    <code>ε</code> goes to <code>0</code> as the sample grows. The left-hand plot <i>is</i> this statement in
+    motion — slide the band tighter with the <code>ε</code> control and the runs still find their way inside
+    and stay. The status box shows <code>σ²/(nε²)</code> for the current numbers and how shrinking it is the
+    weak law itself.
+  </p>
+
+  <h2>"The average concentrates" vs. "the shape becomes normal"</h2>
+  <p style="font-size:14px;max-width:780px">
+    It's worth being precise about what this lecture does and does <i>not</i> say, because the
+    <a href="clt.html">Central Limit Theorem next door</a> is often blurred together with it. The weak law is a
+    statement about <b>concentration</b>: the average collapses onto the single point <code>μ</code>, and the
+    spread <code>σ/√n</code> goes to zero. That is the funnel you see on the left. The CLT is a sharper,
+    different statement about <b>shape</b>: if you <i>zoom in</i> and rescale the leftover error by exactly
+    <code>σ/√n</code>, what remains is always the <b>same bell curve</b>, no matter what population you
+    started from. The weak law tells you the dart lands near the bullseye; the CLT tells you the precise
+    Gaussian pattern of the near-misses. This page is the natural step right before that one —
+    <a href="clt.html">open the CLT lecture</a> to watch the rescaled error converge to the normal.
+  </p>
+
+  <h2>Why settle for a loose bound?</h2>
+  <p style="font-size:14px;max-width:780px">
+    Drag <code>n</code> up and read the gap between the red Chebyshev curve and the actual tail: at
+    <code>k = 2</code> Chebyshev promises <code>≤ 0.25</code>, while the true chance (for a near-normal
+    <code>X̄ₙ</code>) is only about <code>0.046</code> — Chebyshev is loose by more than a factor of five. So
+    why use it? Because it is <b>assumption-light</b>. The CLT's tighter <code>2(1 − Φ(k))</code> estimate
+    (the dashed curve) needs <code>n</code> to be large enough for the bell to set in; Chebyshev needs only a
+    finite variance and holds for <i>every</i> <code>n</code>, every distribution, exactly. When you know
+    nothing but <code>μ</code> and <code>σ²</code> — no shape, no tails, no large-<code>n</code> license — a
+    guaranteed-valid bound beats a sharp guess. That trade, robustness for tightness, is the whole personality
+    of these inequalities, and it is why the weak law can be proved in a single honest line.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const N_PATHS = 4;        // independent running-average runs on the left
+  const N_MAX   = 1000;     // length of each run (x-axis is n itself)
+  const T       = 4000;     // Monte-Carlo replications of X̄ₙ for the right plot
+  const PATH_COLS = ["#1f77b4", "#176d2c", "#d6791f", "#7b4fb0"];
+
+  // Populations: a single-draw sampler plus its true mean μ and variance σ². All finite.
+  const DISTS = {
+    uniform:     { label: "Uniform [0,1]",     draw: () => PR.uniform(0, 1),  mu: 0.5, varr: 1 / 12 },
+    exponential: { label: "Exponential (λ=1)", draw: () => PR.exponential(1), mu: 1,   varr: 1 },
+    bernoulli:   { label: "Bernoulli (p=0.3)", draw: () => PR.bernoulli(0.3), mu: 0.3, varr: 0.21 },
+    die:         { label: "Fair die {1…6}",    draw: () => PR.dieRoll(),      mu: 3.5, varr: 35 / 12 },
+  };
+
+  let current = "uniform";
+  let paths = [];           // cached running-average paths so the ε slider doesn't reshuffle them
+  let pathsPop = null;
+
+  // One running average X̄₁, X̄₂, …, X̄_{N_MAX} from the current population.
+  function onePath(desc) {
+    const out = new Array(N_MAX);
+    let s = 0;
+    for (let i = 0; i < N_MAX; i++) { s += desc.draw(); out[i] = s / (i + 1); }
+    return out;
+  }
+  function makePaths() {
+    const desc = DISTS[current];
+    paths = [];
+    for (let p = 0; p < N_PATHS; p++) paths.push(onePath(desc));
+    pathsPop = current;
+  }
+
+  // Monte-Carlo tail of X̄ₙ: returns |X̄ₙ − μ| / SE for T replications (sorted ascending).
+  function deviations(desc, n) {
+    const SE = Math.sqrt(desc.varr / n);
+    const d = new Array(T);
+    for (let t = 0; t < T; t++) {
+      let s = 0;
+      for (let i = 0; i < n; i++) s += desc.draw();
+      d[t] = Math.abs(s / n - desc.mu) / SE;
+    }
+    d.sort((a, b) => a - b);
+    return d;
+  }
+  // Empirical P(dev ≥ k) from a sorted deviation array (binary search for first index ≥ k).
+  function tailGE(sorted, k) {
+    let lo = 0, hi = sorted.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (sorted[m] < k) lo = m + 1; else hi = m; }
+    return (sorted.length - lo) / sorted.length;
+  }
+
+  function draw() {
+    const desc  = DISTS[current];
+    const sigma = Math.sqrt(desc.varr);
+    const epsRel = parseFloat($("eps").value);
+    const eps    = epsRel * sigma;
+    const n = parseInt($("n").value, 10);
+    const k = parseFloat($("k").value);
+    $("epsval").textContent = PR.round(epsRel, 2);
+    $("nval").textContent = n;
+    $("kval").textContent = PR.round(k, 1);
+
+    if (pathsPop !== current) makePaths();
+
+    // ---------- LEFT: the running sample average (weak law in motion) ----------
+    const xs = []; for (let i = 1; i <= N_MAX; i++) xs.push(i);
+    const lawData = paths.map((p, i) => ({
+      type: "scatter", mode: "lines", x: xs, y: p,
+      line: { color: PATH_COLS[i], width: 1.2 }, opacity: 0.7,
+      name: "run " + (i + 1), hoverinfo: "skip",
+    }));
+    // μ line
+    lawData.push({
+      type: "scatter", mode: "lines", x: [1, N_MAX], y: [desc.mu, desc.mu],
+      line: { color: "#111", width: 2 }, name: "true μ = " + PR.round(desc.mu, 3), hoverinfo: "skip",
+    });
+
+    const yLo = desc.mu - 2.5 * sigma, yHi = desc.mu + 2.5 * sigma;
+    Plotly.react("lawPlot", lawData, {
+      title: { text: "Running average X̄ₙ  (" + desc.label + ")", font: { size: 13 } },
+      margin: { l: 46, r: 12, t: 34, b: 38 },
+      xaxis: { type: "log", title: { text: "n  (number of draws averaged, log scale)", font: { size: 11 } } },
+      yaxis: { range: [yLo, yHi], title: { text: "X̄ₙ", font: { size: 11 } } },
+      showlegend: true,
+      legend: { x: 0.62, y: 0.98, font: { size: 10 }, bgcolor: "rgba(255,255,255,0.6)" },
+      shapes: [
+        // ±ε tolerance band around μ (paper x so it spans the whole log axis)
+        { type: "rect", xref: "paper", yref: "y", x0: 0, x1: 1, y0: desc.mu - eps, y1: desc.mu + eps,
+          fillcolor: "rgba(31,119,180,0.10)", line: { width: 0 } },
+        { type: "line", xref: "paper", yref: "y", x0: 0, x1: 1, y0: desc.mu - eps, y1: desc.mu - eps,
+          line: { color: "#1f77b4", width: 1, dash: "dot" } },
+        { type: "line", xref: "paper", yref: "y", x0: 0, x1: 1, y0: desc.mu + eps, y1: desc.mu + eps,
+          line: { color: "#1f77b4", width: 1, dash: "dot" } },
+      ],
+      annotations: [
+        { x: 0.02, y: desc.mu + eps, xref: "paper", yref: "y", text: "μ ± ε",
+          showarrow: false, font: { size: 11, color: "#1f77b4" }, yanchor: "bottom", xanchor: "left" },
+      ],
+    }, { responsive: true });
+
+    // ---------- RIGHT: Chebyshev bound 1/k² vs the true tail of X̄ₙ ----------
+    const ks = PR.linspace(1, 4, 60);
+    const cheb = ks.map((kk) => 1 / (kk * kk));               // distribution-free bound
+    const clt  = ks.map((kk) => 2 * (1 - PR.normCdf(kk, 0, 1)));  // CLT / normal-approx tail
+    const dev  = deviations(desc, n);
+    const mc   = ks.map((kk) => tailGE(dev, kk));             // Monte-Carlo truth at this n
+
+    const boundData = [
+      { type: "scatter", mode: "lines", x: ks, y: cheb, line: { color: "#b00020", width: 2.5 },
+        name: "Chebyshev bound 1/k²", hoverinfo: "x+y" },
+      { type: "scatter", mode: "lines", x: ks, y: clt, line: { color: "#111", width: 1.5, dash: "dash" },
+        name: "normal-approx 2(1−Φ(k))", hoverinfo: "x+y" },
+      { type: "scatter", mode: "lines+markers", x: ks, y: mc, line: { color: "#176d2c", width: 1.5 },
+        marker: { size: 3 }, name: "true tail at n=" + n + " (sim)", hoverinfo: "x+y" },
+      // marker for the current k
+      { type: "scatter", mode: "markers", x: [k, k], y: [1 / (k * k), tailGE(dev, k)],
+        marker: { size: 8, color: ["#b00020", "#176d2c"] }, name: "k = " + PR.round(k, 1), hoverinfo: "skip" },
+    ];
+    Plotly.react("boundPlot", boundData, {
+      title: { text: "P(|X̄ₙ − μ| ≥ k·σ/√n)  —  bound vs. truth", font: { size: 13 } },
+      margin: { l: 46, r: 12, t: 34, b: 38 },
+      xaxis: { range: [1, 4], title: { text: "k  (deviation in standard errors σ/√n)", font: { size: 11 } } },
+      yaxis: { range: [0, 1], title: { text: "tail probability", font: { size: 11 } } },
+      showlegend: true,
+      legend: { x: 0.5, y: 0.98, font: { size: 10 }, bgcolor: "rgba(255,255,255,0.6)" },
+    }, { responsive: true });
+
+    // ---------- STATUS: the Chebyshev / weak-law statement with numbers plugged in ----------
+    const fmt = (x, d) => PR.round(x, d == null ? 3 : d);
+    const rhsEps = desc.varr / (n * eps * eps);              // σ²/(nε²) for the ε band
+    const chebAtK = 1 / (k * k);
+    const trueAtK = tailGE(dev, k);
+    const html =
+      '<span class="tag one">Chebyshev for the sample mean: &nbsp;P(|X̄ₙ − μ| ≥ ε) ≤ σ²/(nε²).</span><br>' +
+      'population &nbsp;<code>μ = ' + fmt(desc.mu) + '</code>, &nbsp;<code>σ² = ' + fmt(desc.varr) + '</code> ' +
+      '(σ = ' + fmt(sigma) + '), &nbsp; band &nbsp;<code>ε = ' + fmt(epsRel, 2) + '·σ = ' + fmt(eps) + '</code><br>' +
+      'at <code>n = ' + n + '</code>: &nbsp;<code>P(|X̄ₙ − μ| ≥ ' + fmt(eps) + ') ≤ σ²/(nε²) = ' +
+        fmt(desc.varr) + ' / (' + n + ' · ' + fmt(eps * eps) + ') = ' + fmt(rhsEps, 4) + '</code><br>' +
+      '<span style="color:#666">grow n: same bound is &nbsp;' +
+        'n=' + n + ' → ' + fmt(rhsEps, 4) + ', &nbsp; n=' + (10 * n) + ' → ' + fmt(rhsEps / 10, 4) +
+        ', &nbsp; n→∞ → 0. &nbsp;That shrinking-to-zero <b>is</b> the weak law.</span><br>' +
+      'at <code>k = ' + fmt(k, 1) + '</code> std-errors: &nbsp;Chebyshev says <b style="color:#b00020">≤ ' +
+        fmt(chebAtK) + '</b>, &nbsp; the true tail (sim, n=' + n + ') is <b style="color:#176d2c">≈ ' +
+        fmt(trueAtK) + '</b> ' +
+      (trueAtK > 0 ? '&nbsp;(valid but loose by ≈ ' + fmt(chebAtK / Math.max(trueAtK, 1e-6), 1) + '×).' : '&nbsp;(valid).');
+    $("status").innerHTML = html;
+  }
+
+  // wiring
+  $("eps").addEventListener("input", draw);
+  $("n").addEventListener("input", draw);
+  $("k").addEventListener("input", draw);
+  $("reroll").onclick = () => { makePaths(); draw(); };
+  document.querySelectorAll(".preset[data-d]").forEach((b) => {
+    b.onclick = () => {
+      current = b.dataset.d;
+      if (b.dataset.n) { $("n").value = b.dataset.n; }
+      makePaths();
+      draw();
+    };
+  });
+
+  makePaths();
+  draw();
+})();
+</script>
+</body>
+</html>

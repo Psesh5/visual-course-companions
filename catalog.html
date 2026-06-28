@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Visual Course Companions</title>
+<link rel="stylesheet" href="lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <h1>Visual Course Companions</h1>
+  <div class="sub">Interactive, zero-build companions to foundational math &amp; statistics courses.
+    Each one turns the core ideas into something you can drag, tune, and watch move.
+    Built with Plotly.js; no install, no build step.</div>
+
+  <div class="unit">Courses</div>
+  <div class="cards">
+    <div class="card live">
+      <span class="num">MIT 18.06 · Gilbert Strang</span>
+      <span class="ttl">Linear Algebra</span>
+      <span class="badge live">25 interactive modules</span>
+      <a class="go" href="index.html">Open course →</a>
+      <div class="links">Geometry of Ax=b · elimination · four subspaces · projections &amp; least squares ·
+        determinants · eigenvalues · SVD · transformations</div>
+    </div>
+
+    <div class="card live">
+      <span class="num">MIT 6.041 · John Tsitsiklis</span>
+      <span class="ttl">Probability &amp; Random Processes</span>
+      <span class="badge live">14 interactive modules</span>
+      <a class="go" href="probability/index.html">Open course →</a>
+      <div class="links">Axioms &amp; Bayes · PMFs &amp; expectation · PDFs/CDFs · joint densities &amp; correlation ·
+        derived distributions · inequalities &amp; the CLT · Bayesian inference · Bernoulli/Poisson/Markov</div>
+    </div>
+  </div>
+
+  <div class="unit" style="margin-top:24px">On the roadmap</div>
+  <div class="cards">
+    <div class="card"><span class="ttl">Convex Optimization</span>
+      <span class="badge soon">planned</span><div class="links">Boyd EE364a · gradient-descent paths · the lasso vs ridge constraint geometry</div></div>
+    <div class="card"><span class="ttl">Statistical Learning (ISLR)</span>
+      <span class="badge soon">planned</span><div class="links">Hastie &amp; Tibshirani · bias–variance · shrinkage paths · decision boundaries</div></div>
+    <div class="card"><span class="ttl">Essence of Calculus</span>
+      <span class="badge soon">planned</span><div class="links">Derivatives as slope · integrals as area · Taylor series building up</div></div>
+    <div class="card"><span class="ttl">Differential Equations</span>
+      <span class="badge soon">planned</span><div class="links">MIT 18.03 · phase portraits · vector fields (reuses the linalg eigen-tools)</div></div>
+  </div>
+
+  <div class="sub" style="margin-top:28px">
+    Shared <code>lib/</code> (one stylesheet + a domain JS module per subject). Add a course by dropping in a
+    <code>course.json</code>, a domain lib, and per-lecture HTML pages.
+  </div>
+</div>
+</body>
+</html>

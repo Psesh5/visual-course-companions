@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 8 — Solving Ax=b, the complete solution · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 8 · Solving Ax = b — the complete solution</h1>
+  <div class="sub">Every solution of <code>Ax = b</code> splits into one
+    <b>particular solution</b> plus anything in the <b>nullspace</b>:
+    <code>x = x<sub>p</sub> + x<sub>n</sub></code>. The solution set is the nullspace
+    <i>shifted</i> so it passes through <code>x<sub>p</sub></code>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The system.</b> We use a short, wide matrix
+    <code>A = [[1, 2, 2], [2, 4, 5]]</code> (2 equations, 3 unknowns). Rank is 2, so there is
+    one free variable and the nullspace is a <b>line</b> through the origin. When <code>b</code>
+    is consistent, the complete solution is that same line <i>translated</i> to pass through a
+    particular solution <code>x<sub>p</sub></code> — a line in R³ that does <b>not</b> go through
+    the origin (unless <code>b = 0</code>).
+  </div>
+
+  <div class="note" style="background:#fff8ec;border-color:#f0d9a8">
+    <b>Strang's own example (4-D, so we can't draw it).</b> The lecture itself uses the
+    <b>3×4</b> matrix <code>A = [[1,2,2,2],[2,4,6,8],[3,6,8,10]]</code> with
+    <code>b = (1,5,6)</code> — note row 3 = row 1 + row 2, which forces the solvability
+    condition <code>b₁ + b₂ = b₃</code>. Rank is 2, so there are <b>two</b> free variables and
+    the solution set is a <b>2-D plane shifted off the origin inside R⁴</b>. We can't plot R⁴,
+    so the picture above uses the 2×3 cousin (a shifted <i>line</i> in R³) to show the same
+    <code>x = x<sub>p</sub> + x<sub>n</sub></code> geometry. The exact 4-D arithmetic is worked
+    out below, and the <b>four rank cases</b> Strang ends on are at the bottom of the page.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Right-hand side b:</span>
+    <button class="preset primary" data-p="consistent">Consistent · b = [5, 11]</button>
+    <button class="preset" data-p="zero">Homogeneous · b = [0, 0]</button>
+    <button class="preset" data-p="inconsistent">Inconsistent · b = [5, 9]</button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div class="plots">
+    <div id="plot" class="plot" style="flex:1 1 720px"></div>
+  </div>
+
+  <h2>The intuition</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>One particular point, then slide it.</b> Suppose you find a single vector
+    <code>x<sub>p</sub></code> with <code>A x<sub>p</sub> = b</code>. Now take any
+    <code>x<sub>n</sub></code> in the nullspace (<code>A x<sub>n</sub> = 0</code>). Then
+    <code>A(x<sub>p</sub> + x<sub>n</sub>) = A x<sub>p</sub> + A x<sub>n</sub> = b + 0 = b</code>.
+    So <i>every</i> sum <code>x<sub>p</sub> + x<sub>n</sub></code> solves the system, and conversely
+    any two solutions differ by something in the nullspace. The full answer is a copy of the
+    nullspace, picked up and dropped onto <code>x<sub>p</sub></code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Why it usually misses the origin.</b> The nullspace (green line) always passes through
+    <code>0</code> because <code>A·0 = 0</code>. The complete solution set (red line) only passes
+    through the origin when <code>0</code> is itself a solution — i.e. when <code>b = 0</code>.
+    Toggle the <b>homogeneous</b> preset and watch the red line snap onto the green one through the
+    origin; toggle back and the red line lifts away, parallel but offset by <code>x<sub>p</sub></code>.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>No solution looks different.</b> The <b>inconsistent</b> preset keeps the same columns but
+    moves <code>b</code> outside the column space. Elimination then produces an impossible row like
+    <code>0 = −1</code>; there is no <code>x<sub>p</sub></code> at all, so there is no line to draw.
+    The plot greys out and the status box shows the contradiction.
+  </p>
+
+  <h2>The worked math</h2>
+  <p style="font-size:14px;max-width:760px">
+    Take the consistent case, <code>b = [5, 11]</code>. Augment and eliminate:
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">
+[A | b] = [ 1  2  2 | 5 ]
+          [ 2  4  5 | 11]
+
+R2 ← R2 − 2·R1:
+
+          [ 1  2  2 | 5 ]   ← pivot in col 1
+          [ 0  0  1 | 1 ]   ← pivot in col 3
+
+Pivot columns: 1 and 3.   Free column: 2  (no pivot)  →  one free variable x₂.</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>Consistency.</b> No row of the form <code>[0 0 0 | nonzero]</code> appeared, so the system is
+    consistent. (For <code>b = [5, 9]</code>, R2 becomes <code>[0 0 1 | −1]</code> after the first
+    step and a second elimination would give <code>0 = −1</code> — see the inconsistent preset.)
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Particular solution</b> — set the free variable <code>x₂ = 0</code> and back-substitute:
+    from row 2, <code>x₃ = 1</code>; from row 1, <code>x₁ + 2(0) + 2(1) = 5 ⇒ x₁ = 3</code>. So
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">x_p = [ 3, 0, 1 ]ᵀ        (check: 1·3 + 2·0 + 2·1 = 5,  2·3 + 4·0 + 5·1 = 11 ✓)</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>Special solution (nullspace).</b> Solve <code>Ax = 0</code>. Set the free variable
+    <code>x₂ = 1</code>. Then row 2 gives <code>x₃ = 0</code>, and row 1 gives
+    <code>x₁ + 2(1) + 2(0) = 0 ⇒ x₁ = −2</code>:
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">s = [ −2, 1, 0 ]ᵀ         (check: 1·(−2) + 2·1 + 2·0 = 0,  2·(−2) + 4·1 + 5·0 = 0 ✓)</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>Complete solution.</b> One free variable ⇒ a one-parameter family. The nullspace is the line
+    <code>c·s</code>, and the complete solution is
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">x = x_p + c·s = [ 3, 0, 1 ]ᵀ + c·[ −2, 1, 0 ]ᵀ ,   c ∈ ℝ
+
+  = [ 3 − 2c ,  c ,  1 ]ᵀ</pre>
+  <p style="font-size:14px;max-width:760px">
+    This is a line in R³ through <code>x<sub>p</sub> = (3,0,1)</code> with direction
+    <code>s = (−2,1,0)</code>. It is parallel to the nullspace line <code>c·s</code> through the
+    origin but shifted off it — exactly the red/green pair you can rotate in the figure above.
+    Set <code>b = 0</code> and <code>x<sub>p</sub> = 0</code>: the two lines coincide and pass
+    through the origin.
+  </p>
+
+  <h2>Strang's exact 4-D example, worked out</h2>
+  <p style="font-size:14px;max-width:760px">
+    Now the real lecture matrix. <code>A = [[1,2,2,2],[2,4,6,8],[3,6,8,10]]</code>,
+    <code>b = (1,5,6)</code>. Row 3 = row 1 + row 2, so elimination kills the third row and
+    leaves the solvability test <code>0 = b₃ − b₂ − b₁</code>. With <code>(1,5,6)</code> that is
+    <code>6 − 5 − 1 = 0 ✓</code>, so a solution exists.
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">[A | b] = [ 1 2 2 2 | 1 ]        eliminate         [ 1 2 2 2 | 1 ]   ← pivot col 1
+          [ 2 4 6 8 | 5 ]   ───────────────▶      [ 0 0 2 4 | 3 ]   ← pivot col 3
+          [ 3 6 8 10| 6 ]                          [ 0 0 0 0 | 0 ]   ← 0 = b₃−b₂−b₁ ✓
+
+Pivot columns: 1, 3.   Free columns: 2, 4   →   two free variables x₂, x₄.</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>Particular solution</b> — set both free variables <code>x₂ = x₄ = 0</code>. Row 2 gives
+    <code>2x₃ = 3 ⇒ x₃ = 3/2</code>; row 1 gives <code>x₁ + 2x₃ = 1 ⇒ x₁ = 1 − 3 = −2</code>:
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">x_p = ( −2, 0, 3/2, 0 )ᵀ      (Strang's "minus two, zero, three halves, zero")</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>Two special solutions</b> (solve <code>Ax = 0</code>, one free variable = 1 at a time). The
+    reduced rows are <code>x₁ + 2x₂ + 2x₄ = 0</code> and <code>x₃ + 2x₄ = 0</code>:
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">x₂ = 1, x₄ = 0  →  s₁ = ( −2, 1,  0, 0 )ᵀ
+x₂ = 0, x₄ = 1  →  s₂ = (  2, 0, −2, 1 )ᵀ        (Strang: "two minus four and two gives zero, check")</pre>
+  <p style="font-size:14px;max-width:760px">
+    <b>Complete solution.</b> Two free variables ⇒ a two-parameter family — a <b>2-D plane</b>,
+    shifted off the origin, living inside R⁴:
+  </p>
+  <pre style="font-size:13px;background:#f6f8fb;border:1px solid #e3e9f2;border-radius:8px;padding:12px;overflow:auto">x = x_p + c₁·s₁ + c₂·s₂
+  = ( −2, 0, 3/2, 0 )ᵀ + c₁·( −2, 1, 0, 0 )ᵀ + c₂·( 2, 0, −2, 1 )ᵀ,   c₁, c₂ ∈ ℝ</pre>
+  <p style="font-size:14px;max-width:760px">
+    <code>x<sub>p</sub></code> is one point; the two <code>s</code>'s span the nullspace plane
+    through the origin; adding them lifts that plane up to <code>x<sub>p</sub></code>. As Strang
+    puts it, "it's like a flat thing, like a subspace, but it's been shifted away from the origin
+    — it doesn't contain zero." It is exactly the R³ line picture at the top of this page, with
+    one extra dimension of freedom.
+  </p>
+
+  <h2>The big picture — what the rank tells you</h2>
+  <p style="font-size:14px;max-width:760px">
+    Strang closes the lecture with the line that "summarizes the whole lecture":
+    <b>the rank <code>r</code> tells you everything about the number of solutions</b> — everything
+    except the exact entries. For an <code>m × n</code> matrix we always have
+    <code>r ≤ m</code> and <code>r ≤ n</code>. The four corners below are his exact examples.
+    Click each to see its reduced form <code>R</code>, its nullspace, and how many solutions
+    <code>Ax = b</code> has.
+  </p>
+  <div class="controls">
+    <button class="rcase primary" data-c="rmn">r = m = n &nbsp;(square, invertible)</button>
+    <button class="rcase" data-c="coln">r = n &lt; m &nbsp;(full column rank)</button>
+    <button class="rcase" data-c="rowm">r = m &lt; n &nbsp;(full row rank)</button>
+    <button class="rcase" data-c="rlt">r &lt; m, r &lt; n &nbsp;(general)</button>
+  </div>
+  <div id="rankStatus" class="status"></div>
+  <table style="border-collapse:collapse;font-size:13px;margin-top:10px;max-width:760px">
+    <thead><tr style="background:#eef3fb">
+      <th style="border:1px solid #d6e0ee;padding:6px 10px;text-align:left">case</th>
+      <th style="border:1px solid #d6e0ee;padding:6px 10px;text-align:left">R (reduced)</th>
+      <th style="border:1px solid #d6e0ee;padding:6px 10px;text-align:left">null space</th>
+      <th style="border:1px solid #d6e0ee;padding:6px 10px;text-align:left"># solutions of Ax=b</th>
+    </tr></thead>
+    <tbody id="rankRows"></tbody>
+  </table>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  const { arrow, SCENE } = LA;
+
+  // A = [[1,2,2],[2,4,5]]  (2 eqns, 3 unknowns). rank 2, free var x2.
+  const A = [[1, 2, 2], [2, 4, 5]];
+  const s = [-2, 1, 0];          // special solution (nullspace direction)
+
+  const PRESETS = {
+    consistent:   { b: [5, 11], xp: [3, 0, 1] },
+    zero:         { b: [0, 0],  xp: [0, 0, 0] },
+    inconsistent: { b: [5, 9],  xp: null },
+  };
+
+  const T = 2.4;   // parameter half-range for drawing the lines
+  const matvec = (M, v) => M.map((row) => row.reduce((acc, a, j) => acc + a * v[j], 0));
+  const fmt = (v) => "[" + v.map((x) => LA.round(x)).join(", ") + "]";
+
+  function lineTrace(base, dir, color, name, dash) {
+    return {
+      type: "scatter3d", mode: "lines",
+      x: [base[0] - T * dir[0], base[0] + T * dir[0]],
+      y: [base[1] - T * dir[1], base[1] + T * dir[1]],
+      z: [base[2] - T * dir[2], base[2] + T * dir[2]],
+      line: { color, width: 6, dash: dash || "solid" },
+      name, showlegend: true,
+    };
+  }
+
+  function point(p, color, name) {
+    return {
+      type: "scatter3d", mode: "markers",
+      x: [p[0]], y: [p[1]], z: [p[2]],
+      marker: { color, size: 6, symbol: "circle" },
+      name, showlegend: true,
+    };
+  }
+
+  function draw(key) {
+    const P = PRESETS[key];
+    const data = [];
+
+    // origin marker (always)
+    data.push({ type: "scatter3d", mode: "markers", x: [0], y: [0], z: [0],
+      marker: { color: "#444", size: 4 }, name: "origin", showlegend: true });
+
+    // nullspace line through origin (green) — always present, depends only on A
+    data.push(lineTrace([0, 0, 0], s, "#2ca02c", "nullspace  c·s"));
+
+    let statusHTML;
+
+    if (P.xp === null) {
+      // inconsistent: no particular solution, nothing to shift
+      statusHTML =
+        '<span class="tag none">NO SOLUTION</span> &nbsp; b = ' + fmt(P.b) +
+        ' is outside the column space. Elimination gives an impossible row ' +
+        '<code>0 = −1</code>, so there is no x<sub>p</sub> and no solution line.';
+    } else {
+      const xp = P.xp;
+      // particular solution point (orange) + arrow from origin
+      arrow([0, 0, 0], xp, "#ff7f0e", 6).forEach((t) => data.push(t));
+      data.push(point(xp, "#ff7f0e", "x_p = " + fmt(xp)));
+
+      // complete solution line: xp + c·s (red)
+      data.push(lineTrace(xp, s, "#d62728", "complete  x_p + c·s"));
+
+      const onOrigin = xp[0] === 0 && xp[1] === 0 && xp[2] === 0;
+      const tag = onOrigin ? "inf" : "inf";
+      statusHTML =
+        '<span class="tag ' + tag + '">INFINITELY MANY</span> &nbsp; b = ' + fmt(P.b) +
+        '. Complete solution <code>x = ' + fmt(xp) + ' + c·' + fmt(s) +
+        '</code> — a line in R³' +
+        (onOrigin
+          ? ' that <b>does</b> pass through the origin, because b = 0 makes x_p = 0; here the red line lies on top of the green nullspace.'
+          : ' that does <b>not</b> pass through the origin; it is the green nullspace shifted by x_p.');
+    }
+
+    document.getElementById("status").innerHTML = statusHTML;
+
+    const layout = {
+      margin: { l: 0, r: 0, t: 10, b: 0 },
+      scene: SCENE(),
+      legend: { x: 0, y: 1, font: { size: 12 } },
+      showlegend: true,
+    };
+    Plotly.react("plot", data, layout, { responsive: true });
+  }
+
+  draw("consistent");
+  document.querySelectorAll(".preset").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll(".preset").forEach((b) => b.classList.remove("primary"));
+      btn.classList.add("primary");
+      draw(btn.dataset.p);
+    };
+  });
+
+  // --- The four rank cases (Strang's closing summary, with his exact examples) ---
+  (function () {
+    const CASES = {
+      rmn: {
+        title: "r = m = n — square &amp; invertible",
+        A: "[[1,2],[3,1]]",
+        R: "[[1,0],[0,1]] = I",
+        nul: "{ 0 } only",
+        nsol: "exactly <b>one</b> (for every b)",
+        why: 'Strang\'s "brilliant example" <code>[[1,2],[3,1]]</code>: full rank in a square ' +
+             'matrix means R is the identity. No free variables (so the only nullspace vector is 0) ' +
+             'and no zero rows (so every b is solvable). This is the chapter-2 invertible case: ' +
+             '<b>x = x<sub>p</sub></b>, a unique solution.',
+      },
+      coln: {
+        title: "r = n &lt; m — full column rank (tall &amp; thin)",
+        A: "[[1,3],[2,1],[6,1],[5,1]]",
+        R: "[[1,0],[0,1],[0,0],[0,0]] = [ I ; 0 ]",
+        nul: "{ 0 } only",
+        nsol: "<b>zero or one</b>",
+        why: 'Strang\'s 4×2 example <code>columns (1,2,6,5) and (3,1,1,1)</code>: every column has ' +
+             'a pivot, so there are no free variables and the nullspace is just 0. But there are ' +
+             'extra (zero) rows, so most b fail the solvability test. Pick b = (4,3,7,6) = col₁+col₂ ' +
+             'and you get the lone solution <b>x<sub>p</sub> = (1,1)</b>; a random b has no solution at all.',
+      },
+      rowm: {
+        title: "r = m &lt; n — full row rank (short &amp; wide)",
+        A: "[[1,2,6,5],[3,1,1,1]]",
+        R: "[ I  F ]  (pivots, but I and F may be intermixed)",
+        nul: "dimension n − m = 2",
+        nsol: "<b>infinitely many</b> (for every b)",
+        why: 'The transpose of the previous matrix — Strang literally flips it over. Every <i>row</i> ' +
+             'has a pivot, so elimination produces no zero rows and <b>Ax = b is solvable for every b</b> ' +
+             '(the existence case). With n − r = 4 − 2 = 2 free variables, there is always a whole ' +
+             'nullspace plane to add, so there are always infinitely many solutions.',
+      },
+      rlt: {
+        title: "r &lt; m and r &lt; n — the general case",
+        A: "[[1,2,2,2],[2,4,6,8],[3,6,8,10]]",
+        R: "[[1,2,0,−2],[0,0,1,2],[0,0,0,0]] = [[I, F],[0, 0]]",
+        nul: "dimension n − r = 2",
+        nsol: "<b>zero or infinitely many</b>",
+        why: 'This is the main example of the lecture itself (rank 2, 3×4). R has both free columns ' +
+             '<i>and</i> a zero row, so it carries both a solvability condition (<code>b₁+b₂=b₃</code>) ' +
+             'and free variables. If b passes the test you get a shifted 2-D plane of solutions ' +
+             '(<b>x<sub>p</sub> + c₁s₁ + c₂s₂</b>); if it fails, there is no solution. The most general ' +
+             'situation, combining everything above.',
+      },
+    };
+    const order = ["rmn", "coln", "rowm", "rlt"];
+    const rows = document.getElementById("rankRows");
+    rows.innerHTML = order.map((k) => {
+      const c = CASES[k];
+      const td = 'style="border:1px solid #d6e0ee;padding:6px 10px;vertical-align:top"';
+      return '<tr data-row="' + k + '">' +
+        '<td ' + td + '>' + c.title + '</td>' +
+        '<td ' + td + '><code>' + c.R + '</code></td>' +
+        '<td ' + td + '>' + c.nul + '</td>' +
+        '<td ' + td + '>' + c.nsol + '</td></tr>';
+    }).join("");
+
+    function showCase(k) {
+      const c = CASES[k];
+      document.getElementById("rankStatus").innerHTML =
+        '<b>' + c.title + '</b> &nbsp; A = <code>' + c.A + '</code><br>' + c.why;
+      rows.querySelectorAll("tr").forEach((tr) =>
+        tr.style.background = tr.dataset.row === k ? "#fff4d6" : "");
+    }
+    document.querySelectorAll(".rcase").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll(".rcase").forEach((b) => b.classList.remove("primary"));
+        btn.classList.add("primary");
+        showCase(btn.dataset.c);
+      };
+    });
+    showCase("rmn");
+  })();
+</script>
+</body>
+</html>

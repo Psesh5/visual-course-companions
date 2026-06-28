@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>PMFs and expectation · 6.041</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All probability units</a> &nbsp;·&nbsp; <a href="../../catalog.html">All courses</a></div>
+  <h1>PMFs and expectation · the center of mass of a random variable</h1>
+  <div class="sub">A <b>discrete random variable</b> <code>X</code> is described by its <b>probability mass
+    function</b> <code>p(k) = P(X = k)</code> — how much probability sits on each possible value. The
+    <b>expectation</b> <code>E[X] = Σ k·p(k)</code> is the <i>weighted average</i> of those values: the single
+    number where all that mass would <b>balance</b>.
+    <a href="https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/" target="_blank">▶ watch on OCW (Tsitsiklis 6.041)</a>
+  </div>
+
+  <div class="note">
+    <b>The picture:</b> each blue bar is the probability <code>p(k)</code> that <code>X</code> lands on the
+    value <code>k</code> — the bar heights are an honest pile of mass that sums to 1. The red
+    <span style="color:#b00020">▲ fulcrum</span> sits at the <b>mean</b> <code>μ = E[X]</code>: think of the
+    bars as weights on a seesaw, and the triangle is the one pivot where the whole thing balances. The pale band
+    is <code>μ ± σ</code>, one standard deviation either side, so you can <i>see</i> how spread out the
+    distribution is. Pick a family, drag the parameters, and watch the mass — and the balance point — move.
+  </div>
+
+  <div class="controls">
+    <span style="font-size:13px;color:#444;margin-right:6px">Distribution:</span>
+    <button class="preset" data-d="binom">Binomial(n, p)</button>
+    <button class="preset" data-d="poisson">Poisson(λ)</button>
+    <button class="preset" data-d="geom">Geometric(p)</button>
+    <button class="preset" data-d="die">Fair die {1…6}</button>
+  </div>
+  <div class="controls">
+    <label id="row-n" style="font-size:14px">trials&nbsp; <b>n = <span id="nval">10</span></b>&nbsp;
+      <input type="range" id="n" min="1" max="40" value="10" style="vertical-align:middle;width:180px">
+    </label>
+    &nbsp;&nbsp;
+    <label id="row-p" style="font-size:14px">success prob&nbsp; <b>p = <span id="pval">0.50</span></b>&nbsp;
+      <input type="range" id="p" min="0.1" max="0.9" step="0.05" value="0.5" style="vertical-align:middle;width:160px">
+    </label>
+    &nbsp;&nbsp;
+    <label id="row-lam" style="font-size:14px">rate&nbsp; <b>λ = <span id="lamval">4.0</span></b>&nbsp;
+      <input type="range" id="lam" min="0.5" max="20" step="0.5" value="4" style="vertical-align:middle;width:160px">
+    </label>
+  </div>
+  <div class="controls" style="margin-bottom:10px">
+    <span style="font-size:13px;color:#444;margin-right:6px">Memorable cases:</span>
+    <button class="preset" data-pre="binom,10,0.5,4">Binomial(10, ½) · E = 5</button>
+    <button class="preset" data-pre="binom,20,0.3,4">Binomial(20, 0.3) · E = 6</button>
+    <button class="preset" data-pre="poisson,10,0.5,4">Poisson(4) · E = Var = 4</button>
+    <button class="preset" data-pre="geom,10,0.25,4">Geometric(¼) · E = 4</button>
+    <button class="preset" data-pre="die,10,0.5,4">Fair die · E = 3.5</button>
+  </div>
+
+  <div class="plots">
+    <div id="pmfPlot" class="plot"></div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <h2>What a PMF is — and the two rules it must obey</h2>
+  <p style="font-size:14px;max-width:780px">
+    A discrete random variable takes values in some list — <code>0, 1, 2, …</code> — and the PMF just records
+    the probability of each: <code>p(k) = P(X = k)</code>. It is the most complete description there is; once you
+    know <code>p</code>, you know everything probabilistic about <code>X</code>. Only two rules apply, and both
+    are visible in the bar chart above. First, <b>every bar is non-negative</b>, <code>p(k) ≥ 0</code> — you
+    cannot have a negative amount of probability. Second, <b>the bars sum to one</b>,
+    <code>Σ p(k) = 1</code> — all the probability has to go <i>somewhere</i>. The status box re-checks that
+    second rule live by adding the bar heights; it always lands on 1.000.
+  </p>
+
+  <h2>Expectation is a weighted average — and the balance point</h2>
+  <p style="font-size:14px;max-width:780px">
+    The expectation is defined as <code>E[X] = Σ k·p(k)</code>: walk over every value <code>k</code>, weight it
+    by how likely it is, and add. That is exactly a <b>weighted average</b> of the possible values, where the
+    weights are the probabilities. If the probabilities were all equal it would be the ordinary average; because
+    they are not, values with more mass pull <code>E[X]</code> toward them.
+  </p>
+  <p style="font-size:14px;max-width:780px">
+    The mechanical picture is the one Tsitsiklis keeps coming back to: imagine the PMF as little weights placed
+    on a ruler, the weight at position <code>k</code> being <code>p(k)</code>. The expectation is the
+    <b>center of mass</b> — the single point where you could put a fulcrum and have the ruler balance. That is the
+    red <span style="color:#b00020">▲</span> in the plot. Notice it need not sit on a bar, and for a skewed
+    distribution it gets dragged toward the long tail. <i>Expectation is where the probability mass balances.</i>
+  </p>
+
+  <h2>A worked sum — the fair die, by hand</h2>
+  <p style="font-size:14px;max-width:780px">
+    Take the fair die. Every face is equally likely, so <code>p(k) = 1/6</code> for <code>k = 1,…,6</code>.
+    Apply the definition term by term:
+  </p>
+  <pre style="font-size:14px;background:#f7f9fc;border:1px solid #e3eaf3;border-radius:8px;padding:12px 14px;max-width:780px;overflow:auto">
+E[X] = Σ k·p(k)
+     = 1·(1/6) + 2·(1/6) + 3·(1/6) + 4·(1/6) + 5·(1/6) + 6·(1/6)
+     = (1 + 2 + 3 + 4 + 5 + 6) / 6
+     = 21 / 6  =  3.5</pre>
+  <p style="font-size:14px;max-width:780px">
+    The mean is <b>3.5</b> — a value the die can never actually show. That is the point of "expected" value: it
+    is the long-run average of many rolls, not a prediction of any single roll. Roll the die ten thousand times,
+    average the faces, and you land near 3.5; the fulcrum sits exactly at the middle of the symmetric mass.
+    For the <b>binomial</b> there is a slicker route: <code>X</code> is a sum of <code>n</code> independent
+    coin-flips, each worth <code>p</code> on average, so <code>E[X] = np</code> — no big sum required. For
+    <code>Binomial(3, ½)</code> that is <code>3·½ = 1.5</code>, and the direct sum
+    <code>0·⅛ + 1·⅜ + 2·⅜ + 3·⅛ = 12/8 = 1.5</code> agrees. The status box runs exactly this check for whatever
+    parameters you choose: the <i>closed form</i> and the <i>brute-force</i> <code>Σ k·p(k)</code> always match.
+  </p>
+
+  <h2>Variance — how wide is the pile?</h2>
+  <p style="font-size:14px;max-width:780px">
+    Expectation says where the mass sits; <b>variance</b> says how far it typically spreads from there.
+    The definition is itself an expectation — of the squared distance from the mean:
+    <code>Var(X) = E[(X − μ)²] = Σ (k − μ)²·p(k)</code>. Squaring keeps over- and under-shoots from cancelling and
+    punishes far-out values. Its square root <code>σ = √Var</code> is the <b>standard deviation</b>, back in the
+    original units, and it is the half-width of the pale band drawn around the fulcrum. Each family has a tidy
+    closed form: <code>Binomial</code> has <code>Var = np(1−p)</code>, the <code>Poisson</code> has the
+    remarkable <code>Var = λ = E[X]</code> (mean and variance coincide), and the <code>Geometric</code> has
+    <code>Var = (1−p)/p²</code>. Drag <code>p</code> on the binomial toward 0 or 1 and watch the band collapse —
+    a near-certain coin barely varies; the spread is widest at the fair <code>p = ½</code>.
+  </p>
+
+  <h2>The linearity teaser</h2>
+  <p style="font-size:14px;max-width:780px">
+    The reason <code>E[X] = np</code> dropped out so cheaply is the single most useful fact about expectation:
+    it is <b>linear</b>. For <i>any</i> random variables, <code>E[X + Y] = E[X] + E[Y]</code> — no independence
+    needed, no shared distribution required — and <code>E[a·X + b] = a·E[X] + b</code>. A binomial is the sum
+    <code>X = X₁ + ⋯ + Xₙ</code> of <code>n</code> Bernoulli(<code>p</code>) indicators, each with mean
+    <code>p</code>, so its mean is just <code>n</code> copies of <code>p</code> added up. Variance is
+    <i>not</i> linear in general — it only adds when the pieces are <b>independent</b>, which is exactly why the
+    binomial's variance is <code>n·p(1−p)</code>. That split — expectation always adds, variance adds only under
+    independence — is the hinge the next several lectures turn on.
+  </p>
+</div>
+
+<script src="../../lib/prob.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const range = (lo, hi) => { const a = []; for (let k = lo; k <= hi; k++) a.push(k); return a; };
+
+  // Each family: which sliders it uses, how to build its (truncated) support,
+  // the PMF, and the closed-form mean / variance with a readable formula string.
+  const DISTS = {
+    binom: {
+      label: (P) => "Binomial(n = " + P.n + ", p = " + P.p + ")",
+      uses: { n: true, p: true, lam: false },
+      support: (P) => range(0, P.n),
+      pmf: (k, P) => PR.binomPmf(k, P.n, P.p),
+      E: (P) => P.n * P.p,
+      V: (P) => P.n * P.p * (1 - P.p),
+      Estr: (P) => "np = " + P.n + "·" + P.p + " = " + PR.round(P.n * P.p, 3),
+      Vstr: (P) => "np(1−p) = " + P.n + "·" + P.p + "·" + PR.round(1 - P.p, 3) + " = " + PR.round(P.n * P.p * (1 - P.p), 3),
+      xrange: (P) => [-0.5, P.n + 0.5],
+    },
+    poisson: {
+      label: (P) => "Poisson(λ = " + P.lam + ")",
+      uses: { n: false, p: false, lam: true },
+      support: (P) => range(0, Math.max(20, Math.ceil(P.lam + 10 * Math.sqrt(P.lam) + 12))),
+      pmf: (k, P) => PR.poissonPmf(k, P.lam),
+      E: (P) => P.lam,
+      V: (P) => P.lam,
+      Estr: (P) => "λ = " + PR.round(P.lam, 3),
+      Vstr: (P) => "λ = " + PR.round(P.lam, 3) + "  (mean = variance!)",
+      xrange: (P) => [-0.5, Math.max(8, Math.ceil(P.lam + 4 * Math.sqrt(P.lam) + 3)) + 0.5],
+    },
+    geom: {
+      label: (P) => "Geometric(p = " + P.p + ")",
+      uses: { n: false, p: true, lam: false },
+      // first success on trial k = 1,2,3,…  truncate where the tail is negligible
+      support: (P) => range(1, Math.max(40, Math.ceil(Math.log(1e-10) / Math.log(1 - P.p)) + 2)),
+      pmf: (k, P) => PR.geomPmf(k, P.p),
+      E: (P) => 1 / P.p,
+      V: (P) => (1 - P.p) / (P.p * P.p),
+      Estr: (P) => "1/p = 1/" + P.p + " = " + PR.round(1 / P.p, 3),
+      Vstr: (P) => "(1−p)/p² = " + PR.round(1 - P.p, 3) + "/" + PR.round(P.p * P.p, 3) + " = " + PR.round((1 - P.p) / (P.p * P.p), 3),
+      xrange: (P) => [0.5, Math.max(8, Math.ceil(1 / P.p + 4 * Math.sqrt((1 - P.p)) / P.p)) + 0.5],
+    },
+    die: {
+      label: () => "Fair die {1,…,6}",
+      uses: { n: false, p: false, lam: false },
+      support: () => range(1, 6),
+      pmf: () => 1 / 6,
+      E: () => 3.5,
+      V: () => 35 / 12,
+      Estr: () => "(1+2+3+4+5+6)/6 = 21/6 = 3.5",
+      Vstr: () => "35/12 = " + PR.round(35 / 12, 3),
+      xrange: () => [0.5, 6.5],
+    },
+  };
+
+  let current = "binom";
+
+  function readParams() {
+    return {
+      n:   parseInt($("n").value, 10),
+      p:   parseFloat($("p").value),
+      lam: parseFloat($("lam").value),
+    };
+  }
+
+  // dim the sliders the active family does not use
+  function syncSliderUI(desc) {
+    [["n", "row-n"], ["p", "row-p"], ["lam", "row-lam"]].forEach(([id, row]) => {
+      const on = !!desc.uses[id];
+      $(id).disabled = !on;
+      $(row).style.opacity = on ? "1" : "0.32";
+    });
+  }
+
+  function draw() {
+    const desc = DISTS[current];
+    const P = readParams();
+    $("nval").textContent = P.n;
+    $("pval").textContent = P.p.toFixed(2);
+    $("lamval").textContent = P.lam.toFixed(1);
+    syncSliderUI(desc);
+
+    // ---- build the PMF over its (truncated) support ----
+    const ks = desc.support(P);
+    const ps = ks.map((k) => desc.pmf(k, P));
+
+    // ---- closed-form mean / variance ----
+    const Ecf = desc.E(P), Vcf = desc.V(P);
+    const sigma = Math.sqrt(Vcf);
+
+    // ---- direct verification by brute-force summation over the support ----
+    let sumP = 0, Edir = 0;
+    for (let i = 0; i < ks.length; i++) { sumP += ps[i]; Edir += ks[i] * ps[i]; }
+    let Vdir = 0;
+    for (let i = 0; i < ks.length; i++) Vdir += (ks[i] - Edir) * (ks[i] - Edir) * ps[i];
+
+    // ---- plot window and bar heights inside it ----
+    const xr = desc.xrange(P);
+    let ymax = 0;
+    for (let i = 0; i < ks.length; i++) if (ks[i] >= xr[0] && ks[i] <= xr[1]) ymax = Math.max(ymax, ps[i]);
+    const yTop = ymax * 1.18;
+
+    const bars = {
+      type: "bar", x: ks, y: ps, width: 0.86,
+      marker: { color: "#9fc6e8", line: { color: "#1f77b4", width: 1 } },
+      name: "p(k) = P(X = k)", hovertemplate: "k = %{x}<br>p(k) = %{y:.4f}<extra></extra>",
+    };
+
+    // the balance-point fulcrum: a triangle sitting on the axis at μ
+    const fulcrum = {
+      type: "scatter", mode: "markers", x: [Ecf], y: [0],
+      marker: { symbol: "triangle-up", size: 18, color: "#b00020", line: { color: "#7a0016", width: 1 } },
+      name: "E[X] (balance point)", hovertemplate: "E[X] = %{x:.3f}<extra></extra>",
+    };
+
+    // ±σ band (shape, below bars) and the mean line + label (above)
+    const shapes = [
+      { type: "rect", x0: Ecf - sigma, x1: Ecf + sigma, y0: 0, y1: yTop,
+        fillcolor: "rgba(31,119,180,0.09)", line: { width: 0 }, layer: "below" },
+      { type: "line", x0: Ecf, x1: Ecf, y0: 0, y1: yTop,
+        line: { color: "#b00020", width: 2, dash: "dash" } },
+    ];
+    const annotations = [
+      { x: Ecf, y: yTop, text: "E[X] = " + PR.round(Ecf, 3), showarrow: false,
+        font: { color: "#b00020", size: 13 }, yanchor: "bottom", xanchor: "center" },
+      { x: Ecf + sigma, y: yTop * 0.5, text: "+σ", showarrow: false,
+        font: { color: "#1f77b4", size: 11 }, xanchor: "left" },
+      { x: Ecf - sigma, y: yTop * 0.5, text: "−σ", showarrow: false,
+        font: { color: "#1f77b4", size: 11 }, xanchor: "right" },
+    ];
+
+    Plotly.react("pmfPlot", [bars, fulcrum], {
+      title: { text: "PMF  " + desc.label(P) + "   —   ▲ at the mean is the balance point", font: { size: 13 } },
+      margin: { l: 52, r: 14, t: 36, b: 40 },
+      xaxis: { range: xr, title: { text: "value k", font: { size: 12 } }, dtick: 1 },
+      yaxis: { range: [0, yTop], title: { text: "probability  p(k)", font: { size: 12 } }, rangemode: "tozero" },
+      bargap: 0.12, shapes, annotations, showlegend: true,
+      legend: { x: 0.98, y: 0.98, xanchor: "right", font: { size: 11 }, bgcolor: "rgba(255,255,255,0.65)" },
+    }, { responsive: true });
+
+    // ---- status: closed form vs. direct Σ, both for E and Var ----
+    const f = (x) => PR.round(x, 3);
+    const okE = Math.abs(Ecf - Edir) < 5e-3, okV = Math.abs(Vcf - Vdir) < 5e-3;
+    $("status").innerHTML =
+      '<span class="tag one">' + desc.label(P) + '</span><br>' +
+      'axioms &nbsp;<code>p(k) ≥ 0</code> ✓ &nbsp;and&nbsp; <code>Σ p(k) = ' + f(sumP) + '</code> ✓<br>' +
+      '<b>E[X]</b> &nbsp;closed form &nbsp;<code>' + desc.Estr(P) + '</code> &nbsp;→ direct &nbsp;<code>Σ k·p(k) = ' +
+        f(Edir) + '</code> &nbsp;' + (okE ? '✓ agree' : '≈') + '<br>' +
+      '<b>Var(X)</b> &nbsp;closed form &nbsp;<code>' + desc.Vstr(P) + '</code> &nbsp;→ direct &nbsp;<code>Σ (k−μ)²·p(k) = ' +
+        f(Vdir) + '</code> &nbsp;' + (okV ? '✓ agree' : '≈') + '<br>' +
+      '<span style="color:#666">standard deviation &nbsp;<code>σ = √Var = ' + f(sigma) +
+        '</code> &nbsp;— the half-width of the shaded band.</span>';
+  }
+
+  // ---- wiring ----
+  ["n", "p", "lam"].forEach((id) => $(id).addEventListener("input", draw));
+  document.querySelectorAll(".preset[data-d]").forEach((b) => {
+    b.onclick = () => { current = b.dataset.d; draw(); };
+  });
+  document.querySelectorAll(".preset[data-pre]").forEach((b) => {
+    b.onclick = () => {
+      const [d, n, p, lam] = b.dataset.pre.split(",");
+      current = d;
+      $("n").value = n; $("p").value = p; $("lam").value = lam;
+      draw();
+    };
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 12 — Graphs, networks, incidence matrices · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+<style>
+  /* lecture-local extras (kept tiny; shared look comes from style.css) */
+  table.mat { border-collapse: collapse; margin: 10px 0; font-variant-numeric: tabular-nums; }
+  table.mat caption { font-size: 13px; color: var(--muted); text-align: left; margin-bottom: 4px; }
+  table.mat th, table.mat td { padding: 4px 9px; text-align: center; min-width: 30px; }
+  table.mat th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  table.mat td { border-left: 1px solid #eee; }
+  table.mat td.rowlbl { border-left: none; color: var(--muted); font-size: 12px; }
+  table.mat td.pos { color: #176d2c; font-weight: 600; }
+  table.mat td.neg { color: #b00020; font-weight: 600; }
+  .dimgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 10px 0; }
+  .dimcard { border: 1px solid #e6e6e6; border-radius: 10px; padding: 10px 14px; background: #fff; }
+  .dimcard .k { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .dimcard .d { font-size: 22px; font-weight: 700; }
+  .dimcard .s { font-size: 13px; color: #444; }
+  p.body { font-size: 14px; max-width: 780px; }
+  .eq { font-family: ui-monospace, Menlo, monospace; font-size: 14px; }
+  .vrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0; }
+  .vrow label { font-size:13px; color:#444; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 12 · Graphs, networks, and incidence matrices</h1>
+  <div class="sub">A <b>directed graph</b> turns into a matrix. The incidence matrix <code>A</code> records
+    where every edge starts and ends, and its four subspaces <i>are</i> the laws of circuits:
+    potentials, voltage drops, currents, and loops.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>The graph:</b> Strang's small network — <b>4 nodes</b>, <b>5 edges</b>, every edge directed (arrow points
+    from the <span style="color:#b00020">−1</span> node to the <span style="color:#176d2c">+1</span> node).
+    Each <b>row</b> of <code>A</code> is one edge. Pick a potential vector <code>x</code> on the nodes below and
+    watch <code>Ax</code> — the voltage drop across every edge — update live.
+  </div>
+
+  <!-- ====================== INTERACTIVE FIGURE ====================== -->
+  <div class="plots">
+    <div id="graphPlot" class="plot" style="flex:1 1 480px"></div>
+    <div style="flex:1 1 380px; min-width:340px">
+      <div class="vrow">
+        <span style="font-size:13px;color:#444;margin-right:4px">Node potentials x =</span>
+        <label>x₁ <input class="coef pot" id="x0" type="number" value="0" step="1"></label>
+        <label>x₂ <input class="coef pot" id="x1" type="number" value="1" step="1"></label>
+        <label>x₃ <input class="coef pot" id="x2" type="number" value="4" step="1"></label>
+        <label>x₄ <input class="coef pot" id="x3" type="number" value="3" step="1"></label>
+      </div>
+      <div class="controls">
+        <button class="preset" data-p="step">Increasing 0,1,4,3</button>
+        <button class="preset" data-p="const">Constant 2,2,2,2</button>
+        <button class="preset" data-p="zero">Reset to 0</button>
+      </div>
+      <div id="matMount"></div>
+      <div class="status" id="axStatus"></div>
+    </div>
+  </div>
+
+  <!-- ====================== INTUITION ====================== -->
+  <h2>The intuition — a matrix you can draw</h2>
+  <p class="body">
+    Forget formulas for a second. A graph is just dots (<b>nodes</b>) joined by arrows (<b>edges</b>). The
+    <b>incidence matrix</b> <code>A</code> is the bookkeeping: one row per edge, one column per node. In the
+    row for the edge that runs from node <i>i</i> to node <i>j</i>, put <span style="color:#b00020">−1</span>
+    in column <i>i</i> (where it leaves) and <span style="color:#176d2c">+1</span> in column <i>j</i> (where it
+    arrives). Everything else is zero. That single rule encodes the whole picture.
+  </p>
+  <p class="body">
+    Now give every node a number <code>x</code> — think <b>voltage / potential / elevation</b>. Multiplying
+    <code>Ax</code> subtracts the start value from the end value for each edge, so <b><code>Ax</code> is the list
+    of potential <i>differences</i> (voltage drops) along the edges.</b> Two facts fall out immediately, and they
+    are the heart of the lecture:
+  </p>
+  <ul class="body">
+    <li><b>Raise everything by the same amount and nothing changes.</b> If <code>x = (c,c,c,c)</code>, every
+      difference is <code>c − c = 0</code>, so <code>Ax = 0</code>. The constant vector <code>(1,1,1,1)</code>
+      is the <b>nullspace</b>: potential is only defined up to a reference level (pick a ground).</li>
+    <li><b>Go around a loop and you come back to where you started.</b> Add the drops around any closed loop and
+      they cancel — that is <b>Kirchhoff's Voltage Law</b>. The loops live in the <b>left nullspace</b> of
+      <code>A</code> (the solutions of <code>Aᵀy = 0</code> are currents that balance at every node — Kirchhoff's
+      Current Law).</li>
+  </ul>
+
+  <!-- ====================== FOUR SUBSPACES ====================== -->
+  <h2>The four subspaces, made concrete</h2>
+  <p class="body">
+    <code>A</code> is <b>5×4</b> (m = 5 edges, n = 4 nodes). Its rank is <b>r = n − 1 = 3</b> for a connected
+    graph — the columns add to zero, so they are dependent and one is redundant. Everything else follows from
+    <code>r = 3</code>:
+  </p>
+  <div class="dimgrid">
+    <div class="dimcard">
+      <div class="k">Column space C(A) — in ℝ⁵</div>
+      <div class="d">dim 3</div>
+      <div class="s">The voltage-drop vectors that actually <i>can</i> occur. A vector <code>b</code> of edge
+        drops is achievable iff its sum around every loop is zero.</div>
+    </div>
+    <div class="dimcard">
+      <div class="k">Nullspace N(A) — in ℝ⁴</div>
+      <div class="d">dim 1</div>
+      <div class="s">Spanned by <code>(1,1,1,1)</code>. Potentials are defined only up to a constant. n − r = 4 − 3 = 1.</div>
+    </div>
+    <div class="dimcard">
+      <div class="k">Row space C(Aᵀ) — in ℝ⁴</div>
+      <div class="d">dim 3</div>
+      <div class="s">Spanned by 3 independent edges (a <b>spanning tree</b>). Orthogonal to <code>(1,1,1,1)</code>.</div>
+    </div>
+    <div class="dimcard">
+      <div class="k">Left nullspace N(Aᵀ) — in ℝ⁵</div>
+      <div class="d">dim 2</div>
+      <div class="s">The independent <b>loops</b>. m − r = 5 − 3 = 2 = Kirchhoff currents around the two
+        independent cycles.</div>
+    </div>
+  </div>
+  <p class="body">
+    <b>Euler's formula ties it together.</b> Number of independent loops =
+    <code>edges − nodes + 1 = 5 − 4 + 1 = 2</code> for a connected graph. That is exactly
+    <code>m − r</code>, the dimension of the left nullspace. A spanning tree uses <code>n − 1 = 3</code> edges
+    (no loops); each of the remaining <code>m − (n−1) = 2</code> edges closes exactly one independent loop.
+  </p>
+
+  <!-- ====================== WORKED MATH ====================== -->
+  <h2>Worked math</h2>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">1 · Build A from the edge list</h3>
+  <p class="body">The five directed edges (start → end) are:</p>
+  <div id="edgeListMount" class="eq" style="margin:6px 0"></div>
+  <p class="body">Writing the −1/+1 rule row by row gives the incidence matrix below
+    (also shown in the live panel above):</p>
+  <div id="matStatic"></div>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">2 · The nullspace is the constants</h3>
+  <p class="body">
+    Solve <code>Ax = 0</code>. Edge <code>1→2</code> forces <code>x₂ = x₁</code>; edge <code>2→3</code> forces
+    <code>x₃ = x₂</code>; edge <code>1→4</code> forces <code>x₄ = x₁</code>. Following the edges through the
+    connected graph, <b>every node equals every other</b>: <code>x₁ = x₂ = x₃ = x₄</code>. So
+  </p>
+  <p class="body eq" style="margin-left:14px">
+    N(A) = span{ (1, 1, 1, 1) },&nbsp;&nbsp; dim N(A) = n − r = 4 − 3 = 1.
+  </p>
+  <p class="body">
+    Physically: only <i>differences</i> of potential are observable. We fix the indeterminacy by grounding a
+    node, e.g. setting <code>x₁ = 0</code>.
+  </p>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">3 · Independent loops (Euler)</h3>
+  <p class="body">
+    A connected graph on <code>n = 4</code> nodes has a spanning tree with <code>n − 1 = 3</code> edges and
+    <b>no loops</b>. We have <code>m = 5</code> edges, so the <code>5 − 3 = 2</code> extra edges create
+    <b>2 independent loops</b>. By Euler, loops <code>= m − n + 1 = 5 − 4 + 1 = 2 = dim N(Aᵀ)</code>. These two
+    loop vectors <code>y</code> satisfy <code>Aᵀy = 0</code> — currents that circulate without piling up charge at
+    any node (Kirchhoff's Current Law).
+  </p>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">4 · The physics: Ax = voltage drops, Aᵀy = 0 = KCL</h3>
+  <p class="body">
+    Pick potentials <code>x</code> on the nodes. Each edge's entry of <code>Ax</code> is
+    <code>x<sub>end</sub> − x<sub>start</sub></code> — the voltage drop driving current across that edge. With the
+    default <code>x = (0, 1, 4, 3)</code>:
+  </p>
+  <div id="workedAx" class="eq" style="margin:6px 0 4px"></div>
+  <p class="body">
+    Change <code>x</code> by a constant and these drops are unchanged (nullspace). On the other side,
+    <code>Aᵀ</code> is <b>4×5</b>: row <i>i</i> sums the edges touching node <i>i</i> with sign. So
+    <code>Aᵀy = 0</code> says, at every node, <i>current in = current out</i> — exactly Kirchhoff's Current Law.
+    Together <code>Ax</code> (KVL / potential differences) and <code>Aᵀy = 0</code> (KCL) are the full circuit
+    model living inside one little matrix.
+  </p>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">5 · Aᵀ and Kirchhoff's Current Law, node by node</h3>
+  <p class="body">
+    Transpose <code>A</code> to get the <b>4×5</b> matrix <code>Aᵀ</code> (columns become rows). Now each
+    <b>row of <code>Aᵀ</code> is a node</b>, and it collects every edge current touching that node with sign:
+    <code>+1</code> if the edge arrives, <code>−1</code> if it leaves. Setting <code>Aᵀy = 0</code> gives one
+    balance equation per node — Strang's exact four:
+  </p>
+  <div id="atStatic"></div>
+  <div id="kclEqns" class="eq" style="margin:6px 0"></div>
+  <p class="body">
+    Each says <i>current in = current out</i>: charge never piles up. The first row,
+    <code>−y₁ − y₃ − y₄ = 0</code>, is node 1 — edges 1, 3, 4 all leave it, so their currents must sum to zero.
+  </p>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">6 · The left nullspace = loop currents (try them)</h3>
+  <p class="body">
+    A solution <code>y</code> of <code>Aᵀy = 0</code> is a set of currents that circulate forever without a source —
+    and the simplest ones run <b>around a loop</b>. The space is <code>dim = m − r = 5 − 3 = 2</code>, so there are
+    two independent loops. Send one amp around each and read off the current vector; flip to the big outer loop to
+    see it is just their <b>sum</b> (so not independent — exactly why the basis has only two vectors).
+  </p>
+  <div class="plots">
+    <div id="loopPlot" class="plot" style="flex:1 1 480px"></div>
+    <div style="flex:1 1 340px; min-width:320px">
+      <div class="controls">
+        <button class="preset loopbtn" data-l="small1">Loop 1 (e1,e2,e3)</button>
+        <button class="preset loopbtn" data-l="small2">Loop 2 (e3,e4,e5)</button>
+        <button class="preset loopbtn" data-l="big">Big outer loop (sum)</button>
+      </div>
+      <div id="loopMat"></div>
+      <div class="status" id="loopStatus"></div>
+    </div>
+  </div>
+
+  <h3 style="font-size:15px;margin:14px 0 4px">7 · The whole cycle: e = Ax, y = Ce, Aᵀy = f</h3>
+  <p class="body">
+    Strang closes the lecture by snapping the three pieces into one loop — "the most important model in applied
+    math." Read it top to bottom:
+  </p>
+  <div class="dimgrid">
+    <div class="dimcard">
+      <div class="k">Step 1 · potentials → drops</div>
+      <div class="d eq">e = A x</div>
+      <div class="s">Node potentials <code>x</code> map to the voltage drops <code>e</code> on the edges (what
+        the live figure at the top computes).</div>
+    </div>
+    <div class="dimcard">
+      <div class="k">Step 2 · Ohm's Law</div>
+      <div class="d eq">y = C e</div>
+      <div class="s">Each drop drives a current through the edge's conductance <code>C</code> (= 1/resistance).
+        <code>C</code> is a diagonal matrix of physical constants.</div>
+    </div>
+    <div class="dimcard">
+      <div class="k">Step 3 · KCL (balance)</div>
+      <div class="d eq">Aᵀy = f</div>
+      <div class="s">Currents balance at every node. <code>f</code> is the outside source (current pumped in/out);
+        with no source it is the <code>Aᵀy = 0</code> above.</div>
+    </div>
+  </div>
+  <p class="body">
+    Substitute up the chain — <code>y = Ce = C(Ax)</code> into <code>Aᵀy = f</code> — and the three steps collapse
+    into <b>one</b> equation in the unknown potentials:
+  </p>
+  <p class="body eq" style="margin-left:14px;font-size:16px">
+    Aᵀ C A x = f
+  </p>
+  <p class="body">
+    That matrix <code>AᵀCA</code> is the heart of it. Strang's parting fact: <code>AᵀA</code> (and
+    <code>AᵀCA</code>) is <b>always symmetric</b> — <code>(AᵀCA)ᵀ = Aᵀ Cᵀ A = AᵀCA</code> since <code>C</code> is
+    diagonal. Add a current source <code>f</code> (or batteries in the edges) and you have the equilibrium
+    equations of an entire electrical circuit — the same <code>AᵀCA</code> pattern shows up in structures,
+    hydraulics, and least squares.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+(function () {
+  // ---- Strang's graph: 4 nodes, 5 edges. Edge = [start, end] (1-indexed in labels). ----
+  const N = 4, EDGES = [[1,2],[2,3],[1,3],[1,4],[3,4]];
+
+  // Incidence matrix A (m x n): row per edge, -1 at start, +1 at end.
+  const A = EDGES.map(([s, e]) => {
+    const row = new Array(N).fill(0);
+    row[s - 1] = -1; row[e - 1] = 1; return row;
+  });
+
+  // Fixed 2D node positions (a tidy quadrilateral).
+  const POS = { 1:[0,1], 2:[1,1], 3:[1,0], 4:[0,0] };
+
+  const matVec = (M, v) => M.map(row => row.reduce((acc, a, j) => acc + a * v[j], 0));
+
+  // ---------- incidence-matrix table (reusable) ----------
+  function matTable(highlightAx) {
+    let h = '<table class="mat"><caption>A — incidence matrix (5 edges × 4 nodes)</caption><tr><th></th>';
+    for (let j = 0; j < N; j++) h += `<th>x${j + 1}</th>`;
+    if (highlightAx) h += '<th></th><th>Ax</th>';
+    h += '</tr>';
+    const drops = highlightAx ? matVec(A, highlightAx) : null;
+    A.forEach((row, i) => {
+      h += `<tr><td class="rowlbl">e${i + 1}: ${EDGES[i][0]}→${EDGES[i][1]}</td>`;
+      row.forEach(v => {
+        const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+        h += `<td class="${cls}">${v === 0 ? '0' : (v > 0 ? '+1' : '−1')}</td>`;
+      });
+      if (highlightAx) h += `<td class="rowlbl">=</td><td><b>${LA.round(drops[i])}</b></td>`;
+      h += '</tr>';
+    });
+    h += '</table>';
+    return h;
+  }
+
+  // ---------- 2D graph drawing ----------
+  function drawGraph(x) {
+    const data = [];
+    // edges as lines + arrowheads via annotations; label at midpoint
+    const ann = [];
+    EDGES.forEach(([s, e], i) => {
+      const p = POS[s], q = POS[e];
+      data.push({
+        type: "scatter", mode: "lines", x: [p[0], q[0]], y: [p[1], q[1]],
+        line: { color: "#9aa7b4", width: 2 }, hoverinfo: "skip", showlegend: false
+      });
+      // directed arrowhead at the end node, pulled slightly off the node
+      const t = 0.78, ax = p[0] + t * (q[0] - p[0]), ay = p[1] + t * (q[1] - p[1]);
+      ann.push({ x: ax, y: ay, ax: p[0], ay: p[1], xref: "x", yref: "y", axref: "x", ayref: "y",
+        showarrow: true, arrowhead: 3, arrowsize: 1.5, arrowwidth: 2, arrowcolor: "#5b6b7a",
+        standoff: 0, text: "" });
+      // edge label at midpoint, nudged perpendicular
+      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1;
+      ann.push({ x: mx - dy / L * 0.12, y: my + dx / L * 0.12, xref: "x", yref: "y",
+        text: `e${i + 1}`, showarrow: false, font: { size: 12, color: "#5b6b7a" } });
+    });
+    // nodes
+    const nx = [], ny = [], ntxt = [];
+    for (let k = 1; k <= N; k++) {
+      nx.push(POS[k][0]); ny.push(POS[k][1]);
+      ntxt.push(`node ${k}<br>x${k}=${LA.round(x[k - 1])}`);
+    }
+    data.push({
+      type: "scatter", mode: "markers+text", x: nx, y: ny,
+      text: ntxt, textposition: "middle center",
+      textfont: { size: 11, color: "#fff" },
+      marker: { size: 46, color: "#1f77b4", line: { color: "#0d4f86", width: 2 } },
+      hoverinfo: "skip", showlegend: false
+    });
+    Plotly.react("graphPlot", data, {
+      title: { text: "Directed graph: 4 nodes, 5 edges", font: { size: 14 } },
+      xaxis: { visible: false, range: [-0.35, 1.35] },
+      yaxis: { visible: false, range: [-0.35, 1.35], scaleanchor: "x" },
+      annotations: ann, margin: { l: 6, r: 6, t: 30, b: 6 }, showlegend: false
+    }, { responsive: true, displayModeBar: false });
+  }
+
+  // ---------- live update ----------
+  function readX() { return [0, 1, 2, 3].map(i => parseFloat(document.getElementById("x" + i).value) || 0); }
+
+  function update() {
+    const x = readX();
+    drawGraph(x);
+    document.getElementById("matMount").innerHTML = matTable(x);
+    const drops = matVec(A, x).map(LA.round);
+    const isConst = x.every(v => v === x[0]);
+    document.getElementById("axStatus").innerHTML =
+      `<b>Ax = voltage drops</b> = (${drops.join(", ")})ᵀ` +
+      (isConst
+        ? `<br>x is constant → every drop is 0 → <code>Ax = 0</code> (the nullspace direction (1,1,1,1)).`
+        : `<br>each entry is x<sub>end</sub> − x<sub>start</sub>. Add a constant to all of x and every drop is unchanged.`);
+  }
+
+  document.querySelectorAll(".pot").forEach(inp => inp.addEventListener("input", update));
+  const PRESETS = { step: [0, 1, 4, 3], const: [2, 2, 2, 2], zero: [0, 0, 0, 0] };
+  document.querySelectorAll(".preset").forEach(btn => {
+    btn.onclick = () => {
+      const p = PRESETS[btn.dataset.p];
+      [0, 1, 2, 3].forEach(i => document.getElementById("x" + i).value = p[i]);
+      update();
+    };
+  });
+
+  // ---------- static worked-math pieces ----------
+  document.getElementById("edgeListMount").innerHTML =
+    EDGES.map(([s, e], i) => `e${i + 1}: ${s} → ${e}`).join("&nbsp;&nbsp;·&nbsp;&nbsp;");
+  document.getElementById("matStatic").innerHTML = matTable(null);
+
+  const xw = [0, 1, 4, 3], dw = matVec(A, xw);
+  document.getElementById("workedAx").innerHTML =
+    EDGES.map(([s, e], i) =>
+      `e${i + 1} (${s}→${e}): x${e} − x${s} = ${xw[e - 1]} − ${xw[s - 1]} = <b>${LA.round(dw[i])}</b>`
+    ).join("<br>") +
+    `<br><br>Ax = (${dw.map(LA.round).join(", ")})ᵀ`;
+
+  // ---------- Aᵀ (transpose) table: one row per node, one column per edge ----------
+  // AT[node][edge] = A[edge][node]
+  const AT = [];
+  for (let n = 0; n < N; n++) AT.push(A.map(row => row[n]));
+
+  function atTable(highlightY) {
+    let h = '<table class="mat"><caption>Aᵀ — transpose (4 nodes × 5 edges)</caption><tr><th></th>';
+    for (let i = 0; i < EDGES.length; i++) h += `<th>y${i + 1}</th>`;
+    if (highlightY) h += '<th></th><th>Aᵀy</th>';
+    h += '</tr>';
+    const bal = highlightY ? matVec(AT, highlightY) : null;
+    AT.forEach((row, n) => {
+      h += `<tr><td class="rowlbl">node ${n + 1}</td>`;
+      row.forEach(v => {
+        const cls = v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+        h += `<td class="${cls}">${v === 0 ? '0' : (v > 0 ? '+1' : '−1')}</td>`;
+      });
+      if (highlightY) h += `<td class="rowlbl">=</td><td><b>${LA.round(bal[n])}</b></td>`;
+      h += '</tr>';
+    });
+    h += '</table>';
+    return h;
+  }
+  document.getElementById("atStatic").innerHTML = atTable(null);
+
+  // KCL node equations, written symbolically from the rows of Aᵀ
+  document.getElementById("kclEqns").innerHTML = AT.map((row, n) => {
+    // build a tidy signed string from this node's row of Aᵀ
+    let s = "";
+    row.forEach((v, i) => {
+      if (v === 0) return;
+      if (v < 0) s += (s ? " − " : "−") + `y${i + 1}`;
+      else       s += (s ? " + " : "") + `y${i + 1}`;
+    });
+    return `node ${n + 1}:&nbsp; ${s} = 0`;
+  }).join("<br>");
+
+  // ---------- loop-current visualization (left nullspace) ----------
+  // Two independent loop basis vectors (Strang's), plus the dependent outer loop = their sum.
+  // Edge order: e1:1→2, e2:2→3, e3:1→3, e4:1→4, e5:3→4
+  const LOOPS = {
+    small1: { y: [1, 1, -1, 0, 0], name: "Loop 1: e1 → e2 → back on e3 (nodes 1-2-3)" },
+    small2: { y: [0, 0, 1, -1, 1], name: "Loop 2: e3 → e5 → back on e4 (nodes 1-3-4)" },
+    big:    { y: [1, 1, 0, -1, 1], name: "Outer loop (nodes 1-2-3-4) = Loop 1 + Loop 2" }
+  };
+  let currentLoop = "small1";
+
+  function drawLoop(key) {
+    const y = LOOPS[key].y, data = [], ann = [];
+    EDGES.forEach(([s, e], i) => {
+      const p = POS[s], q = POS[e], cur = y[i];
+      const active = cur !== 0;
+      data.push({
+        type: "scatter", mode: "lines", x: [p[0], q[0]], y: [p[1], q[1]],
+        line: { color: active ? "#1f77b4" : "#d4dae0", width: active ? 4 : 2 },
+        hoverinfo: "skip", showlegend: false
+      });
+      // arrowhead shows the DIRECTION OF CURRENT FLOW (flip if y is negative)
+      if (active) {
+        const fwd = cur > 0;
+        const a0 = fwd ? p : q, a1 = fwd ? q : p;
+        const t = 0.78, hx = a0[0] + t * (a1[0] - a0[0]), hy = a0[1] + t * (a1[1] - a0[1]);
+        ann.push({ x: hx, y: hy, ax: a0[0], ay: a0[1], xref: "x", yref: "y", axref: "x", ayref: "y",
+          showarrow: true, arrowhead: 3, arrowsize: 1.6, arrowwidth: 2.5, arrowcolor: "#1f77b4",
+          standoff: 0, text: "" });
+      } else {
+        // faint reference arrow for inactive edges
+        const t = 0.78, ax = p[0] + t * (q[0] - p[0]), ay = p[1] + t * (q[1] - p[1]);
+        ann.push({ x: ax, y: ay, ax: p[0], ay: p[1], xref: "x", yref: "y", axref: "x", ayref: "y",
+          showarrow: true, arrowhead: 3, arrowsize: 1.2, arrowwidth: 1.5, arrowcolor: "#cdd5dc",
+          standoff: 0, text: "" });
+      }
+      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2;
+      const dx = q[0] - p[0], dy = q[1] - p[1], L = Math.hypot(dx, dy) || 1;
+      ann.push({ x: mx - dy / L * 0.14, y: my + dx / L * 0.14, xref: "x", yref: "y",
+        text: `y${i + 1}=${LA.round(cur)}`, showarrow: false,
+        font: { size: 11, color: active ? "#1f77b4" : "#9aa7b4" } });
+    });
+    const nx = [], ny = [], ntxt = [];
+    for (let k = 1; k <= N; k++) { nx.push(POS[k][0]); ny.push(POS[k][1]); ntxt.push(`${k}`); }
+    data.push({
+      type: "scatter", mode: "markers+text", x: nx, y: ny, text: ntxt,
+      textposition: "middle center", textfont: { size: 12, color: "#fff" },
+      marker: { size: 40, color: "#5b6b7a", line: { color: "#34404c", width: 2 } },
+      hoverinfo: "skip", showlegend: false
+    });
+    Plotly.react("loopPlot", data, {
+      title: { text: "Loop current y (left nullspace of A)", font: { size: 14 } },
+      xaxis: { visible: false, range: [-0.35, 1.35] },
+      yaxis: { visible: false, range: [-0.35, 1.35], scaleanchor: "x" },
+      annotations: ann, margin: { l: 6, r: 6, t: 30, b: 6 }, showlegend: false
+    }, { responsive: true, displayModeBar: false });
+  }
+
+  function updateLoop() {
+    const key = currentLoop, y = LOOPS[key].y;
+    drawLoop(key);
+    document.getElementById("loopMat").innerHTML = atTable(y);
+    const bal = matVec(AT, y).map(LA.round);
+    const isZero = bal.every(v => v === 0);
+    document.getElementById("loopStatus").innerHTML =
+      `<b>y = (${y.join(", ")})ᵀ</b><br>${LOOPS[key].name}<br>` +
+      `Aᵀy = (${bal.join(", ")})ᵀ ` +
+      (isZero ? "= 0 ✓ — Kirchhoff's Current Law holds at every node."
+              : "≠ 0 (current is piling up somewhere).") +
+      (key === "big" ? "<br><i>= Loop 1 + Loop 2, so it is dependent — not a third basis vector.</i>" : "");
+  }
+
+  document.querySelectorAll(".loopbtn").forEach(btn => {
+    btn.onclick = () => { currentLoop = btn.dataset.l; updateLoop(); };
+  });
+  updateLoop();
+
+  update();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Lec 16 — Projection matrices and least squares · 18.06</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="../lib/style.css"/>
+</head>
+<body>
+<div class="wrap">
+  <div class="crumb"><a href="../index.html">← All lectures</a></div>
+  <h1>Lecture 16 · Projection matrices and least squares</h1>
+  <div class="sub">When <code>Ax = b</code> has no solution (too many equations), we settle for the
+    <b>best</b> <code>x̂</code> — the one that makes <code>Ax̂</code> as close to <code>b</code> as possible.
+    "Closest" means the <b>projection</b> of <code>b</code> onto the column space of <code>A</code>.
+    <a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" target="_blank">▶ watch on OCW</a>
+  </div>
+
+  <div class="note">
+    <b>Strang's example.</b> Three data points <code>(t, b)</code> = (1, 1), (2, 2), (3, 2) that do
+    <i>not</i> lie on a line. We fit the best line <code>b = C + D·t</code>. The system
+    <code>A x = b</code> with <code>A = [[1,1],[1,2],[1,3]]</code> and <code>x = (C, D)</code> is
+    unsolvable, so we solve the <b>normal equations</b> <code>AᵀA x̂ = Aᵀb</code> instead. Edit the points
+    below and watch the fit and the residuals recompute.
+  </div>
+
+  <div class="controls">
+    <span class="rng" style="margin-left:0">Data points (t, b):</span>
+    <span style="margin:0 10px">P₁ (<input class="coef" id="t0" value="1"/>, <input class="coef" id="b0" value="1"/>)</span>
+    <span style="margin-right:10px">P₂ (<input class="coef" id="t1" value="2"/>, <input class="coef" id="b1" value="2"/>)</span>
+    <span>P₃ (<input class="coef" id="t2" value="3"/>, <input class="coef" id="b2" value="2"/>)</span>
+    <div style="margin-top:8px">
+      <button class="primary" id="fit">Fit best line</button>
+      <button class="preset" id="reset">Reset to Strang's data</button>
+    </div>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div class="plots">
+    <div id="fitPlot" class="plot"></div>
+    <div id="projPlot" class="plot"></div>
+  </div>
+
+  <h2>What you're seeing</h2>
+  <p style="font-size:14px;max-width:760px">
+    <b>Best-fit line (left).</b> The three blue dots are the data. No straight line hits all three, so the
+    fitted line <code>b = C + D·t</code> threads between them. The dashed red <b>vertical</b> segments are the
+    <b>residuals</b> <code>e₁, e₂, e₃</code> — the gaps between each measured <code>bᵢ</code> and the line's
+    prediction <code>C + D·tᵢ</code>. Least squares chooses <code>C</code> and <code>D</code> to make the
+    sum of the <i>squares</i> of these vertical gaps as small as possible:
+    <code>‖e‖² = e₁² + e₂² + e₃²</code> is minimized.
+  </p>
+  <p style="font-size:14px;max-width:760px">
+    <b>Projection picture (right).</b> Stack the three measurements into one vector
+    <code>b = (b₁, b₂, b₃)</code> living in <b>R³</b>. The two columns of <code>A</code>,
+    <code>col₁ = (1,1,1)</code> and <code>col₂ = (t₁,t₂,t₃)</code>, span a <b>plane</b> (the column space).
+    <code>b</code> generally pokes out of that plane, which is exactly why <code>Ax = b</code> has no
+    solution. The closest point in the plane is the <b>projection</b> <code>p = Ax̂</code> (green), and the
+    error <code>e = b − p</code> (red) is <b>perpendicular</b> to the plane. That perpendicularity is the
+    whole game: <code>Aᵀe = 0</code> ⟺ <code>Aᵀ(b − Ax̂) = 0</code> ⟺ <code>AᵀA x̂ = Aᵀb</code>.
+  </p>
+
+  <h2>The worked math</h2>
+  <div id="math" style="font-size:14px;max-width:760px"></div>
+
+  <h2>Why projection = least squares</h2>
+  <p style="font-size:14px;max-width:760px">
+    The vector <code>Ax</code> is forced to live in the column space of <code>A</code> — a plane through the
+    origin in R³. Among all points <code>Ax</code> in that plane, the one nearest <code>b</code> is the foot of
+    the perpendicular from <code>b</code>: the projection <code>p</code>. "Nearest" means smallest distance
+    <code>‖Ax − b‖</code>, and minimizing a distance is the same as minimizing its square
+    <code>‖Ax − b‖²</code>. Since the <code>i</code>-th component of <code>Ax − b</code> is exactly the
+    vertical residual <code>(C + D·tᵢ) − bᵢ</code>, minimizing <code>‖Ax − b‖²</code> <b>is</b> minimizing the
+    sum of squared vertical errors. The minimizer <code>x̂</code> is the unique solution of the normal
+    equations <code>AᵀA x̂ = Aᵀb</code>, and <code>p = Ax̂</code> equals <code>Pb</code> where
+    <code>P = A(AᵀA)⁻¹Aᵀ</code> is the projection matrix onto the column space.
+  </p>
+
+  <h2>Strang's exact answer</h2>
+  <p style="font-size:14px;max-width:760px">
+    For his data the normal equations are <code>3C + 6D = 5</code> and <code>6C + 14D = 11</code>.
+    Subtracting twice the first from the second gives <code>2D = 1</code>, so <code>D = 1/2</code>, and
+    back-substitution gives <code>C = 2/3</code>. The best line is <b><code>b = 2/3 + (1/2)·t</code></b>.
+    Evaluating it at <code>t = 1, 2, 3</code> gives the projection
+    <code>p = (7/6, 5/3, 13/6)</code>, and the error is
+    <code>e = b − p = (−1/6, 2/6, −1/6)</code>. Strang checks that <code>e</code> is perpendicular not just
+    to <code>p</code> but to the <i>entire</i> column space:
+    <code>e·(1,1,1) = −1/6 + 2/6 − 1/6 = 0</code> and
+    <code>e·(1,2,3) = −1/6 + 4/6 − 3/6 = 0</code>. The interactive math block above recomputes all of these
+    for whatever points you enter.
+  </p>
+
+  <h2>Why is AᵀA invertible? (the central theory)</h2>
+  <p style="font-size:14px;max-width:760px">
+    Everything above relies on solving <code>AᵀA x̂ = Aᵀb</code> — which only works if <code>AᵀA</code> is
+    invertible. Strang proves the key fact: <b>if the columns of <code>A</code> are independent, then
+    <code>AᵀA</code> is invertible.</b> A square matrix is invertible exactly when its null space is just
+    the zero vector, so it is enough to show <code>AᵀA x = 0 ⟹ x = 0</code>:
+  </p>
+  <ol style="font-size:14px;max-width:760px">
+    <li>Suppose <code>AᵀA x = 0</code>. Dot both sides with <code>x</code>:
+        <code>xᵀAᵀA x = 0</code>.</li>
+    <li>But <code>xᵀAᵀA x = (Ax)ᵀ(Ax) = ‖Ax‖²</code> — the squared length of <code>Ax</code>.
+        A length is zero only for the zero vector, so <code>Ax = 0</code>.</li>
+    <li>Now use the hypothesis: if <code>A</code> has <b>independent columns</b>, the only solution of
+        <code>Ax = 0</code> is <code>x = 0</code>.</li>
+  </ol>
+  <p style="font-size:14px;max-width:760px">
+    So the null space of <code>AᵀA</code> is only <code>{0}</code>, which makes <code>AᵀA</code> invertible.
+    For Strang's data the columns <code>(1,1,1)</code> and <code>(1,2,3)</code> are clearly independent, so
+    <code>AᵀA = [[3,6],[6,14]]</code> is invertible (its determinant <code>3·14 − 6·6 = 6 ≠ 0</code>) and the
+    best-fit line is unique. The cleanest possible case is when the columns are not just independent but
+    <b>orthonormal</b> (perpendicular unit vectors) — then <code>AᵀA = I</code>, the topic of the next lecture.
+  </p>
+</div>
+
+<script src="../lib/linalg.js"></script>
+<script>
+  const { round, arrow, SCENE } = LA;
+
+  const fmt = (x) => {
+    // pretty-print a fraction-ish number; fall back to 3 decimals
+    const r = round(x);
+    const denoms = [2, 3, 4, 6];
+    for (const d of denoms) {
+      if (Math.abs(r * d - Math.round(r * d)) < 1e-6) {
+        const num = Math.round(r * d);
+        if (num % d === 0) return String(num / d);
+        const sign = num < 0 ? "−" : "";
+        return `${sign}${Math.abs(num)}/${d}`;
+      }
+    }
+    return String(r);
+  };
+
+  // Solve 2x2 normal equations AtA x = Atb for the line b = C + D t.
+  function leastSquares(ts, bs) {
+    const n = ts.length;
+    let s1 = 0, st = 0, stt = 0, sb = 0, stb = 0;
+    for (let i = 0; i < n; i++) {
+      s1 += 1; st += ts[i]; stt += ts[i] * ts[i];
+      sb += bs[i]; stb += ts[i] * bs[i];
+    }
+    // AtA = [[s1, st],[st, stt]],  Atb = [sb, stb]
+    const det = s1 * stt - st * st;
+    const C = (stt * sb - st * stb) / det;
+    const D = (s1 * stb - st * sb) / det;
+    return { C, D, AtA: [[s1, st], [st, stt]], Atb: [sb, stb], det };
+  }
+
+  function read() {
+    const ts = [0, 1, 2].map((i) => parseFloat(document.getElementById("t" + i).value));
+    const bs = [0, 1, 2].map((i) => parseFloat(document.getElementById("b" + i).value));
+    return { ts, bs };
+  }
+
+  function render() {
+    const { ts, bs } = read();
+    if (ts.some(isNaN) || bs.some(isNaN)) {
+      document.getElementById("status").innerHTML =
+        '<span class="tag none">Enter numbers for all six fields.</span>';
+      return;
+    }
+
+    const { C, D, AtA, Atb, det } = leastSquares(ts, bs);
+    const pred = ts.map((t) => C + D * t);          // p_i = fitted values
+    const err  = bs.map((b, i) => b - pred[i]);     // residuals e_i = b - p
+    const ssq  = err.reduce((s, e) => s + e * e, 0);
+
+    /* ---- status line ---- */
+    document.getElementById("status").innerHTML =
+      `Best fit: <code>b = ${fmt(C)} + ${fmt(D)}·t</code> ` +
+      `&nbsp;→&nbsp; <code>C = ${fmt(C)}</code>, <code>D = ${fmt(D)}</code>. ` +
+      `Sum of squared errors <code>‖e‖² = ${round(ssq)}</code>.`;
+
+    /* ---- left: 2D scatter + line + vertical residuals ---- */
+    const tmin = Math.min(...ts), tmax = Math.max(...ts);
+    const pad = Math.max(0.5, (tmax - tmin) * 0.25);
+    const lx = [tmin - pad, tmax + pad];
+    const ly = lx.map((t) => C + D * t);
+
+    const resTraces = ts.map((t, i) => ({
+      type: "scatter", mode: "lines", x: [t, t], y: [bs[i], pred[i]],
+      line: { color: "#b00020", width: 2, dash: "dot" }, showlegend: false,
+      hoverinfo: "text", text: [`e${i + 1} = ${round(err[i])}`, ""],
+    }));
+
+    Plotly.react("fitPlot", [
+      { type: "scatter", mode: "lines", x: lx, y: ly,
+        line: { color: "#1f77b4", width: 3 }, name: "best fit b = C + Dt" },
+      ...resTraces,
+      // foot of each residual (on the line)
+      { type: "scatter", mode: "markers", x: ts, y: pred,
+        marker: { color: "#9a6b00", size: 6, symbol: "x" }, name: "fitted Ax̂" },
+      // data points
+      { type: "scatter", mode: "markers+text", x: ts, y: bs,
+        marker: { color: "#2ca02c", size: 11 },
+        text: ts.map((_, i) => " P" + (i + 1)), textposition: "top right",
+        name: "data points" },
+    ], {
+      title: { text: "Best-fit line and residuals", font: { size: 14 } },
+      margin: { l: 45, r: 12, t: 36, b: 40 },
+      xaxis: { title: "t", zeroline: false },
+      yaxis: { title: "b", zeroline: false },
+      legend: { orientation: "h", y: -0.18, font: { size: 11 } },
+    }, { displayModeBar: false, responsive: true });
+
+    /* ---- right: 3D projection of b onto column space of A ---- */
+    const col1 = [1, 1, 1];
+    const col2 = ts.slice();
+    const bvec = bs.slice();
+    const pvec = pred.slice();          // p = A x̂ = C*col1 + D*col2
+    // build the plane spanned by col1, col2 over a parameter grid
+    const R = Math.max(2, Math.max(...bvec.map(Math.abs)) + 1);
+    const gs = LA.linspace(-1.2, 1.2, 12);
+    const X = [], Y = [], Z = [];
+    for (let i = 0; i < gs.length; i++) {
+      X.push([]); Y.push([]); Z.push([]);
+      for (let j = 0; j < gs.length; j++) {
+        const a = gs[i] * R, c = gs[j] * R;
+        X[i].push(a * col1[0] + c * col2[0]);
+        Y[i].push(a * col1[1] + c * col2[1]);
+        Z[i].push(a * col1[2] + c * col2[2]);
+      }
+    }
+
+    const traces = [
+      { type: "surface", x: X, y: Y, z: Z, showscale: false, opacity: 0.45,
+        colorscale: "Blues", name: "column space (plane)" },
+      ...arrow([0, 0, 0], col1, LA.VEC[0], 5),                 // col1
+      ...arrow([0, 0, 0], col2, LA.VEC[1], 5),                 // col2
+      ...arrow([0, 0, 0], bvec, "#b00020", 6),                // b
+      ...arrow([0, 0, 0], pvec, "#176d2c", 6),                // p = projection
+      // error e = b - p, drawn from p to b (perpendicular to plane)
+      { type: "scatter3d", mode: "lines", x: [pvec[0], bvec[0]],
+        y: [pvec[1], bvec[1]], z: [pvec[2], bvec[2]],
+        line: { color: "#9a6b00", width: 6, dash: "dash" }, showlegend: false },
+    ];
+
+    Plotly.react("projPlot", traces, {
+      title: { text: "b in R³ projected onto the column space", font: { size: 14 } },
+      margin: { l: 0, r: 0, t: 36, b: 0 },
+      scene: { ...SCENE(), aspectmode: "data",
+        annotations: [] },
+      showlegend: false,
+    }, { displayModeBar: false, responsive: true });
+
+    /* ---- worked math block ---- */
+    const A = ts.map((t) => [1, t]);
+    const Arows = A.map((r) => `[${r[0]}, ${round(r[1])}]`).join(", ");
+    document.getElementById("math").innerHTML = `
+      <p><b>1. Set up the unsolvable system</b> <code>A x = b</code>, fitting <code>b = C + D·t</code>:</p>
+      <pre style="background:#f6f6f6;padding:8px 12px;border-radius:6px;overflow-x:auto">A = [ ${Arows} ]ᵀ-rows,&nbsp;&nbsp; x = (C, D),&nbsp;&nbsp; b = (${bs.map(round).join(", ")})</pre>
+      <p><b>2. Form the normal equations</b> <code>AᵀA x̂ = Aᵀb</code>:</p>
+      <pre style="background:#f6f6f6;padding:8px 12px;border-radius:6px;overflow-x:auto">AᵀA = [[${round(AtA[0][0])}, ${round(AtA[0][1])}], [${round(AtA[1][0])}, ${round(AtA[1][1])}]]&nbsp;&nbsp;&nbsp;&nbsp; Aᵀb = (${round(Atb[0])}, ${round(Atb[1])})</pre>
+      <p><b>3. Solve</b> (det AᵀA = ${round(det)}):</p>
+      <pre style="background:#f6f6f6;padding:8px 12px;border-radius:6px;overflow-x:auto">C = ${fmt(C)},&nbsp;&nbsp; D = ${fmt(D)}&nbsp;&nbsp; ⟹&nbsp;&nbsp; b = ${fmt(C)} + ${fmt(D)}·t</pre>
+      <p><b>4. Minimum.</b> This <code>x̂</code> minimizes
+      <code>‖Ax − b‖² = Σ (C + D·tᵢ − bᵢ)²</code> = the sum of squared vertical errors
+      = <code>${round(ssq)}</code>, achieved at the projection <code>p = Ax̂</code>.</p>
+      <p><b>5. Projection and error vectors.</b>
+      <code>p = (${pred.map(fmt).join(", ")})</code> is the closest point in the column space;
+      <code>e = b − p = (${err.map(fmt).join(", ")})</code> is the error.
+      Strang verifies <code>e</code> is perpendicular to <i>both</i> columns
+      (so to the whole column space): the dot products
+      <code>e·(1,1,1) = ${fmt(err.reduce((s, e) => s + e, 0))}</code> and
+      <code>e·(t₁,t₂,t₃) = ${fmt(err.reduce((s, e, i) => s + e * ts[i], 0))}</code>,
+      both <b>zero</b> — that is exactly <code>Aᵀe = 0</code>, the normal equations.</p>
+    `;
+  }
+
+  document.getElementById("fit").onclick = render;
+  document.querySelectorAll(".coef").forEach((el) => {
+    el.addEventListener("change", render);
+    el.addEventListener("keydown", (e) => { if (e.key === "Enter") render(); });
+  });
+  document.getElementById("reset").onclick = () => {
+    const defs = { t0: 1, b0: 1, t1: 2, b1: 2, t2: 3, b2: 2 };
+    for (const k in defs) document.getElementById(k).value = defs[k];
+    render();
+  };
+
+  render();
+</script>
+</body>
+</html>
