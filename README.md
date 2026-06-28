@@ -38,6 +38,19 @@ probability/
 Adding a course = drop in a `course.json`, a domain JS lib under `lib/`, and per-lecture HTML pages
 that load Plotly + the shared stylesheet + that domain lib.
 
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) — adding a lecture or a whole course is a matter of
+copying the established pattern. No build step.
+
 ## License
 
-Educational use. Lecture content follows the respective MIT OpenCourseWare courses.
+Dual-licensed by component:
+
+- **Source code** — [MIT License](LICENSE) (interactive logic, Plotly helpers, scaffolding, tooling).
+- **Educational content** — [CC BY-NC-SA 4.0](LICENSE-content) (lecture write-ups, intuition/worked-math
+  narrative, choice of teaching examples), to stay compatible with the MIT OpenCourseWare materials it is
+  built on and verified against.
+
+Course materials © MIT OpenCourseWare, used under CC BY-NC-SA 4.0. This is an independent project and is
+not endorsed by MIT, MIT OpenCourseWare, or the course instructors (Gilbert Strang, John Tsitsiklis).
